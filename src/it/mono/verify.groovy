@@ -18,6 +18,10 @@
  * under the License.
  */
 
-File touchFile = new File( basedir, "target/buildinfo" );
+File buildinfoFile = new File( basedir, "target/buildinfo" );
 
-assert touchFile.isFile()
+assert buildinfoFile.isFile()
+
+File local = new File( basedir, "../../local-repo/org/apache/maven/plugins/it/mono/1.0-SNAPSHOT/mono-1.0-SNAPSHOT.buildinfo")
+
+assert local.isFile()

@@ -24,10 +24,12 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.MavenProjectHelper;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -65,6 +67,18 @@ public class SaveMojo
     @Parameter( defaultValue = "${project.build.directory}/buildinfo", required = true )
     private File buildinfoFile;
 
+    /**
+     * Specifies whether to attach the generated buildinfo file to the project.
+     */
+    @Parameter( property = "buildinfo.attach", defaultValue = "true" )
+    private boolean attach;
+
+    /**
+     * Used for attaching the buildinfo file in the project.
+     */
+    @Component
+    private MavenProjectHelper projectHelper;
+
     public void execute() throws MojoExecutionException
     {
         try ( PrintWriter p = new PrintWriter( new BufferedWriter( new FileWriter( buildinfoFile ) ) ) )
@@ -77,7 +91,12 @@ public class SaveMojo
             p.println( "version=" + project.getVersion() );
             p.println();
             p.println( "# source information" );
-            p.println( "# TBD source.* artifact, url, scm.uri, scm.tag: what part is automatic or parameter?" );
+            p.println( "# TBD source.* artifact, url should be parameters" );
+            if ( project.getScm() != null )
+            {
+                p.println( "source.scm.uri=" + project.getScm().getConnection() );
+                p.println( "source.scm.tag=" + project.getScm().getTag() );
+            }
             p.println();
             p.println( "# build instructions" );
             p.println( "build-tool=mvn" );
@@ -100,6 +119,15 @@ public class SaveMojo
         catch ( IOException e )
         {
             throw new MojoExecutionException( "Error creating file " + buildinfoFile, e );
+        }
+
+        if ( attach )
+        {
+            projectHelper.attachArtifact( project, "buildinfo", "", buildinfoFile );
+        }
+        else
+        {
+            getLog().info( "NOT adding site jar to the list of attached artifacts." );
         }
     }
 

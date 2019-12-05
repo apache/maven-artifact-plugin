@@ -137,9 +137,10 @@
             <artifactId>maven-invoker-plugin</artifactId>
             <configuration>
               <goals>
-                <goal>verify</goal>
+                <goal>deploy</goal>
               </goals>
               <debug>false</debug>
+              <showErrors>true</showErrors>
             </configuration>
           </plugin>
         </plugins>

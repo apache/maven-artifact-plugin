@@ -34,6 +34,14 @@
     <project.build.outputTimestamp>2019-12-03T10:04:00Z</project.build.outputTimestamp>
   </properties>
 
+  <distributionManagement>
+    <snapshotRepository>
+      <id>local</id>
+      <url>file://${basedir}/target/repo</url>
+      <uniqueVersion>false</uniqueVersion>
+    </snapshotRepository>
+  </distributionManagement>
+
   <build>
     <plugins>
       <plugin>
