@@ -87,13 +87,11 @@ public class SaveMojo
             p.println( "java.version=" + System.getProperty( "java.version" ) );
             p.println( "java.vendor=" + System.getProperty( "java.vendor" ) );
             p.println( "os.name=" + System.getProperty( "os.name" ) );
-            p.println( "os.arch=" + System.getProperty( "os.arch" ) );
-            p.println( "os.version=" + System.getProperty( "os.version" ) );
-            p.println( "source.used= TBD" );
             p.println();
             p.println( "# Maven rebuild instructions and effective environment" );
-            p.println( "mvn.rebuild-args=package" );
+            p.println( "mvn.rebuild-args=package (TBD: should not be hardcoded)" );
             p.println( "mvn.version=" + MavenVersion.createMavenVersionString() );
+            p.println( "mvn.minimum.version=TBD" );
             p.println();
             printOutput( p );
 
