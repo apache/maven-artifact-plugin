@@ -19,7 +19,6 @@ package org.apache.maven.plugins.buildinfo;
  * under the License.
  */
 
-import org.apache.commons.codec.binary.Hex;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -33,12 +32,9 @@ import org.apache.maven.project.MavenProjectHelper;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 /**
@@ -81,6 +77,21 @@ public class SaveMojo
 
     public void execute() throws MojoExecutionException
     {
+        generateBuildinfo();
+
+        if ( attach )
+        {
+            projectHelper.attachArtifact( project, "buildinfo", buildinfoFile );
+        }
+        else
+        {
+            getLog().info( "NOT adding buildinfo to the list of attached artifacts." );
+        }
+    }
+
+    private void generateBuildinfo()
+            throws MojoExecutionException
+    {
         try ( PrintWriter p = new PrintWriter( new BufferedWriter( new FileWriter( buildinfoFile ) ) ) )
         {
             p.println( "buildinfo.version=1.0-SNAPSHOT" );
@@ -120,15 +131,6 @@ public class SaveMojo
         {
             throw new MojoExecutionException( "Error creating file " + buildinfoFile, e );
         }
-
-        if ( attach )
-        {
-            projectHelper.attachArtifact( project, "buildinfo", "", buildinfoFile );
-        }
-        else
-        {
-            getLog().info( "NOT adding site jar to the list of attached artifacts." );
-        }
     }
 
     private void printOutput( PrintWriter p )
@@ -151,33 +153,6 @@ public class SaveMojo
         File file = artifact.getFile();
         p.println( "outputs." + i + ".filename=" + file.getName() );
         p.println( "outputs." + i + ".length=" + file.length() );
-        p.println( "outputs." + i + ".checksums.sha512=" + calculateSha512( file ) );
-    }
-
-    private String calculateSha512( File file )
-            throws MojoExecutionException
-    {
-        try ( FileInputStream fis = new FileInputStream( file ) )
-        {
-            MessageDigest messageDigest = MessageDigest.getInstance( "sha-512" );
-
-            byte[] buffer = new byte[16 * 1024];
-            int size = fis.read( buffer, 0, buffer.length );
-            while ( size >= 0 )
-            {
-                messageDigest.update( buffer, 0, size );
-                size = fis.read( buffer, 0, buffer.length );
-            }
-
-            return Hex.encodeHexString( messageDigest.digest() );
-        }
-        catch ( IOException ioe )
-        {
-            throw new MojoExecutionException( "Error opening file " + file, ioe );
-        }
-        catch ( NoSuchAlgorithmException nsae )
-        {
-            throw new MojoExecutionException( "Could not get hash algorithm", nsae );
-        }
+        p.println( "outputs." + i + ".checksums.sha512=" + DigestHelper.calculateSha512( file ) );
     }
 }
