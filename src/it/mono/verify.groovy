@@ -25,3 +25,7 @@ assert buildinfoFile.isFile()
 File local = new File( basedir, "../../local-repo/org/apache/maven/plugins/it/mono/1.0-SNAPSHOT/mono-1.0-SNAPSHOT.buildinfo")
 
 assert local.isFile()
+
+String buildinfo = buildinfoFile.text
+
+assert buildinfo.contains( "mvn.minimum.version=3.0.5" )

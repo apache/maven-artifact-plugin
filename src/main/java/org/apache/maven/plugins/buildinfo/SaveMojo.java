@@ -118,7 +118,10 @@ public class SaveMojo
             p.println( "# Maven rebuild instructions and effective environment" );
             p.println( "mvn.rebuild-args=package (TBD: should not be hardcoded)" );
             p.println( "mvn.version=" + MavenVersion.createMavenVersionString() );
-            p.println( "mvn.minimum.version=TBD" );
+            if ( ( project.getPrerequisites() != null ) && ( project.getPrerequisites().getMaven() != null ) )
+            {
+                p.println( "mvn.minimum.version=" + project.getPrerequisites().getMaven() );
+            }
             p.println();
             printOutput( p );
 
