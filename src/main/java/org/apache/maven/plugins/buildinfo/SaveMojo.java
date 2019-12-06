@@ -120,6 +120,7 @@ public class SaveMojo
             p.println( "mvn.version=" + MavenVersion.createMavenVersionString() );
             if ( ( project.getPrerequisites() != null ) && ( project.getPrerequisites().getMaven() != null ) )
             {
+                // TODO wrong algorithm, should reuse algorithm written in versions-maven-plugin
                 p.println( "mvn.minimum.version=" + project.getPrerequisites().getMaven() );
             }
             p.println();
