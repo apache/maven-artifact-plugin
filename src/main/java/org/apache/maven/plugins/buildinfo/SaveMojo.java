@@ -19,6 +19,7 @@ package org.apache.maven.plugins.buildinfo;
  * under the License.
  */
 
+import org.apache.commons.codec.Charsets;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -32,9 +33,12 @@ import org.apache.maven.project.MavenProjectHelper;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.util.List;
 
 /**
@@ -92,7 +96,8 @@ public class SaveMojo
     private void generateBuildinfo()
             throws MojoExecutionException
     {
-        try ( PrintWriter p = new PrintWriter( new BufferedWriter( new FileWriter( buildinfoFile ) ) ) )
+        try ( PrintWriter p = new PrintWriter( new BufferedWriter(
+                new OutputStreamWriter( new FileOutputStream( buildinfoFile ), Charsets.ISO_8859_1 ) ) ) )
         {
             p.println( "buildinfo.version=1.0-SNAPSHOT" );
             p.println();
