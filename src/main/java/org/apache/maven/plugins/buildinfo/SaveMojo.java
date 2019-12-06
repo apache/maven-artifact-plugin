@@ -101,13 +101,7 @@ public class SaveMojo
             p.println( "artifact-id=" + project.getArtifactId() );
             p.println( "version=" + project.getVersion() );
             p.println();
-            p.println( "# source information" );
-            p.println( "# TBD source.* artifact, url should be parameters" );
-            if ( project.getScm() != null )
-            {
-                p.println( "source.scm.uri=" + project.getScm().getConnection() );
-                p.println( "source.scm.tag=" + project.getScm().getTag() );
-            }
+            printSourceInformation( p );
             p.println();
             p.println( "# build instructions" );
             p.println( "build-tool=mvn" );
@@ -130,6 +124,28 @@ public class SaveMojo
         catch ( IOException e )
         {
             throw new MojoExecutionException( "Error creating file " + buildinfoFile, e );
+        }
+    }
+
+    private void printSourceInformation( PrintWriter p )
+    {
+        boolean sourceAvailable = false;
+        p.println( "# source information" );
+        p.println( "# TBD source.* artifact, url should be parameters" );
+        if ( project.getScm() != null )
+        {
+            sourceAvailable = true;
+            p.println( "source.scm.uri=" + project.getScm().getConnection() );
+            p.println( "source.scm.tag=" + project.getScm().getTag() );
+        }
+        else
+        {
+            p.println( "# no scm configured in pom.xml" );
+        }
+
+        if ( !sourceAvailable )
+        {
+            getLog().warn( "No source information available in buildinfo for rebuilders..." );
         }
     }
 
