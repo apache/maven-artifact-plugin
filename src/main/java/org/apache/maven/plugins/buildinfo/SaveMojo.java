@@ -72,6 +72,12 @@ public class SaveMojo
     private boolean attach;
 
     /**
+     * Rebuild arguments.
+     */
+    @Parameter( property = "buildinfo.rebuild-args", defaultValue = "-DskipTests verify" )
+    private boolean rebuildArgs;
+
+    /**
      * Used for attaching the buildinfo file in the project.
      */
     @Component
@@ -116,7 +122,7 @@ public class SaveMojo
             p.println( "os.name=" + System.getProperty( "os.name" ) );
             p.println();
             p.println( "# Maven rebuild instructions and effective environment" );
-            p.println( "mvn.rebuild-args=package (TBD: should not be hardcoded)" );
+            p.println( "mvn.rebuild-args=" + rebuildArgs );
             p.println( "mvn.version=" + MavenVersion.createMavenVersionString() );
             if ( ( project.getPrerequisites() != null ) && ( project.getPrerequisites().getMaven() != null ) )
             {
