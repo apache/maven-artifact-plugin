@@ -100,6 +100,7 @@ public class SaveMojo
     private void generateBuildinfo()
             throws MojoExecutionException
     {
+        buildinfoFile.getParentFile().mkdirs();
         try ( PrintWriter p = new PrintWriter( new BufferedWriter(
                 new OutputStreamWriter( new FileOutputStream( buildinfoFile ), Charsets.ISO_8859_1 ) ) ) )
         {
@@ -129,8 +130,11 @@ public class SaveMojo
                 // TODO wrong algorithm, should reuse algorithm written in versions-maven-plugin
                 p.println( "mvn.minimum.version=" + project.getPrerequisites().getMaven() );
             }
-            p.println();
-            printOutput( p );
+            if ( project.getArtifact() != null )
+            {
+                p.println();
+                printOutput( p );
+            }
 
             getLog().info( "Saved info on build to " + buildinfoFile );
         }
@@ -167,9 +171,12 @@ public class SaveMojo
     {
         p.println( "# output" );
 
-        printArtifact( p, 0, project.getArtifact() );
+        int n = 0;
+        if ( project.getArtifact().getFile() != null )
+        {
+            printArtifact( p, n++, project.getArtifact() );
+        }
 
-        int n = 1;
         for ( Artifact attached : project.getAttachedArtifacts() )
         {
             printArtifact( p, n++, attached );
