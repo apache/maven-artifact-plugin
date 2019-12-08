@@ -117,7 +117,7 @@ public class SaveMojo
                 p.println();
                 p.println( "# build instructions" );
                 p.println( "build-tool=mvn" );
-                p.println( "# optional build setup url, as plugin parameter" );
+                //p.println( "# optional build setup url, as plugin parameter" );
                 p.println();
                 p.println( "# effective build environment information" );
                 p.println( "java.version=" + System.getProperty( "java.version" ) );
@@ -192,6 +192,11 @@ public class SaveMojo
 
         for ( Artifact attached : project.getAttachedArtifacts() )
         {
+            if ( attached.getType().endsWith( ".asc" ) )
+            {
+                // ignore pgp signatures
+                continue;
+            }
             printArtifact( p, n++, attached );
         }
     }

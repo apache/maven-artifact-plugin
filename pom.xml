@@ -146,5 +146,25 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>dev</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-buildinfo-plugin</artifactId>
+            <version>${project.version}</version>
+            <executions>
+              <execution>
+                <id>buildinfo</id>
+                <goals>
+                  <goal>save</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>
