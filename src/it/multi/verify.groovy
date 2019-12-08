@@ -33,3 +33,14 @@ assert modA.isFile()
 File modB = new File( basedir, "../../local-repo/org/apache/maven/plugins/it/multi-modB/1.0-SNAPSHOT/multi-modB-1.0-SNAPSHOT.buildinfo")
 
 assert modB.isFile()
+
+String buildinfo = multi.text
+assert buildinfo.contains( "mvn.rebuild-args=-DskipTests verify" )
+
+buildinfo = modA.text
+assert buildinfo.contains( "mvn.build-root=org.apache.maven.plugins.it:multi:1.0-SNAPSHOT" )
+assert buildinfo.contains( "outputs.0.filename=multi-modA-1.0-SNAPSHOT.jar" )
+
+buildinfo = modB.text
+assert buildinfo.contains( "mvn.build-root=org.apache.maven.plugins.it:multi:1.0-SNAPSHOT" )
+assert buildinfo.contains( "outputs.0.filename=multi-modB-1.0-SNAPSHOT.jar" )

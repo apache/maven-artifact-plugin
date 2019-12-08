@@ -111,25 +111,38 @@ public class SaveMojo
             p.println( "artifact-id=" + project.getArtifactId() );
             p.println( "version=" + project.getVersion() );
             p.println();
-            printSourceInformation( p );
-            p.println();
-            p.println( "# build instructions" );
-            p.println( "build-tool=mvn" );
-            p.println( "# optional build setup url, as plugin parameter" );
-            p.println();
-            p.println( "# effective build environment information" );
-            p.println( "java.version=" + System.getProperty( "java.version" ) );
-            p.println( "java.vendor=" + System.getProperty( "java.vendor" ) );
-            p.println( "os.name=" + System.getProperty( "os.name" ) );
-            p.println();
-            p.println( "# Maven rebuild instructions and effective environment" );
-            p.println( "mvn.rebuild-args=" + rebuildArgs );
-            p.println( "mvn.version=" + MavenVersion.createMavenVersionString() );
-            if ( ( project.getPrerequisites() != null ) && ( project.getPrerequisites().getMaven() != null ) )
+            if ( project.isExecutionRoot() )
             {
-                // TODO wrong algorithm, should reuse algorithm written in versions-maven-plugin
-                p.println( "mvn.minimum.version=" + project.getPrerequisites().getMaven() );
+                printSourceInformation( p );
+                p.println();
+                p.println( "# build instructions" );
+                p.println( "build-tool=mvn" );
+                p.println( "# optional build setup url, as plugin parameter" );
+                p.println();
+                p.println( "# effective build environment information" );
+                p.println( "java.version=" + System.getProperty( "java.version" ) );
+                p.println( "java.vendor=" + System.getProperty( "java.vendor" ) );
+                p.println( "os.name=" + System.getProperty( "os.name" ) );
+                p.println();
+                p.println( "# Maven rebuild instructions and effective environment" );
+                p.println( "mvn.rebuild-args=" + rebuildArgs );
+                p.println( "mvn.version=" + MavenVersion.createMavenVersionString() );
+                if ( ( project.getPrerequisites() != null ) && ( project.getPrerequisites().getMaven() != null ) )
+                {
+                    // TODO wrong algorithm, should reuse algorithm written in versions-maven-plugin
+                    p.println( "mvn.minimum.version=" + project.getPrerequisites().getMaven() );
+                }
             }
+            else
+            {
+                // multi-module non execution root
+                p.println( "# build instructions" );
+                p.println( "build-tool=mvn" );
+                MavenProject root = getExecutionRoot();
+                p.println( "mvn.build-root=" + root.getGroupId() + ':' + root.getArtifactId() + ':'
+                    + root.getVersion() );
+            }
+
             if ( project.getArtifact() != null )
             {
                 p.println();
@@ -190,5 +203,17 @@ public class SaveMojo
         p.println( "outputs." + i + ".filename=" + file.getName() );
         p.println( "outputs." + i + ".length=" + file.length() );
         p.println( "outputs." + i + ".checksums.sha512=" + DigestHelper.calculateSha512( file ) );
+    }
+
+    private MavenProject getExecutionRoot()
+    {
+        for ( MavenProject p : reactorProjects )
+        {
+            if ( p.isExecutionRoot() )
+            {
+                return p;
+            }
+        }
+        return null;
     }
 }

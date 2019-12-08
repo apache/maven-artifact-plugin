@@ -28,4 +28,5 @@ assert local.isFile()
 
 String buildinfo = buildinfoFile.text
 
+assert buildinfo.contains( "outputs.0.filename=mono-1.0-SNAPSHOT.jar" )
 assert buildinfo.contains( "mvn.minimum.version=3.0.5" )
