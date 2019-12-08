@@ -95,6 +95,20 @@ public class SaveMojo
         {
             getLog().info( "NOT adding buildinfo to the list of attached artifacts." );
         }
+
+        if ( ( reactorProjects.size() > 1 ) && ( project == reactorProjects.get( reactorProjects.size() - 1 ) ) )
+        {
+            File aggregate = generateAggregateBuildinfo();
+
+            if ( attach )
+            {
+                projectHelper.attachArtifact( project, "buildinfo", "aggregate", aggregate );
+            }
+            else
+            {
+                getLog().info( "NOT adding buildinfo to the list of attached artifacts." );
+            }
+        }
     }
 
     private void generateBuildinfo()
@@ -104,34 +118,11 @@ public class SaveMojo
         try ( PrintWriter p = new PrintWriter( new BufferedWriter(
                 new OutputStreamWriter( new FileOutputStream( buildinfoFile ), Charsets.ISO_8859_1 ) ) ) )
         {
-            p.println( "buildinfo.version=1.0-SNAPSHOT" );
-            p.println();
-            p.println( "name=" + project.getName() );
-            p.println( "group-id=" + project.getGroupId() );
-            p.println( "artifact-id=" + project.getArtifactId() );
-            p.println( "version=" + project.getVersion() );
+            printHeader( p, project );
             p.println();
             if ( project.isExecutionRoot() )
             {
-                printSourceInformation( p );
-                p.println();
-                p.println( "# build instructions" );
-                p.println( "build-tool=mvn" );
-                //p.println( "# optional build setup url, as plugin parameter" );
-                p.println();
-                p.println( "# effective build environment information" );
-                p.println( "java.version=" + System.getProperty( "java.version" ) );
-                p.println( "java.vendor=" + System.getProperty( "java.vendor" ) );
-                p.println( "os.name=" + System.getProperty( "os.name" ) );
-                p.println();
-                p.println( "# Maven rebuild instructions and effective environment" );
-                p.println( "mvn.rebuild-args=" + rebuildArgs );
-                p.println( "mvn.version=" + MavenVersion.createMavenVersionString() );
-                if ( ( project.getPrerequisites() != null ) && ( project.getPrerequisites().getMaven() != null ) )
-                {
-                    // TODO wrong algorithm, should reuse algorithm written in versions-maven-plugin
-                    p.println( "mvn.minimum.version=" + project.getPrerequisites().getMaven() );
-                }
+                printRootInformation( p, project );
             }
             else
             {
@@ -146,7 +137,8 @@ public class SaveMojo
             if ( project.getArtifact() != null )
             {
                 p.println();
-                printOutput( p );
+                p.println( "# output" );
+                printOutput( p, project );
             }
 
             getLog().info( "Saved info on build to " + buildinfoFile );
@@ -157,7 +149,46 @@ public class SaveMojo
         }
     }
 
-    private void printSourceInformation( PrintWriter p )
+    private void printHeader( PrintWriter p, MavenProject project )
+    {
+        p.println( "buildinfo.version=1.0-SNAPSHOT" );
+        p.println();
+        p.println( "name=" + project.getName() );
+        p.println( "group-id=" + project.getGroupId() );
+        p.println( "artifact-id=" + project.getArtifactId() );
+        p.println( "version=" + project.getVersion() );
+    }
+
+    private void printRootInformation( PrintWriter p, MavenProject project )
+    {
+        printSourceInformation( p, project );
+        p.println();
+        p.println( "# build instructions" );
+        p.println( "build-tool=mvn" );
+        //p.println( "# optional build setup url, as plugin parameter" );
+        p.println();
+        p.println( "# effective build environment information" );
+        p.println( "java.version=" + System.getProperty( "java.version" ) );
+        p.println( "java.vendor=" + System.getProperty( "java.vendor" ) );
+        p.println( "os.name=" + System.getProperty( "os.name" ) );
+        p.println();
+        p.println( "# Maven rebuild instructions and effective environment" );
+        p.println( "mvn.rebuild-args=" + rebuildArgs );
+        p.println( "mvn.version=" + MavenVersion.createMavenVersionString() );
+        if ( ( project.getPrerequisites() != null ) && ( project.getPrerequisites().getMaven() != null ) )
+        {
+            // TODO wrong algorithm, should reuse algorithm written in versions-maven-plugin
+            p.println( "mvn.minimum.version=" + project.getPrerequisites().getMaven() );
+        }
+        if ( reactorProjects.size() > 1 )
+        {
+            MavenProject aggregate = reactorProjects.get( reactorProjects.size() - 1 );
+            p.println( "mvn.aggregate-buildinfo=" + aggregate.getGroupId() + ':' + aggregate.getArtifactId() + ':'
+                + aggregate.getVersion() );
+        }
+    }
+
+    private void printSourceInformation( PrintWriter p, MavenProject project )
     {
         boolean sourceAvailable = false;
         p.println( "# source information" );
@@ -179,11 +210,9 @@ public class SaveMojo
         }
     }
 
-    private void printOutput( PrintWriter p )
+    private void printOutput( PrintWriter p, MavenProject project )
             throws MojoExecutionException
     {
-        p.println( "# output" );
-
         int n = 0;
         if ( project.getArtifact().getFile() != null )
         {
@@ -195,6 +224,11 @@ public class SaveMojo
             if ( attached.getType().endsWith( ".asc" ) )
             {
                 // ignore pgp signatures
+                continue;
+            }
+            if ( attached.getFile().getName().equals( "buildinfo" ) )
+            {
+                // ignore buildinfo files (during aggregate)
                 continue;
             }
             if ( "javadoc".equals( attached.getClassifier() ) )
@@ -225,5 +259,40 @@ public class SaveMojo
             }
         }
         return null;
+    }
+
+    private File generateAggregateBuildinfo()
+        throws MojoExecutionException
+    {
+        File aggregate = new File( buildinfoFile.getParentFile(), "aggregate.buildinfo" );
+        MavenProject root = getExecutionRoot();
+        try ( PrintWriter p =
+            new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( aggregate ),
+                                                                         Charsets.ISO_8859_1 ) ) ) )
+        {
+            printHeader( p, root );
+            p.println();
+            printRootInformation( p, root );
+            p.println( "mvn.build-root=" + root.getGroupId() + ':' + root.getArtifactId() + ':' + root.getVersion() );
+
+            int n = 1;
+            for ( MavenProject project : reactorProjects )
+            {
+                if ( project.getArtifact() != null )
+                {
+                    p.println();
+                    p.println( "# " + n++ + '/' + reactorProjects.size() + ' ' + project.getGroupId() + ':'
+                        + project.getArtifactId() );
+                    printOutput( p, project );
+                }
+            }
+
+            getLog().info( "Saved aggregate info on build to " + aggregate );
+        }
+        catch ( IOException e )
+        {
+            throw new MojoExecutionException( "Error creating file " + aggregate, e );
+        }
+        return aggregate;
     }
 }
