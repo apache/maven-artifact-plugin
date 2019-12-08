@@ -197,6 +197,11 @@ public class SaveMojo
                 // ignore pgp signatures
                 continue;
             }
+            if ( "javadoc".equals( attached.getClassifier() ) )
+            {
+                // TEMPORARY ignore javadoc, waiting for MJAVADOC-627 in m-javadoc-p 3.2.0
+                continue;
+            }
             printArtifact( p, n++, attached );
         }
     }
