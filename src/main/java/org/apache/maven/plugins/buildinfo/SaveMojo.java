@@ -75,7 +75,7 @@ public class SaveMojo
      * Rebuild arguments.
      */
     @Parameter( property = "buildinfo.rebuild-args", defaultValue = "-DskipTests verify" )
-    private boolean rebuildArgs;
+    private String rebuildArgs;
 
     /**
      * Used for attaching the buildinfo file in the project.
