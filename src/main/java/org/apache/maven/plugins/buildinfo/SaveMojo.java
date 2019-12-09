@@ -151,6 +151,7 @@ public class SaveMojo
 
     private void printHeader( PrintWriter p, MavenProject project )
     {
+        p.println( "# https://reproducible-builds.org/docs/jvm/" );
         p.println( "buildinfo.version=1.0-SNAPSHOT" );
         p.println();
         p.println( "name=" + project.getName() );
