@@ -18,15 +18,32 @@
  * under the License.
  */
 
-File buildinfoFile = new File( basedir, "target/buildinfo" );
-
+// check existence of generated buildinfo in target
+File buildinfoFile = new File( basedir, "target/mono-1.0-SNAPSHOT.buildinfo" );
 assert buildinfoFile.isFile()
 
-File local = new File( basedir, "../../local-repo/org/apache/maven/plugins/it/mono/1.0-SNAPSHOT/mono-1.0-SNAPSHOT.buildinfo")
-
-assert local.isFile()
-
+// check generated buildinfo content
 String buildinfo = buildinfoFile.text
 
 assert buildinfo.contains( "outputs.0.filename=mono-1.0-SNAPSHOT.jar" )
 assert buildinfo.contains( "mvn.minimum.version=3.0.5" )
+
+// check existence of buildinfo in local repository
+File local = new File( basedir, "../../local-repo/org/apache/maven/plugins/it/mono/1.0-SNAPSHOT/mono-1.0-SNAPSHOT.buildinfo")
+assert local.isFile()
+
+// check existence of buildinfo in remote repository
+File remoteDir = new File( basedir, "target/remote-repo/org/apache/maven/plugins/it/mono/1.0-SNAPSHOT")
+  assert remoteDir.isDirectory()
+int count = 0;
+for ( File f : remoteDir.listFiles() )
+{
+  if ( f.getName().endsWith( ".pom" ) )
+  {
+    File b = new File( remoteDir, f.getName().replace( ".pom", ".buildinfo" ) )
+    println b
+    assert b.isFile()
+    count++
+  }
+}
+assert count > 0

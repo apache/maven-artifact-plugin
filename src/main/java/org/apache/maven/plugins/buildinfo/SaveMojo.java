@@ -60,10 +60,18 @@ public class SaveMojo
     protected List<MavenProject> reactorProjects;
 
     /**
-     * Location of the buildinfo file.
+     * Location of the generated buildinfo file.
      */
-    @Parameter( defaultValue = "${project.build.directory}/buildinfo", required = true )
+    @Parameter( defaultValue = "${project.build.directory}/${project.artifactId}-${project.version}.buildinfo",
+                    required = true, readonly = true )
     private File buildinfoFile;
+
+    /**
+     * Location of the eventually generated aggregate buildinfo file.
+     */
+    @Parameter( defaultValue = "${project.build.directory}/${project.artifactId}-${project.version}"
+        + "-aggregate.buildinfo", required = true, readonly = true )
+    private File aggregateBuildinfoFile;
 
     /**
      * Specifies whether to attach the generated buildinfo file to the project.
@@ -271,10 +279,9 @@ public class SaveMojo
     private File generateAggregateBuildinfo()
         throws MojoExecutionException
     {
-        File aggregate = new File( buildinfoFile.getParentFile(), "aggregate.buildinfo" );
         MavenProject root = getExecutionRoot();
         try ( PrintWriter p =
-            new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( aggregate ),
+            new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( aggregateBuildinfoFile ),
                                                                          Charsets.ISO_8859_1 ) ) ) )
         {
             printHeader( p, root );
@@ -294,12 +301,12 @@ public class SaveMojo
                 }
             }
 
-            getLog().info( "Saved aggregate info on build to " + aggregate );
+            getLog().info( "Saved aggregate info on build to " + aggregateBuildinfoFile );
         }
         catch ( IOException e )
         {
-            throw new MojoExecutionException( "Error creating file " + aggregate, e );
+            throw new MojoExecutionException( "Error creating file " + aggregateBuildinfoFile, e );
         }
-        return aggregate;
+        return aggregateBuildinfoFile;
     }
 }

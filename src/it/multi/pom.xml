@@ -42,7 +42,7 @@
   <distributionManagement>
     <snapshotRepository>
       <id>local-snapshots</id>
-      <url>file://${basedir}/target/repo</url>
+      <url>file://${basedir}/target/remote-repo</url>
       <uniqueVersion>false</uniqueVersion>
     </snapshotRepository>
   </distributionManagement>
