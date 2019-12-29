@@ -38,6 +38,13 @@
     <maven>3.0.5</maven>
   </prerequisites>
 
+  <scm>
+    <connection>scm:git:https://gitbox.apache.org/repos/asf/maven-studies.git</connection>
+    <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/maven-studies.git</developerConnection>
+    <url>https://github.com/apache/maven-studies/tree/${project.scm.tag}</url>
+    <tag>maven-buildinfo-plugin</tag>
+  </scm>
+
   <distributionManagement>
     <snapshotRepository>
       <id>local</id>
