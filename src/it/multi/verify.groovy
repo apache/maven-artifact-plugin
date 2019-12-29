@@ -65,4 +65,31 @@ File localAggregate = new File( basedir, "../../local-repo/org/apache/maven/plug
 assert localAggregate.isFile()
 
 // check existence of buildinfos in remote repository
-// TODO
+void checkBuildinfo( String root, String artifactId, boolean aggregate )
+{
+  File remoteDir = new File( basedir, root + "target/remote-repo/org/apache/maven/plugins/it/" + artifactId + "/1.0-SNAPSHOT" )
+  assert remoteDir.isDirectory()
+  int count = 0;
+  for ( File f : remoteDir.listFiles() )
+  {
+    if ( f.getName().endsWith( ".pom" ) )
+    {
+      File b = new File( remoteDir, f.getName().replace( ".pom", ".buildinfo" ) )
+      println b
+      assert b.isFile()
+      count++
+      if ( aggregate )
+      {
+        File a = new File( remoteDir, f.getName().replace( ".pom", "-aggregate.buildinfo" ) )
+        println a
+        assert a.isFile()
+        count++
+      }
+    }
+  }
+  assert count >= ( aggregate ? 2 : 1 )
+}
+
+checkBuildinfo( "", "multi", false )
+checkBuildinfo( "modA/", "multi-modA", false )
+checkBuildinfo( "modB/", "multi-modB", true )
