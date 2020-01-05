@@ -146,7 +146,7 @@ public class SaveMojo
             {
                 p.println();
                 p.println( "# output" );
-                printOutput( p, project );
+                printOutput( p, project, -1 );
             }
 
             getLog().info( "Saved info on build to " + buildinfoFile );
@@ -225,13 +225,20 @@ public class SaveMojo
         }
     }
 
-    private void printOutput( PrintWriter p, MavenProject project )
+    private void printOutput( PrintWriter p, MavenProject project, int projectIndex )
             throws MojoExecutionException
     {
+        String prefix = "outputs.";
+        if ( projectIndex >= 0 )
+        {
+            // aggregated buildinfo output
+            prefix += projectIndex + ".";
+            p.println( prefix + "coordinates=" + project.getGroupId() + ':' + project.getArtifactId() );
+        }
         int n = 0;
         if ( project.getArtifact().getFile() != null )
         {
-            printArtifact( p, n++, project.getArtifact() );
+            printArtifact( p, prefix, n++, project.getArtifact() );
         }
 
         for ( Artifact attached : project.getAttachedArtifacts() )
@@ -251,17 +258,17 @@ public class SaveMojo
                 // TEMPORARY ignore javadoc, waiting for MJAVADOC-627 in m-javadoc-p 3.2.0
                 continue;
             }
-            printArtifact( p, n++, attached );
+            printArtifact( p, prefix, n++, attached );
         }
     }
 
-    private void printArtifact( PrintWriter p, int i, Artifact artifact )
+    private void printArtifact( PrintWriter p, String prefix, int i, Artifact artifact )
             throws MojoExecutionException
     {
         File file = artifact.getFile();
-        p.println( "outputs." + i + ".filename=" + file.getName() );
-        p.println( "outputs." + i + ".length=" + file.length() );
-        p.println( "outputs." + i + ".checksums.sha512=" + DigestHelper.calculateSha512( file ) );
+        p.println( prefix + i + ".filename=" + file.getName() );
+        p.println( prefix + i + ".length=" + file.length() );
+        p.println( prefix + i + ".checksums.sha512=" + DigestHelper.calculateSha512( file ) );
     }
 
     private MavenProject getExecutionRoot()
@@ -289,15 +296,13 @@ public class SaveMojo
             printRootInformation( p, root );
             p.println( "mvn.build-root=" + root.getGroupId() + ':' + root.getArtifactId() + ':' + root.getVersion() );
 
-            int n = 1;
+            int n = 0;
             for ( MavenProject project : reactorProjects )
             {
                 if ( project.getArtifact() != null )
                 {
                     p.println();
-                    p.println( "# " + n++ + '/' + reactorProjects.size() + ' ' + project.getGroupId() + ':'
-                        + project.getArtifactId() );
-                    printOutput( p, project );
+                    printOutput( p, project, n++ );
                 }
             }
 

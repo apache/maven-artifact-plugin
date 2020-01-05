@@ -47,9 +47,10 @@ assert buildinfo.contains( "outputs.0.filename=multi-modB-1.0-SNAPSHOT.jar" )
 buildinfo = aggregate.text
 assert buildinfo.contains( "mvn.rebuild-args=-DskipTests verify" )
 assert buildinfo.contains( "mvn.build-root=org.apache.maven.plugins.it:multi:1.0-SNAPSHOT" )
-assert buildinfo.contains( "outputs.0.filename=multi-modA-1.0-SNAPSHOT.jar" )
-assert buildinfo.contains( "mvn.build-root=org.apache.maven.plugins.it:multi:1.0-SNAPSHOT" )
-assert buildinfo.contains( "outputs.0.filename=multi-modB-1.0-SNAPSHOT.jar" )
+assert buildinfo.contains( "outputs.1.coordinates=org.apache.maven.plugins.it:multi-modA" )
+assert buildinfo.contains( "outputs.1.0.filename=multi-modA-1.0-SNAPSHOT.jar" )
+assert buildinfo.contains( "outputs.2.coordinates=org.apache.maven.plugins.it:multi-modB" )
+assert buildinfo.contains( "outputs.2.0.filename=multi-modB-1.0-SNAPSHOT.jar" )
 
 // check existence of buildinfos in local repository
 File local = new File( basedir, "../../local-repo/org/apache/maven/plugins/it/multi/1.0-SNAPSHOT/multi-1.0-SNAPSHOT.buildinfo")
