@@ -248,7 +248,7 @@ public class SaveMojo
                 // ignore pgp signatures
                 continue;
             }
-            if ( attached.getFile().getName().equals( "buildinfo" ) )
+            if ( attached.getType().equals( "buildinfo" ) )
             {
                 // ignore buildinfo files (during aggregate)
                 continue;
