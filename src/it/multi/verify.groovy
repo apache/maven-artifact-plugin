@@ -18,80 +18,43 @@
  * under the License.
  */
 
-// check existence of generated buildinfos in target (1 per module + 1 aggregate in the last)
+// check existence of generated aggregate buildinfo in target
 File buildinfoFile = new File( basedir, "target/multi-1.0-SNAPSHOT.buildinfo" );
-assert buildinfoFile.isFile()
+assert !buildinfoFile.isFile()
 
 File modA = new File( basedir, "modA/target/multi-modA-1.0-SNAPSHOT.buildinfo")
-assert modA.isFile()
+assert !modA.isFile()
 
 File modB = new File( basedir, "modB/target/multi-modB-1.0-SNAPSHOT.buildinfo")
 assert modB.isFile()
 
-File aggregate = new File( basedir, "modB/target/multi-modB-1.0-SNAPSHOT-aggregate.buildinfo")
-assert modB.isFile()
-
-// check generated buildinfo content
-String buildinfo = buildinfoFile.text
-assert buildinfo.contains( "mvn.rebuild-args=-DskipTests verify" )
-assert buildinfo.contains( "mvn.aggregate-buildinfo=org.apache.maven.plugins.it:multi-modB:1.0-SNAPSHOT" )
-
-buildinfo = modA.text
-assert buildinfo.contains( "mvn.build-root=org.apache.maven.plugins.it:multi:1.0-SNAPSHOT" )
-assert buildinfo.contains( "outputs.0.filename=multi-modA-1.0-SNAPSHOT.jar" )
-
-buildinfo = modB.text
-assert buildinfo.contains( "mvn.build-root=org.apache.maven.plugins.it:multi:1.0-SNAPSHOT" )
-assert buildinfo.contains( "outputs.0.filename=multi-modB-1.0-SNAPSHOT.jar" )
-
-buildinfo = aggregate.text
-assert buildinfo.contains( "mvn.rebuild-args=-DskipTests verify" )
-assert buildinfo.contains( "mvn.build-root=org.apache.maven.plugins.it:multi:1.0-SNAPSHOT" )
+// check generated aggregate buildinfo content
+String buildinfo = modB.text
+assert buildinfo.contains( "group-id=org.apache.maven.plugins.it" )
+assert buildinfo.contains( "artifact-id=multi" )
+assert buildinfo.contains( "version=1.0-SNAPSHOT" )
 assert buildinfo.contains( "outputs.1.coordinates=org.apache.maven.plugins.it:multi-modA" )
 assert buildinfo.contains( "outputs.1.0.filename=multi-modA-1.0-SNAPSHOT.jar" )
 assert buildinfo.contains( "outputs.2.coordinates=org.apache.maven.plugins.it:multi-modB" )
 assert buildinfo.contains( "outputs.2.0.filename=multi-modB-1.0-SNAPSHOT.jar" )
 assert !buildinfo.contains( ".buildinfo" )
 
-// check existence of buildinfos in local repository
-File local = new File( basedir, "../../local-repo/org/apache/maven/plugins/it/multi/1.0-SNAPSHOT/multi-1.0-SNAPSHOT.buildinfo")
-assert local.isFile()
-
-File localModA = new File( basedir, "../../local-repo/org/apache/maven/plugins/it/multi-modA/1.0-SNAPSHOT/multi-modA-1.0-SNAPSHOT.buildinfo")
-assert localModA.isFile()
-
+// check existence of buildinfo in local repository
 File localModB = new File( basedir, "../../local-repo/org/apache/maven/plugins/it/multi-modB/1.0-SNAPSHOT/multi-modB-1.0-SNAPSHOT.buildinfo")
 assert localModB.isFile()
 
-File localAggregate = new File( basedir, "../../local-repo/org/apache/maven/plugins/it/multi-modB/1.0-SNAPSHOT/multi-modB-1.0-SNAPSHOT-aggregate.buildinfo")
-assert localAggregate.isFile()
-
-// check existence of buildinfos in remote repository
-void checkBuildinfo( String root, String artifactId, boolean aggregate )
+// check existence of buildinfo in remote repository
+File remoteDir = new File( basedir, "modB/target/remote-repo/org/apache/maven/plugins/it/multi-modB/1.0-SNAPSHOT" )
+assert remoteDir.isDirectory()
+for ( File f : remoteDir.listFiles() )
 {
-  File remoteDir = new File( basedir, root + "target/remote-repo/org/apache/maven/plugins/it/" + artifactId + "/1.0-SNAPSHOT" )
-  assert remoteDir.isDirectory()
-  int count = 0;
-  for ( File f : remoteDir.listFiles() )
+  if ( f.getName().endsWith( ".pom" ) )
   {
-    if ( f.getName().endsWith( ".pom" ) )
-    {
-      File b = new File( remoteDir, f.getName().replace( ".pom", ".buildinfo" ) )
-      println b
-      assert b.isFile()
-      count++
-      if ( aggregate )
-      {
-        File a = new File( remoteDir, f.getName().replace( ".pom", "-aggregate.buildinfo" ) )
-        println a
-        assert a.isFile()
-        count++
-      }
-    }
+    File b = new File( remoteDir, f.getName().replace( ".pom", ".buildinfo" ) )
+    println b
+    assert b.isFile()
+    return
   }
-  assert count >= ( aggregate ? 2 : 1 )
 }
 
-checkBuildinfo( "", "multi", false )
-checkBuildinfo( "modA/", "multi-modA", false )
-checkBuildinfo( "modB/", "multi-modB", true )
+// issue: buildinfo not found
