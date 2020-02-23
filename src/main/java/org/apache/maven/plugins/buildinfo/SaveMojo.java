@@ -79,6 +79,18 @@ public class SaveMojo
     //private String rebuildArgs;
 
     /**
+     * URL for reference build, containing either reference buildinfo file or reference artifacts.
+     */
+    @Parameter( property = "reference.url" )
+    private String referenceUrl;
+
+    /**
+     * Directory of the downloaded reference files.
+     */
+    @Parameter( defaultValue = "${project.build.directory}/reference", required = true, readonly = true )
+    private File referenceDir;
+
+    /**
      * Used for attaching the buildinfo file in the project.
      */
     @Component
@@ -110,6 +122,12 @@ public class SaveMojo
         else
         {
             getLog().info( "NOT adding buildinfo to the list of attached artifacts." );
+        }
+
+        if ( referenceUrl != null )
+        {
+            getLog().info( "Checking against reference build from " + referenceUrl );
+            checkAgainstReference();
         }
     }
 
@@ -156,5 +174,12 @@ public class SaveMojo
             }
         }
         return null;
+    }
+
+    private void checkAgainstReference()
+    {
+        referenceDir.mkdirs();
+        getLog().warn( "TODO try to download reference buildinfo and compare..." );
+        getLog().warn( "TODO if no reference buildinfo, try to download reference artifacts and compare..." );
     }
 }
