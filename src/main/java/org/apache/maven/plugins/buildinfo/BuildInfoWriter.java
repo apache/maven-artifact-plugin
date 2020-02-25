@@ -119,6 +119,7 @@ public class BuildInfoWriter
             // aggregated buildinfo output
             projectCount++;
             prefix += projectCount + ".";
+            p.println();
             p.println( prefix + "coordinates=" + project.getGroupId() + ':' + project.getArtifactId() );
         }
 
@@ -148,6 +149,7 @@ public class BuildInfoWriter
         throws MojoExecutionException
     {
         File file = artifact.getFile();
+        p.println();
         p.println( prefix + i + ".filename=" + file.getName() );
         p.println( prefix + i + ".length=" + file.length() );
         p.println( prefix + i + ".checksums.sha512=" + DigestHelper.calculateSha512( file ) );
