@@ -21,6 +21,8 @@ package org.apache.maven.plugins.buildinfo;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -35,6 +37,7 @@ public class BuildInfoWriter
     private final Log log;
     private final PrintWriter p;
     private final boolean mono;
+    private final List<Artifact> artifacts = new ArrayList<>();
     private int projectCount = -1;
 
     BuildInfoWriter( Log log, PrintWriter p, boolean mono )
@@ -153,5 +156,11 @@ public class BuildInfoWriter
         p.println( prefix + i + ".filename=" + file.getName() );
         p.println( prefix + i + ".length=" + file.length() );
         p.println( prefix + i + ".checksums.sha512=" + DigestHelper.calculateSha512( file ) );
+        artifacts.add( artifact );
+    }
+
+    public List<Artifact> getArtifacts()
+    {
+        return artifacts;
     }
 }

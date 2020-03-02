@@ -151,7 +151,7 @@ public class SaveMojo
             }
         }
 
-        generateBuildinfo( mono );
+        List<Artifact> artifacts = generateBuildinfo( mono );
         getLog().info( "Saved " + ( mono ? "" : "aggregate " ) + "info on build to " + buildinfoFile );
 
         if ( attach )
@@ -165,14 +165,12 @@ public class SaveMojo
 
         if ( referenceRepo != null )
         {
-            ArtifactRepository repo = createReferenceRepo();
-
             getLog().info( "Checking against reference build from " + referenceRepo + "..." );
-            checkAgainstReference( repo );
+            checkAgainstReference( mono, artifacts );
         }
     }
 
-    private void generateBuildinfo( boolean mono )
+    private List<Artifact> generateBuildinfo( boolean mono )
             throws MojoExecutionException
     {
         MavenProject root = mono ? project : getExecutionRoot();
@@ -198,6 +196,7 @@ public class SaveMojo
                     bi.printArtifacts( project );
                 }
             }
+            return bi.getArtifacts();
         }
         catch ( IOException e )
         {
@@ -217,44 +216,85 @@ public class SaveMojo
         return null;
     }
 
-    private void checkAgainstReference( ArtifactRepository repo )
+    private void checkAgainstReference( boolean mono, List<Artifact> artifacts )
         throws MojoExecutionException
     {
+        ArtifactRepository repo = createReferenceRepo();
         referenceDir.mkdirs();
 
         File referenceBuildinfo = downloadReferenceBuildinfo( repo );
+
+        if ( !referenceBuildinfo.canRead() )
+        {
+            // download reference artifacts
+            for ( Artifact artifact : artifacts )
+            {
+                try
+                {
+                    downloadReference( repo, artifact );
+                }
+                catch ( ArtifactNotFoundException e )
+                {
+                    getLog().warn( "Reference artifact not found " + artifact );
+                }
+            }
+
+            // generate buildinfo from reference artifacts
+            try ( PrintWriter p =
+                new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( referenceBuildinfo ),
+                                                                             Charsets.ISO_8859_1 ) ) ) )
+            {
+                BuildInfoWriter bi = new BuildInfoWriter( getLog(), p, mono );
+
+                // TODO artifact(s) fingerprints
+            }
+            catch ( IOException e )
+            {
+                throw new MojoExecutionException( "Error creating file " + referenceBuildinfo, e );
+            }
+        }
+
+        // TODO compare reference buildinfo vs actual
     }
 
     private File downloadReferenceBuildinfo( ArtifactRepository repo )
         throws MojoExecutionException
     {
-        File referenceBuildinfo = new File( referenceDir, buildinfoFile.getName() );
-
         Artifact buildinfo =
                         artifactFactory.createArtifactWithClassifier( project.getGroupId(), project.getArtifactId(),
                                                                       project.getVersion(), "buildinfo", "" );
         try
         {
-            artifactResolver.resolve( buildinfo, Collections.singletonList( repo ), localRepository );
+            downloadReference( repo, buildinfo );
 
-            FileUtils.copyFile( buildinfo.getFile(), referenceBuildinfo );
-            getLog().info( "Reference buildinfo file found, copied to " + referenceBuildinfo );
-        }
-        catch ( ArtifactResolutionException are )
-        {
-            throw new MojoExecutionException( "Error resolving buildinfo artifact " + buildinfo, are );
+            getLog().info( "Reference buildinfo file found, copied to " + buildinfo.getFile() );
         }
         catch ( ArtifactNotFoundException e )
         {
             getLog().warn( "Reference buildinfo file not found: "
                 + "it will be generated from downloaded reference artifacts" );
         }
+
+        return buildinfo.getFile();
+    }
+
+    private void downloadReference( ArtifactRepository repo, Artifact artifact )
+        throws MojoExecutionException, ArtifactNotFoundException
+    {
+        try
+        {
+            artifactResolver.resolve( artifact, Collections.singletonList( repo ), localRepository );
+
+            FileUtils.copyFile( artifact.getFile(), new File( referenceDir, artifact.getFile().getName() ) );
+        }
+        catch ( ArtifactResolutionException are )
+        {
+            throw new MojoExecutionException( "Error resolving reference artifact " + artifact, are );
+        }
         catch ( IOException ioe )
         {
-            throw new MojoExecutionException( "Error copying buildinfo artifact " + buildinfo, ioe );
+            throw new MojoExecutionException( "Error copying reference artifact " + artifact, ioe );
         }
-
-        return referenceBuildinfo;
     }
 
     private ArtifactRepository createReferenceRepo()
