@@ -21,8 +21,8 @@ package org.apache.maven.plugins.buildinfo;
 
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -37,7 +37,7 @@ public class BuildInfoWriter
     private final Log log;
     private final PrintWriter p;
     private final boolean mono;
-    private final List<Artifact> artifacts = new ArrayList<>();
+    private final Map<Artifact, String> artifacts = new HashMap<>();
     private int projectCount = -1;
 
     BuildInfoWriter( Log log, PrintWriter p, boolean mono )
@@ -151,15 +151,21 @@ public class BuildInfoWriter
     private void printArtifact( String prefix, int i, Artifact artifact )
         throws MojoExecutionException
     {
-        File file = artifact.getFile();
-        p.println();
-        p.println( prefix + i + ".filename=" + file.getName() );
-        p.println( prefix + i + ".length=" + file.length() );
-        p.println( prefix + i + ".checksums.sha512=" + DigestHelper.calculateSha512( file ) );
-        artifacts.add( artifact );
+        prefix = prefix + i;
+        printFile( prefix, artifact.getFile() );
+        artifacts.put( artifact, prefix );
     }
 
-    public List<Artifact> getArtifacts()
+    public void printFile( String prefix, File file )
+        throws MojoExecutionException
+    {
+        p.println();
+        p.println( prefix + ".filename=" + file.getName() );
+        p.println( prefix + ".length=" + file.length() );
+        p.println( prefix + ".checksums.sha512=" + DigestHelper.calculateSha512( file ) );
+    }
+
+    public Map<Artifact, String> getArtifacts()
     {
         return artifacts;
     }

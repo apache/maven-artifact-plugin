@@ -51,6 +51,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Save buildinfo file, as specified in
@@ -154,7 +155,7 @@ public class SaveMojo
             }
         }
 
-        List<Artifact> artifacts = generateBuildinfo( mono );
+        Map<Artifact, String> artifacts = generateBuildinfo( mono );
         getLog().info( "Saved " + ( mono ? "" : "aggregate " ) + "info on build to " + buildinfoFile );
 
         if ( attach )
@@ -173,7 +174,7 @@ public class SaveMojo
         }
     }
 
-    private List<Artifact> generateBuildinfo( boolean mono )
+    private Map<Artifact, String> generateBuildinfo( boolean mono )
             throws MojoExecutionException
     {
         MavenProject root = mono ? project : getExecutionRoot();
@@ -219,7 +220,7 @@ public class SaveMojo
         return null;
     }
 
-    private void checkAgainstReference( boolean mono, List<Artifact> artifacts )
+    private void checkAgainstReference( boolean mono, Map<Artifact, String> artifacts )
         throws MojoExecutionException
     {
         RemoteRepository repo = createReferenceRepo();
@@ -230,7 +231,7 @@ public class SaveMojo
         if ( referenceBuildinfo == null )
         {
             // download reference artifacts
-            for ( Artifact artifact : artifacts )
+            for ( Artifact artifact : artifacts.keySet() )
             {
                 try
                 {
@@ -250,7 +251,14 @@ public class SaveMojo
             {
                 BuildInfoWriter bi = new BuildInfoWriter( getLog(), p, mono );
 
-                // TODO artifact(s) fingerprints
+                for ( Map.Entry<Artifact, String> entry : artifacts.entrySet() )
+                {
+                    Artifact artifact = entry.getKey();
+                    String prefix = entry.getValue();
+                    bi.printFile( prefix, new File( referenceDir, artifact.getFile().getName() ) );
+                }
+
+                getLog().info( "Minimal buildinfo generated from downloaded artifacts: " + referenceBuildinfo );
             }
             catch ( IOException e )
             {
