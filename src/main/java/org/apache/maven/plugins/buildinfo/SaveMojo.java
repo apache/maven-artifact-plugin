@@ -27,7 +27,6 @@ import org.apache.maven.artifact.repository.ArtifactRepositoryPolicy;
 import org.apache.maven.artifact.repository.MavenArtifactRepository;
 import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
 import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
-import org.apache.maven.artifact.resolver.ArtifactResolutionException;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -39,6 +38,14 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.codehaus.plexus.util.FileUtils;
+import org.eclipse.aether.AbstractForwardingRepositorySystemSession;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.repository.WorkspaceReader;
+import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResult;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -46,7 +53,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -135,6 +141,24 @@ public class SaveMojo
     @Component
     private ArtifactFactory artifactFactory;
 
+    /**
+     * The entry point to Maven Artifact Resolver, i.e. the component doing all the work.
+     */
+    @Component
+    private RepositorySystem repoSystem;
+
+    /**
+     * The current repository/network configuration of Maven.
+     */
+    @Parameter( defaultValue = "${repositorySystemSession}", readonly = true )
+    private RepositorySystemSession repoSession;
+
+    /**
+     * The project's remote repositories to use for the resolution.
+     */
+    @Parameter( defaultValue = "${project.remoteProjectRepositories}", readonly = true )
+    private List<RemoteRepository> remoteRepos;
+
     public void execute()
         throws MojoExecutionException
     {
@@ -219,12 +243,12 @@ public class SaveMojo
     private void checkAgainstReference( boolean mono, List<Artifact> artifacts )
         throws MojoExecutionException
     {
-        ArtifactRepository repo = createReferenceRepo();
+        ArtifactRepository repo = createReferenceRepo(); // TODO replace with org.eclipse.aether.repository.RemoteRepository
         referenceDir.mkdirs();
 
         File referenceBuildinfo = downloadReferenceBuildinfo( repo );
 
-        if ( !referenceBuildinfo.canRead() )
+        if ( referenceBuildinfo == null )
         {
             // download reference artifacts
             for ( Artifact artifact : artifacts )
@@ -240,6 +264,7 @@ public class SaveMojo
             }
 
             // generate buildinfo from reference artifacts
+            referenceBuildinfo = new File( referenceDir, buildinfoFile.getName() );
             try ( PrintWriter p =
                 new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( referenceBuildinfo ),
                                                                              Charsets.ISO_8859_1 ) ) ) )
@@ -265,9 +290,11 @@ public class SaveMojo
                                                                       project.getVersion(), "buildinfo", "" );
         try
         {
-            downloadReference( repo, buildinfo );
+            File file = downloadReference( repo, buildinfo );
 
-            getLog().info( "Reference buildinfo file found, copied to " + buildinfo.getFile() );
+            getLog().info( "Reference buildinfo file found, copied to " + file );
+
+            return file;
         }
         catch ( ArtifactNotFoundException e )
         {
@@ -275,20 +302,35 @@ public class SaveMojo
                 + "it will be generated from downloaded reference artifacts" );
         }
 
-        return buildinfo.getFile();
+        return null;
     }
 
-    private void downloadReference( ArtifactRepository repo, Artifact artifact )
+    private File downloadReference( ArtifactRepository repo, Artifact artifact )
         throws MojoExecutionException, ArtifactNotFoundException
     {
         try
         {
-            artifactResolver.resolve( artifact, Collections.singletonList( repo ), localRepository );
+            ArtifactRequest request = new ArtifactRequest();
+            request.setArtifact( new DefaultArtifact( artifact.getGroupId(), artifact.getArtifactId(),
+                                                      artifact.getClassifier(), artifact.getType(),
+                                                      artifact.getVersion() ) );
+            request.setRepositories( remoteRepos ); // TODO replace with repo
 
-            FileUtils.copyFile( artifact.getFile(), new File( referenceDir, artifact.getFile().getName() ) );
+            ArtifactResult result =
+                repoSystem.resolveArtifact( new NoWorkspaceRepositorySystemSession( repoSession ), request );
+            File resultFile = result.getArtifact().getFile();
+            File destFile = new File( referenceDir, resultFile.getName() );
+
+            FileUtils.copyFile( resultFile, destFile );
+
+            return destFile;
         }
-        catch ( ArtifactResolutionException are )
+        catch ( org.eclipse.aether.resolution.ArtifactResolutionException are )
         {
+            if ( are.getResult().isMissing() )
+            {
+                throw new ArtifactNotFoundException( "Artifact not found " + artifact, artifact );
+            }
             throw new MojoExecutionException( "Error resolving reference artifact " + artifact, are );
         }
         catch ( IOException ioe )
@@ -330,5 +372,25 @@ public class SaveMojo
         return new MavenArtifactRepository( id, url, new DefaultRepositoryLayout(), new ArtifactRepositoryPolicy(),
                                             new ArtifactRepositoryPolicy() );
     }
-    
+
+    private static class NoWorkspaceRepositorySystemSession extends AbstractForwardingRepositorySystemSession
+    {
+        private final RepositorySystemSession rss;
+        NoWorkspaceRepositorySystemSession( RepositorySystemSession rss )
+        {
+            this.rss = rss;
+        }
+
+        @Override
+        protected RepositorySystemSession getSession()
+        {
+            return rss;
+        }
+
+        @Override
+        public WorkspaceReader getWorkspaceReader()
+        {
+            return null;
+        }
+    }
 }
