@@ -22,12 +22,7 @@ package org.apache.maven.plugins.buildinfo;
 import org.apache.commons.codec.Charsets;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.repository.ArtifactRepositoryPolicy;
-import org.apache.maven.artifact.repository.MavenArtifactRepository;
-import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
 import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 
@@ -38,6 +33,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.codehaus.plexus.util.FileUtils;
+
 import org.eclipse.aether.AbstractForwardingRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
@@ -53,6 +49,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -115,28 +112,10 @@ public class SaveMojo
     private File referenceDir;
 
     /**
-     * The local repository taken from Maven's runtime. Typically <code>$HOME/.m2/repository</code>.
-     */
-    @Parameter( defaultValue = "${localRepository}", readonly = true, required = true )
-    private ArtifactRepository localRepository;
-
-    /**
-     * List of Remote Repositories used by the resolver.
-     */
-    @Parameter( defaultValue = "${project.remoteArtifactRepositories}", readonly = true, required = true )
-    private List<ArtifactRepository> remoteArtifactRepositories;
-
-    /**
      * Used for attaching the buildinfo file in the project.
      */
     @Component
     private MavenProjectHelper projectHelper;
-
-    /**
-     * Artifact Resolver, needed to resolve and download the {@code resourceBundles}.
-     */
-    @Component
-    private ArtifactResolver artifactResolver;
 
     @Component
     private ArtifactFactory artifactFactory;
@@ -243,7 +222,7 @@ public class SaveMojo
     private void checkAgainstReference( boolean mono, List<Artifact> artifacts )
         throws MojoExecutionException
     {
-        ArtifactRepository repo = createReferenceRepo(); // TODO replace with org.eclipse.aether.repository.RemoteRepository
+        RemoteRepository repo = createReferenceRepo();
         referenceDir.mkdirs();
 
         File referenceBuildinfo = downloadReferenceBuildinfo( repo );
@@ -282,7 +261,7 @@ public class SaveMojo
         // TODO compare reference buildinfo vs actual
     }
 
-    private File downloadReferenceBuildinfo( ArtifactRepository repo )
+    private File downloadReferenceBuildinfo( RemoteRepository repo )
         throws MojoExecutionException
     {
         Artifact buildinfo =
@@ -305,7 +284,7 @@ public class SaveMojo
         return null;
     }
 
-    private File downloadReference( ArtifactRepository repo, Artifact artifact )
+    private File downloadReference( RemoteRepository repo, Artifact artifact )
         throws MojoExecutionException, ArtifactNotFoundException
     {
         try
@@ -314,7 +293,7 @@ public class SaveMojo
             request.setArtifact( new DefaultArtifact( artifact.getGroupId(), artifact.getArtifactId(),
                                                       artifact.getClassifier(), artifact.getType(),
                                                       artifact.getVersion() ) );
-            request.setRepositories( remoteRepos ); // TODO replace with repo
+            request.setRepositories( Collections.singletonList( repo ) );
 
             ArtifactResult result =
                 repoSystem.resolveArtifact( new NoWorkspaceRepositorySystemSession( repoSession ), request );
@@ -339,7 +318,7 @@ public class SaveMojo
         }
     }
 
-    private ArtifactRepository createReferenceRepo()
+    private RemoteRepository createReferenceRepo()
         throws MojoExecutionException
     {
         if ( referenceRepo.contains( "::" ) )
@@ -357,7 +336,7 @@ public class SaveMojo
         }
 
         // id
-        for ( ArtifactRepository repo : remoteArtifactRepositories )
+        for ( RemoteRepository repo : remoteRepos )
         {
             if ( referenceRepo.equals( repo.getId() ) )
             {
@@ -367,15 +346,16 @@ public class SaveMojo
         throw new MojoExecutionException( "Could not find repository with id = " + referenceRepo );
     }
 
-    protected ArtifactRepository createDeploymentArtifactRepository( String id, String url )
+    protected RemoteRepository createDeploymentArtifactRepository( String id, String url )
     {
-        return new MavenArtifactRepository( id, url, new DefaultRepositoryLayout(), new ArtifactRepositoryPolicy(),
-                                            new ArtifactRepositoryPolicy() );
+        return new RemoteRepository.Builder( id, null, url ).build();
     }
 
-    private static class NoWorkspaceRepositorySystemSession extends AbstractForwardingRepositorySystemSession
+    private static class NoWorkspaceRepositorySystemSession
+        extends AbstractForwardingRepositorySystemSession
     {
         private final RepositorySystemSession rss;
+
         NoWorkspaceRepositorySystemSession( RepositorySystemSession rss )
         {
             this.rss = rss;
