@@ -33,7 +33,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.codehaus.plexus.util.FileUtils;
-
+import org.codehaus.plexus.util.PropertyUtils;
 import org.eclipse.aether.AbstractForwardingRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
@@ -52,6 +52,7 @@ import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Save buildinfo file, as specified in
@@ -244,7 +245,7 @@ public class SaveMojo
             }
 
             // generate buildinfo from reference artifacts
-            referenceBuildinfo = new File( referenceDir, buildinfoFile.getName() );
+            referenceBuildinfo = getReference( buildinfoFile );
             try ( PrintWriter p =
                 new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( referenceBuildinfo ),
                                                                              Charsets.ISO_8859_1 ) ) ) )
@@ -255,7 +256,7 @@ public class SaveMojo
                 {
                     Artifact artifact = entry.getKey();
                     String prefix = entry.getValue();
-                    bi.printFile( prefix, new File( referenceDir, artifact.getFile().getName() ) );
+                    bi.printFile( prefix, getReference( artifact.getFile() ) );
                 }
 
                 getLog().info( "Minimal buildinfo generated from downloaded artifacts: " + referenceBuildinfo );
@@ -266,7 +267,101 @@ public class SaveMojo
             }
         }
 
-        // TODO compare reference buildinfo vs actual
+        // compare outputs from reference buildinfo vs actual
+        Properties actual = loadOutputProperties( buildinfoFile );
+        Properties reference = loadOutputProperties( referenceBuildinfo );
+        int ok = 0;
+        for ( Map.Entry<Artifact, String> entry : artifacts.entrySet() )
+        {
+            Artifact artifact = entry.getKey();
+            String prefix = entry.getValue();
+
+            if ( checkArtifact( artifact, prefix, reference, actual ) )
+            {
+                ok++;
+            }
+        }
+
+        int ko = artifacts.size() - ok;
+        int missing = reference.size() / 3;
+        if ( ko + missing > 0 )
+        {
+            getLog().warn( "Reproducible Build output summary: " + ok + " files ok, " + ko + " different, " + missing
+                + " missing" );
+        }
+        else
+        {
+            getLog().info( "Reproducible Build output summary: " + ok + " files ok" );
+        }
+    }
+
+    private boolean checkArtifact( Artifact artifact, String prefix, Properties reference, Properties actual )
+    {
+        String actualFilename = (String) actual.remove( prefix + ".filename" );
+        String actualLength = (String) actual.remove( prefix + ".length" );
+        String actualSha512 = (String) actual.remove( prefix + ".checksums.sha512" );
+
+        String referencePrefix = findPrefix( reference, actualFilename );
+        String referenceLength = (String) reference.remove( referencePrefix + ".length" );
+        String referenceSha512 = (String) reference.remove( referencePrefix + ".checksums.sha512" );
+
+        if ( !actualLength.equals( referenceLength ) )
+        {
+            getLog().warn( "size mismatch " + actualFilename  + diffoscope( artifact ) );
+            return false;
+        }
+        else if ( !actualSha512.equals( referenceSha512 ) )
+        {
+            getLog().warn( "sha512 mismatch " + actualFilename + diffoscope( artifact )  );
+            return false;
+        }
+        return true;
+    }
+
+    private String diffoscope( Artifact a )
+    {
+        File actual = a.getFile();
+        File reference = getReference( actual );
+        return ", run diffoscope " + relative( reference ) + " " + relative( actual );
+    }
+
+    private String relative( File file )
+    {
+        return file.getPath().substring( getExecutionRoot().getBasedir().getPath().length() + 1 );
+    }
+
+    private String findPrefix( Properties reference, String actualFilename )
+    {
+        for ( String name : reference.stringPropertyNames() )
+        {
+            if ( name.endsWith( ".filename" ) && actualFilename.equals( reference.getProperty( name ) ) )
+            {
+                reference.remove( name );
+                return name.substring( 0, name.length() - ".filename".length() );
+            }
+        }
+        return null;
+    }
+
+    private Properties loadOutputProperties( File buildinfo )
+        throws MojoExecutionException
+    {
+        try
+        {
+            Properties prop = PropertyUtils.loadProperties( buildinfo );
+            for ( String name : prop.stringPropertyNames() )
+            {
+                if ( ! name.startsWith( "outputs." ) || name.endsWith( ".coordinates" ) )
+                {
+                    prop.remove( name );
+                }
+            }
+            return prop;
+        }
+        catch ( IOException ioe )
+        {
+            throw new MojoExecutionException( "Error reading buildinfo file " + buildinfo, ioe );
+        }
     }
 
     private File downloadReferenceBuildinfo( RemoteRepository repo )
@@ -299,14 +394,15 @@ public class SaveMojo
         {
             ArtifactRequest request = new ArtifactRequest();
             request.setArtifact( new DefaultArtifact( artifact.getGroupId(), artifact.getArtifactId(),
-                                                      artifact.getClassifier(), artifact.getType(),
+                                                      artifact.getClassifier(),
+                                                      artifact.getArtifactHandler().getExtension(),
                                                       artifact.getVersion() ) );
             request.setRepositories( Collections.singletonList( repo ) );
 
             ArtifactResult result =
                 repoSystem.resolveArtifact( new NoWorkspaceRepositorySystemSession( repoSession ), request );
             File resultFile = result.getArtifact().getFile();
-            File destFile = new File( referenceDir, resultFile.getName() );
+            File destFile = getReference( resultFile );
 
             FileUtils.copyFile( resultFile, destFile );
 
@@ -324,6 +420,11 @@ public class SaveMojo
         {
             throw new MojoExecutionException( "Error copying reference artifact " + artifact, ioe );
         }
+    }
+
+    private File getReference( File file )
+    {
+        return new File( referenceDir, file.getName() );
     }
 
     private RemoteRepository createReferenceRepo()
