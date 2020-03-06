@@ -32,6 +32,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
+import org.apache.maven.shared.utils.logging.MessageUtils;
 import org.codehaus.plexus.util.FileUtils;
 import org.codehaus.plexus.util.PropertyUtils;
 import org.eclipse.aether.AbstractForwardingRepositorySystemSession;
@@ -289,6 +290,7 @@ public class SaveMojo
         {
             getLog().warn( "Reproducible Build output summary: " + ok + " files ok, " + ko + " different, " + missing
                 + " missing" );
+            getLog().warn( "diff " + relative( referenceBuildinfo ) + " " + relative( buildinfoFile ) );
         }
         else
         {
@@ -308,12 +310,13 @@ public class SaveMojo
 
         if ( !actualLength.equals( referenceLength ) )
         {
-            getLog().warn( "size mismatch " + actualFilename  + diffoscope( artifact ) );
+            getLog().warn( "size mismatch " + MessageUtils.buffer().strong( actualFilename ) + diffoscope( artifact ) );
             return false;
         }
         else if ( !actualSha512.equals( referenceSha512 ) )
         {
-            getLog().warn( "sha512 mismatch " + actualFilename + diffoscope( artifact )  );
+            getLog().warn( "sha512 mismatch " + MessageUtils.buffer().strong( actualFilename )
+                + diffoscope( artifact ) );
             return false;
         }
         return true;
@@ -323,7 +326,7 @@ public class SaveMojo
     {
         File actual = a.getFile();
         File reference = getReference( actual );
-        return ", run diffoscope " + relative( reference ) + " " + relative( actual );
+        return ": diffoscope " + relative( reference ) + " " + relative( actual );
     }
 
     private String relative( File file )
