@@ -110,7 +110,6 @@ public class SaveMojo
     /**
      * Directory of the downloaded reference files.
      */
-    @Parameter( defaultValue = "${project.build.directory}/reference", required = true, readonly = true )
     private File referenceDir;
 
     /**
@@ -181,6 +180,8 @@ public class SaveMojo
         MavenProject root = mono ? project : getExecutionRoot();
 
         buildinfoFile.getParentFile().mkdirs();
+
+        referenceDir = new File( root.getBuild().getDirectory(), "reference" );
 
         try ( PrintWriter p = new PrintWriter( new BufferedWriter(
                 new OutputStreamWriter( new FileOutputStream( buildinfoFile ), Charsets.ISO_8859_1 ) ) ) )
