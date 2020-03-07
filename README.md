@@ -20,12 +20,12 @@ Apache Maven Buildinfo Plugin Study
 [![Apache License, Version 2.0, January 2004](https://img.shields.io/github/license/apache/maven.svg?label=License)][license]
 
 This plugin is a study, written as a Proof Of Concept of [Reproducible Builds](https://reproducible-builds.org/) tooling
-to ease reproducing builds: once feedback will be given on Maven developper mailing list, we'll see if this will be moved
+to ease reproducing Maven builds that are [expected to be reproducible](https://maven.apache.org/guides/mini/guide-reproducible-builds.html): once [feedback](https://lists.apache.org/thread.html/ra05a971a2de961d27691bd4624850a06a862b4223116c0c904be8397%40%3Cdev.maven.apache.org%3E) will be given on Maven developper mailing list, we'll see if this will be moved
 to a separate Maven plugin or if its unique goal will be merged to an existing plugin.
 
 The purpose of this plugin is:
 
-- to generate a buildinfo file from a build, as specified in [Reproducible Builds for the JVM](https://reproducible-builds.org/docs/jvm/)
+- to generate a buildinfo file from a build recording fingerprints of output files, as specified in [Reproducible Builds for the JVM](https://reproducible-builds.org/docs/jvm/)
   that will eventually be deployed to remote repository
 
 - help rebuilders to check that they local build produces the same Reproducible Build output than the reference build
