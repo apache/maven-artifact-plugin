@@ -461,7 +461,7 @@ public class SaveMojo
 
     protected RemoteRepository createDeploymentArtifactRepository( String id, String url )
     {
-        return new RemoteRepository.Builder( id, null, url ).build();
+        return new RemoteRepository.Builder( id, "default", url ).build();
     }
 
     private static class NoWorkspaceRepositorySystemSession
