@@ -61,7 +61,7 @@
         <executions>
           <execution>
             <goals>
-              <goal>save</goal>
+              <goal>buildinfo</goal>
             </goals>
           </execution>
         </executions>

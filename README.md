@@ -37,13 +37,13 @@ Generating buildinfo after a build
 --------------
 
 ```
-mvn verify buildinfo:save
+mvn verify buildinfo:buildinfo
 ```
 
 Deploy to remote repository
 --------------
 
-Configure the plugin with its ```save```
+Configure the plugin with its ```buildinfo```
 goal in your ```pom.xml```
 
 Check local build against remote reference
@@ -52,13 +52,13 @@ Check local build against remote reference
 If reference build is available in a remote repository with predefined id, like ```central```:
 
 ```
-mvn verify buildinfo:save -Dreference.repo=central
+mvn verify buildinfo:buildinfo -Dreference.repo=central
 ```
 
 If reference build is available in a remote repository without predefined id, use its url instead:
 
 ```
-mvn verify buildinfo:save -Dreference.repo=https://repository.apache.org/content/groups/maven-staging-group/
+mvn verify buildinfo:buildinfo -Dreference.repo=https://repository.apache.org/content/groups/maven-staging-group/
 ```
 
 Available Reproducible Releases in Maven Central Repository 
