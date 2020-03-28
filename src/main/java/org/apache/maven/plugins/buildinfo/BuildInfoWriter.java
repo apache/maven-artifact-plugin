@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.handler.ArtifactHandler;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -155,15 +156,42 @@ public class BuildInfoWriter
         throws MojoExecutionException
     {
         prefix = prefix + i;
-        printFile( prefix, artifact.getFile() );
+        printFile( prefix, artifact.getFile(), getArtifactFilename( artifact ) );
         artifacts.put( artifact, prefix );
+    }
+    
+    private String getArtifactFilename( Artifact artifact )
+    {
+        StringBuilder path = new StringBuilder( 128 );
+
+        path.append( artifact.getArtifactId() ).append( '-' ).append( artifact.getBaseVersion() );
+
+        if ( artifact.hasClassifier() )
+        {
+            path.append( '-' ).append( artifact.getClassifier() );
+        }
+
+        ArtifactHandler artifactHandler = artifact.getArtifactHandler();
+
+        if ( artifactHandler.getExtension() != null && artifactHandler.getExtension().length() > 0 )
+        {
+            path.append( '.' ).append( artifactHandler.getExtension() );
+        }
+
+        return path.toString();
     }
 
     public void printFile( String prefix, File file )
         throws MojoExecutionException
     {
+        printFile( prefix, file, file.getName() );
+    }
+
+    private void printFile( String prefix, File file, String filename )
+        throws MojoExecutionException
+    {
         p.println();
-        p.println( prefix + ".filename=" + file.getName() );
+        p.println( prefix + ".filename=" + filename );
         p.println( prefix + ".length=" + file.length() );
         p.println( prefix + ".checksums.sha512=" + DigestHelper.calculateSha512( file ) );
     }

@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -86,11 +87,12 @@ public class ReferenceBuildinfoUtil
         if ( referenceBuildinfo == null )
         {
             // download reference artifacts
+            Map<Artifact, File> referenceArtifacts = new HashMap<>();
             for ( Artifact artifact : artifacts.keySet() )
             {
                 try
                 {
-                    downloadReference( repo, artifact );
+                    referenceArtifacts.put( artifact, downloadReference( repo, artifact ) );
                 }
                 catch ( ArtifactNotFoundException e )
                 {
@@ -110,7 +112,7 @@ public class ReferenceBuildinfoUtil
                 {
                     Artifact artifact = entry.getKey();
                     String prefix = entry.getValue();
-                    bi.printFile( prefix, getReference( artifact.getFile() ) );
+                    bi.printFile( prefix, referenceArtifacts.get( artifact ) );
                 }
 
                 log.info( "Minimal buildinfo generated from downloaded artifacts: " + referenceBuildinfo );
