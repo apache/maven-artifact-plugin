@@ -22,7 +22,6 @@ package org.apache.maven.plugins.buildinfo;
 import org.apache.commons.codec.Charsets;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 
@@ -33,16 +32,9 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.shared.utils.logging.MessageUtils;
-import org.codehaus.plexus.util.FileUtils;
-import org.codehaus.plexus.util.PropertyUtils;
-import org.eclipse.aether.AbstractForwardingRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.repository.WorkspaceReader;
-import org.eclipse.aether.resolution.ArtifactRequest;
-import org.eclipse.aether.resolution.ArtifactResult;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -50,7 +42,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -110,11 +101,6 @@ public class BuildinfoMojo
     private String referenceRepo;
 
     /**
-     * Directory of the downloaded reference files.
-     */
-    private File referenceDir;
-
-    /**
      * Used for attaching the buildinfo file in the project.
      */
     @Component
@@ -149,17 +135,19 @@ public class BuildinfoMojo
         if ( !mono )
         {
             // if multi-module build, generate (aggregate) buildinfo only in last module
-            MavenProject aggregate = reactorProjects.get( reactorProjects.size() - 1 );
-            if  ( project != aggregate )
+            MavenProject last = reactorProjects.get( reactorProjects.size() - 1 );
+            if  ( project != last )
             {
-                getLog().info( "Skip intermediate buildinfo, aggregate will be " + aggregate.getArtifactId() );
+                getLog().info( "Skipping intermediate buildinfo, aggregate will be " + last.getArtifactId() );
                 return;
             }
         }
 
+        // generate buildinfo
         Map<Artifact, String> artifacts = generateBuildinfo( mono );
         getLog().info( "Saved " + ( mono ? "" : "aggregate " ) + "info on build to " + buildinfoFile );
 
+        // eventually attach
         if ( attach )
         {
             projectHelper.attachArtifact( project, "buildinfo", buildinfoFile );
@@ -169,6 +157,7 @@ public class BuildinfoMojo
             getLog().info( "NOT adding buildinfo to the list of attached artifacts." );
         }
 
+        // eventually check against reference
         if ( referenceRepo != null )
         {
             getLog().info( "Checking against reference build from " + referenceRepo + "..." );
@@ -176,14 +165,20 @@ public class BuildinfoMojo
         }
     }
 
+    /**
+     * Generate buildinfo file.
+     *
+     * @param mono is it a mono-module build?
+     * @return a Map of artifacts added to the build info with their associated property key prefix
+     *         (<code>outputs.[#module.].#artifact</code>)
+     * @throws MojoExecutionException
+     */
     private Map<Artifact, String> generateBuildinfo( boolean mono )
             throws MojoExecutionException
     {
         MavenProject root = mono ? project : getExecutionRoot();
 
         buildinfoFile.getParentFile().mkdirs();
-
-        referenceDir = new File( root.getBuild().getDirectory(), "reference" );
 
         try ( PrintWriter p = new PrintWriter( new BufferedWriter(
                 new OutputStreamWriter( new FileOutputStream( buildinfoFile ), Charsets.ISO_8859_1 ) ) ) )
@@ -204,6 +199,7 @@ public class BuildinfoMojo
                     bi.printArtifacts( project );
                 }
             }
+
             return bi.getArtifacts();
         }
         catch ( IOException e )
@@ -212,81 +208,61 @@ public class BuildinfoMojo
         }
     }
 
-    private MavenProject getExecutionRoot()
-    {
-        for ( MavenProject p : reactorProjects )
-        {
-            if ( p.isExecutionRoot() )
-            {
-                return p;
-            }
-        }
-        return null;
-    }
-
+    /**
+     * Check current build result with reference.
+     *
+     * @param mono is it a mono-module build?
+     * @artifacts a Map of artifacts added to the build info with their associated property key prefix
+     *            (<code>outputs.[#module.].#artifact</code>)
+     * @throws MojoExecutionException
+     */
     private void checkAgainstReference( boolean mono, Map<Artifact, String> artifacts )
         throws MojoExecutionException
     {
-        RemoteRepository repo = createReferenceRepo();
+        MavenProject root = mono ? project : getExecutionRoot();
+        File referenceDir = new File( root.getBuild().getDirectory(), "reference" );
         referenceDir.mkdirs();
 
-        File referenceBuildinfo = downloadReferenceBuildinfo( repo );
-
-        if ( referenceBuildinfo == null )
-        {
-            // download reference artifacts
-            for ( Artifact artifact : artifacts.keySet() )
-            {
-                try
-                {
-                    downloadReference( repo, artifact );
-                }
-                catch ( ArtifactNotFoundException e )
-                {
-                    getLog().warn( "Reference artifact not found " + artifact );
-                }
-            }
-
-            // generate buildinfo from reference artifacts
-            referenceBuildinfo = getReference( buildinfoFile );
-            try ( PrintWriter p =
-                new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( referenceBuildinfo ),
-                                                                             Charsets.ISO_8859_1 ) ) ) )
-            {
-                BuildInfoWriter bi = new BuildInfoWriter( getLog(), p, mono );
-
-                for ( Map.Entry<Artifact, String> entry : artifacts.entrySet() )
-                {
-                    Artifact artifact = entry.getKey();
-                    String prefix = entry.getValue();
-                    bi.printFile( prefix, getReference( artifact.getFile() ) );
-                }
-
-                getLog().info( "Minimal buildinfo generated from downloaded artifacts: " + referenceBuildinfo );
-            }
-            catch ( IOException e )
-            {
-                throw new MojoExecutionException( "Error creating file " + referenceBuildinfo, e );
-            }
-        }
+        // download or create reference buildinfo
+        File referenceBuildinfo = downloadOrCreateReferenceBuildinfo( mono, artifacts, referenceDir );
 
         // compare outputs from reference buildinfo vs actual
-        Properties actual = loadOutputProperties( buildinfoFile );
-        Properties reference = loadOutputProperties( referenceBuildinfo );
+        compareWithReference( artifacts, referenceBuildinfo );
+    }
+
+    private File downloadOrCreateReferenceBuildinfo( boolean mono, Map<Artifact, String> artifacts, File referenceDir )
+        throws MojoExecutionException
+    {
+        RemoteRepository repo = createReferenceRepo();
+
+        ReferenceBuildinfoUtil rmb = new ReferenceBuildinfoUtil( getLog(), referenceDir, artifacts,
+                                                                       artifactFactory, repoSystem, repoSession );
+
+        return rmb.downloadOrCreateReferenceBuildinfo( repo, project, buildinfoFile, mono );
+    }
+
+    private void compareWithReference( Map<Artifact, String> artifacts, File referenceBuildinfo )
+        throws MojoExecutionException
+    {
+        Properties actual = BuildInfoWriter.loadOutputProperties( buildinfoFile );
+        Properties reference = BuildInfoWriter.loadOutputProperties( referenceBuildinfo );
+
         int ok = 0;
+        File referenceDir = referenceBuildinfo.getParentFile();
         for ( Map.Entry<Artifact, String> entry : artifacts.entrySet() )
         {
             Artifact artifact = entry.getKey();
             String prefix = entry.getValue();
 
-            if ( checkArtifact( artifact, prefix, reference, actual ) )
+            if ( checkArtifact( artifact, prefix, reference, actual, referenceDir ) )
             {
                 ok++;
             }
         }
 
         int ko = artifacts.size() - ok;
-        int missing = reference.size() / 3;
+        int missing = reference.size() / 3 /* 3 property keys par file: filename, length and checksums.sha512 */;
+
         if ( ko + missing > 0 )
         {
             getLog().warn( "Reproducible Build output summary: " + ok + " files ok, " + ko + " different, " + missing
@@ -299,7 +275,8 @@ public class BuildinfoMojo
         }
     }
 
-    private boolean checkArtifact( Artifact artifact, String prefix, Properties reference, Properties actual )
+    private boolean checkArtifact( Artifact artifact, String prefix, Properties reference, Properties actual,
+                                   File referenceDir )
     {
         String actualFilename = (String) actual.remove( prefix + ".filename" );
         String actualLength = (String) actual.remove( prefix + ".length" );
@@ -311,22 +288,23 @@ public class BuildinfoMojo
 
         if ( !actualLength.equals( referenceLength ) )
         {
-            getLog().warn( "size mismatch " + MessageUtils.buffer().strong( actualFilename ) + diffoscope( artifact ) );
+            getLog().warn( "size mismatch " + MessageUtils.buffer().strong( actualFilename )
+                + diffoscope( artifact, referenceDir ) );
             return false;
         }
         else if ( !actualSha512.equals( referenceSha512 ) )
         {
             getLog().warn( "sha512 mismatch " + MessageUtils.buffer().strong( actualFilename )
-                + diffoscope( artifact ) );
+                + diffoscope( artifact, referenceDir ) );
             return false;
         }
         return true;
     }
 
-    private String diffoscope( Artifact a )
+    private String diffoscope( Artifact a, File referenceDir )
     {
         File actual = a.getFile();
-        File reference = getReference( actual );
+        File reference = new File( referenceDir, actual.getName() );
         return ": diffoscope " + relative( reference ) + " " + relative( actual );
     }
 
@@ -346,90 +324,6 @@ public class BuildinfoMojo
             }
         }
         return null;
-    }
-
-    private Properties loadOutputProperties( File buildinfo )
-        throws MojoExecutionException
-    {
-        try
-        {
-            Properties prop = PropertyUtils.loadProperties( buildinfo );
-            for ( String name : prop.stringPropertyNames() )
-            {
-                if ( ! name.startsWith( "outputs." ) || name.endsWith( ".coordinates" ) )
-                {
-                    prop.remove( name );
-                }
-            }
-            return prop;
-        }
-        catch ( IOException ioe )
-        {
-            throw new MojoExecutionException( "Error reading buildinfo file " + buildinfo, ioe );
-        }
-    }
-
-    private File downloadReferenceBuildinfo( RemoteRepository repo )
-        throws MojoExecutionException
-    {
-        Artifact buildinfo =
-                        artifactFactory.createArtifactWithClassifier( project.getGroupId(), project.getArtifactId(),
-                                                                      project.getVersion(), "buildinfo", "" );
-        try
-        {
-            File file = downloadReference( repo, buildinfo );
-
-            getLog().info( "Reference buildinfo file found, copied to " + file );
-
-            return file;
-        }
-        catch ( ArtifactNotFoundException e )
-        {
-            getLog().warn( "Reference buildinfo file not found: "
-                + "it will be generated from downloaded reference artifacts" );
-        }
-
-        return null;
-    }
-
-    private File downloadReference( RemoteRepository repo, Artifact artifact )
-        throws MojoExecutionException, ArtifactNotFoundException
-    {
-        try
-        {
-            ArtifactRequest request = new ArtifactRequest();
-            request.setArtifact( new DefaultArtifact( artifact.getGroupId(), artifact.getArtifactId(),
-                                                      artifact.getClassifier(),
-                                                      artifact.getArtifactHandler().getExtension(),
-                                                      artifact.getVersion() ) );
-            request.setRepositories( Collections.singletonList( repo ) );
-
-            ArtifactResult result =
-                repoSystem.resolveArtifact( new NoWorkspaceRepositorySystemSession( repoSession ), request );
-            File resultFile = result.getArtifact().getFile();
-            File destFile = getReference( resultFile );
-
-            FileUtils.copyFile( resultFile, destFile );
-
-            return destFile;
-        }
-        catch ( org.eclipse.aether.resolution.ArtifactResolutionException are )
-        {
-            if ( are.getResult().isMissing() )
-            {
-                throw new ArtifactNotFoundException( "Artifact not found " + artifact, artifact );
-            }
-            throw new MojoExecutionException( "Error resolving reference artifact " + artifact, are );
-        }
-        catch ( IOException ioe )
-        {
-            throw new MojoExecutionException( "Error copying reference artifact " + artifact, ioe );
-        }
-    }
-
-    private File getReference( File file )
-    {
-        return new File( referenceDir, file.getName() );
     }
 
     private RemoteRepository createReferenceRepo()
@@ -460,31 +354,20 @@ public class BuildinfoMojo
         throw new MojoExecutionException( "Could not find repository with id = " + referenceRepo );
     }
 
-    protected RemoteRepository createDeploymentArtifactRepository( String id, String url )
+    private RemoteRepository createDeploymentArtifactRepository( String id, String url )
     {
         return new RemoteRepository.Builder( id, "default", url ).build();
     }
 
-    private static class NoWorkspaceRepositorySystemSession
-        extends AbstractForwardingRepositorySystemSession
+    private MavenProject getExecutionRoot()
     {
-        private final RepositorySystemSession rss;
-
-        NoWorkspaceRepositorySystemSession( RepositorySystemSession rss )
+        for ( MavenProject p : reactorProjects )
         {
-            this.rss = rss;
+            if ( p.isExecutionRoot() )
+            {
+                return p;
+            }
         }
-
-        @Override
-        protected RepositorySystemSession getSession()
-        {
-            return rss;
-        }
-
-        @Override
-        public WorkspaceReader getWorkspaceReader()
-        {
-            return null;
-        }
+        return null;
     }
 }
