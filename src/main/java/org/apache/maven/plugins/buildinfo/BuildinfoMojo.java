@@ -32,6 +32,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.shared.utils.logging.MessageUtils;
+import org.codehaus.plexus.util.StringUtils;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -42,9 +43,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Creates a buildinfo file recording build environment and output, as specified in
@@ -99,6 +102,15 @@ public class BuildinfoMojo
      */
     @Parameter( property = "reference.repo" )
     private String referenceRepo;
+
+    /**
+     * Specifies if reference comparison output file should be saved.
+     * This is expected to be a temporary feature to ease
+     * <a href="https://github.com/jvm-repo-rebuild/reproducible-central">Central Repository rebuild</a>
+     * results display.
+     */
+    @Parameter( property = "reference.compare.save", defaultValue = "false" )
+    private boolean referenceCompareSave;
 
     /**
      * Used for attaching the buildinfo file in the project.
@@ -248,6 +260,8 @@ public class BuildinfoMojo
         Properties reference = BuildInfoWriter.loadOutputProperties( referenceBuildinfo );
 
         int ok = 0;
+        Set<String> okFilenames = new HashSet<>();
+        Set<String> koFilenames = new HashSet<>();
         File referenceDir = referenceBuildinfo.getParentFile();
         for ( Map.Entry<Artifact, String> entry : artifacts.entrySet() )
         {
@@ -257,6 +271,11 @@ public class BuildinfoMojo
             if ( checkArtifact( artifact, prefix, reference, actual, referenceDir ) )
             {
                 ok++;
+                okFilenames.add( artifact.getFile().getName() );
+            }
+            else
+            {
+                koFilenames.add( artifact.getFile().getName() );
             }
         }
 
@@ -272,6 +291,25 @@ public class BuildinfoMojo
         else
         {
             getLog().info( "Reproducible Build output summary: " + ok + " files ok" );
+        }
+
+        if ( referenceCompareSave )
+        {
+            File compare = new File( buildinfoFile.getParentFile(), buildinfoFile.getName() + ".compare" );
+            try ( PrintWriter p =
+                new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( compare ),
+                                                                             Charsets.ISO_8859_1 ) ) ) )
+            {
+                p.println( "ok=" + ok );
+                p.println( "ko=" + ko );
+                p.println( "okFiles=\"" + StringUtils.join( okFilenames.iterator(), " " ) + '"' ); 
+                p.println( "koFiles=\"" + StringUtils.join( koFilenames.iterator(), " " ) + '"' ); 
+                getLog().info( "Reproducible Build comparison saved to " + compare );
+            }
+            catch ( IOException e )
+            {
+                throw new MojoExecutionException( "Error creating file " + compare, e );
+            }
         }
     }
 
