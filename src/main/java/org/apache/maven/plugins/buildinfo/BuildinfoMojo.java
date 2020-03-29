@@ -43,11 +43,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 /**
  * Creates a buildinfo file recording build environment and output, as specified in
@@ -260,8 +259,8 @@ public class BuildinfoMojo
         Properties reference = BuildInfoWriter.loadOutputProperties( referenceBuildinfo );
 
         int ok = 0;
-        Set<String> okFilenames = new HashSet<>();
-        Set<String> koFilenames = new HashSet<>();
+        List<String> okFilenames = new ArrayList<>();
+        List<String> koFilenames = new ArrayList<>();
         File referenceDir = referenceBuildinfo.getParentFile();
         for ( Map.Entry<Artifact, String> entry : artifacts.entrySet() )
         {
