@@ -156,6 +156,13 @@ public class BuildInfoWriter
         throws MojoExecutionException
     {
         prefix = prefix + i;
+        if ( artifact.getFile().isDirectory() )
+        {
+            // edge case found in a distribution module with default packaging and skip set for
+            // m-jar-p: should use pom packaging instead
+            throw new MojoExecutionException( "Artifact " + artifact.getId() + " points to a directory: "
+                + artifact.getFile() + ". Packaging should be 'pom'?" );
+        }
         printFile( prefix, artifact.getFile(), getArtifactFilename( artifact ) );
         artifacts.put( artifact, prefix );
     }
