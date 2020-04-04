@@ -299,6 +299,7 @@ public class BuildinfoMojo
                 new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( compare ),
                                                                              Charsets.ISO_8859_1 ) ) ) )
             {
+                p.println( "version=" + project.getVersion() );
                 p.println( "ok=" + ok );
                 p.println( "ko=" + ko );
                 p.println( "okFiles=\"" + StringUtils.join( okFilenames.iterator(), " " ) + '"' ); 
