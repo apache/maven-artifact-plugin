@@ -112,7 +112,11 @@ public class ReferenceBuildinfoUtil
                 {
                     Artifact artifact = entry.getKey();
                     String prefix = entry.getValue();
-                    bi.printFile( prefix, referenceArtifacts.get( artifact ) );
+                    File referenceFile = referenceArtifacts.get( artifact );
+                    if ( referenceFile != null )
+                    {
+                        bi.printFile( prefix, referenceFile );
+                    }
                 }
 
                 log.info( "Minimal buildinfo generated from downloaded artifacts: " + referenceBuildinfo );
