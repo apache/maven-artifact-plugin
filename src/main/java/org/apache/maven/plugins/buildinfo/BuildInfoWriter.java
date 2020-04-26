@@ -22,7 +22,7 @@ package org.apache.maven.plugins.buildinfo;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -41,7 +41,7 @@ public class BuildInfoWriter
     private final Log log;
     private final PrintWriter p;
     private final boolean mono;
-    private final Map<Artifact, String> artifacts = new HashMap<>();
+    private final Map<Artifact, String> artifacts = new LinkedHashMap<>();
     private int projectCount = -1;
 
     BuildInfoWriter( Log log, PrintWriter p, boolean mono )
