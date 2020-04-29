@@ -22,6 +22,7 @@ package org.apache.maven.plugins.buildinfo;
 import org.apache.commons.codec.Charsets;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
+import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 
@@ -33,6 +34,7 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.shared.utils.logging.MessageUtils;
 import org.codehaus.plexus.util.StringUtils;
+import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -145,8 +147,14 @@ public class BuildinfoMojo
 
         if ( !mono )
         {
+            // if module skips install and/or deploy
+            if ( isSkip( project ) )
+            {
+                getLog().info( "Skipping buildinfo for module that skips install and/or deploy" );
+                return;
+            }
             // if multi-module build, generate (aggregate) buildinfo only in last module
-            MavenProject last = reactorProjects.get( reactorProjects.size() - 1 );
+            MavenProject last = getLastProject();
             if  ( project != last )
             {
                 getLog().info( "Skipping intermediate buildinfo, aggregate will be " + last.getArtifactId() );
@@ -207,7 +215,10 @@ public class BuildinfoMojo
             {
                 for ( MavenProject project : reactorProjects )
                 {
-                    bi.printArtifacts( project );
+                    if ( !isSkip( project ) )
+                    {
+                        bi.printArtifacts( project );
+                    }
                 }
             }
 
@@ -351,7 +362,7 @@ public class BuildinfoMojo
         return file.getPath().substring( getExecutionRoot().getBasedir().getPath().length() + 1 );
     }
 
-    private String findPrefix( Properties reference, String actualFilename )
+    private static String findPrefix( Properties reference, String actualFilename )
     {
         for ( String name : reference.stringPropertyNames() )
         {
@@ -392,7 +403,7 @@ public class BuildinfoMojo
         throw new MojoExecutionException( "Could not find repository with id = " + referenceRepo );
     }
 
-    private RemoteRepository createDeploymentArtifactRepository( String id, String url )
+    private static RemoteRepository createDeploymentArtifactRepository( String id, String url )
     {
         return new RemoteRepository.Builder( id, "default", url ).build();
     }
@@ -406,6 +417,68 @@ public class BuildinfoMojo
                 return p;
             }
         }
+        return null;
+    }
+
+    private MavenProject getLastProject()
+    {
+        int i = reactorProjects.size();
+        while ( i > 0 )
+        {
+            MavenProject project = reactorProjects.get( --i );
+            if ( !isSkip( project ) )
+            {
+                return project;
+            }
+        }
+        return null;
+    }
+
+    private static boolean isSkip( MavenProject project )
+    {
+        return isSkip( project, "install" ) || isSkip( project, "deploy" );
+    }
+
+    private static boolean isSkip( MavenProject project, String id )
+    {
+        Plugin plugin = getPlugin( project, "org.apache.maven.plugins:maven-" + id + "-plugin" );
+        String skip = getPluginParameter( plugin, "skip" );
+        if ( skip == null )
+        {
+            skip = project.getProperties().getProperty( "maven." + id + ".skip" );
+        }
+        return Boolean.valueOf( skip );
+    }
+
+    private static Plugin getPlugin( MavenProject project, String plugin )
+    {
+        Map<String, Plugin> pluginsAsMap = project.getBuild().getPluginsAsMap();
+        Plugin result = pluginsAsMap.get( plugin );
+        if ( result == null )
+        {
+            pluginsAsMap = project.getPluginManagement().getPluginsAsMap();
+            result = pluginsAsMap.get( plugin );
+        }
+        return result;
+    }
+
+    private static String getPluginParameter( Plugin plugin, String parameter )
+    {
+        if ( plugin != null )
+        {
+            Xpp3Dom pluginConf = (Xpp3Dom) plugin.getConfiguration();
+
+            if ( pluginConf != null )
+            {
+                Xpp3Dom target = pluginConf.getChild( parameter );
+
+                if ( target != null )
+                {
+                    return target.getValue();
+                }
+            }
+        }
+
         return null;
     }
 }
