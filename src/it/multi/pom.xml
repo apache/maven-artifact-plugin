@@ -48,8 +48,8 @@
   </distributionManagement>
 
   <modules>
-    <module>modA</module>
     <module>modB</module>
+    <module>modA</module>
   </modules>
 
   <build>

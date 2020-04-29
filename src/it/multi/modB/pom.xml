@@ -30,4 +30,12 @@
   </parent>
   <artifactId>multi-modB</artifactId>
   <name>multi-module module B</name>
+
+  <dependencies>
+    <dependency>
+    <groupId>org.apache.maven.plugins.it</groupId>
+    <artifactId>multi-modA</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    </dependency>
+  </dependencies>
 </project>
