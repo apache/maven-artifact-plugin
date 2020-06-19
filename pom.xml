@@ -30,31 +30,31 @@
     <relativePath>../../pom/maven/maven-plugins/pom.xml</relativePath>
   </parent>
 
-  <artifactId>maven-buildinfo-plugin</artifactId>
+  <artifactId>maven-artifact-plugin</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
-  <name>Apache Maven Buildinfo Plugin</name>
-  <description>Plugin to manage Reproducible Builds buildinfo file</description>
+  <name>Apache Maven Artifact Plugin</name>
+  <description>Plugin to manage artifacts tasks</description>
 
   <prerequisites>
     <maven>${maven.version}</maven>
   </prerequisites>
 
   <scm>
-    <connection>scm:git:https://gitbox.apache.org/repos/asf/maven-studies.git</connection>
-    <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/maven-studies.git</developerConnection>
-    <url>https://github.com/apache/maven-studies/tree/${project.scm.tag}</url>
-    <tag>maven-buildinfo-plugin</tag>
+    <connection>scm:git:https://gitbox.apache.org/repos/asf/maven-artifact-plugin.git</connection>
+    <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/maven-artifact-plugin.git</developerConnection>
+    <url>https://github.com/apache/maven-artifact-plugin/tree/${project.scm.tag}</url>
+    <tag>master</tag>
   </scm>
   <!-->issueManagement>
     <system>JIRA</system>
     <url>https://issues.apache.org/jira/browse/MJAR</url>
-  </issueManagement>
+  </issueManagement-->
   <ciManagement>
     <system>Jenkins</system>
-    <url>https://builds.apache.org/job/maven-box/job/maven-jar-plugin/</url>
-  </ciManagement-->
+    <url>https://builds.apache.org/job/maven-box/job/maven-artifact-plugin/</url>
+  </ciManagement>
   <distributionManagement>
     <site>
       <id>apache.website</id>
@@ -65,6 +65,7 @@
   <properties>
     <mavenVersion>3.0</mavenVersion>
     <javaVersion>7</javaVersion>
+    <project.build.outputTimestamp>2020-04-12T07:51:40Z</project.build.outputTimestamp>
   </properties>
 
   <dependencies>
@@ -163,7 +164,7 @@
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-buildinfo-plugin</artifactId>
+            <artifactId>maven-artifact-plugin</artifactId>
             <version>${project.version}</version>
             <executions>
               <execution>

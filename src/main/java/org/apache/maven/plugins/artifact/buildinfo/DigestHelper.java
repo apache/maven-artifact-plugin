@@ -1,4 +1,4 @@
-package org.apache.maven.plugins.buildinfo;
+package org.apache.maven.plugins.artifact.buildinfo;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
