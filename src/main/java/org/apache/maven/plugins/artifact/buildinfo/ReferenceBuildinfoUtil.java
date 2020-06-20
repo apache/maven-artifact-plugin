@@ -26,6 +26,8 @@ import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.shared.utils.WriterFactory;
+import org.apache.maven.shared.utils.io.IOUtil;
 import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.aether.AbstractForwardingRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
@@ -40,17 +42,36 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 /**
  * Utility to download or generate reference buildinfo.
  */
 public class ReferenceBuildinfoUtil
 {
+    private static final Set<String> JAR_TYPES;
+    
+    static
+    {
+        Set<String> types = new HashSet<>();
+        types.add( "jar" );
+        types.add( "test-jar" );
+        types.add( "war" );
+        types.add( "ear" );
+        types.add( "rar" );
+        JAR_TYPES = Collections.unmodifiableSet( types );
+    }
+
     private final Log log;
 
     /**
@@ -86,13 +107,40 @@ public class ReferenceBuildinfoUtil
 
         if ( referenceBuildinfo == null )
         {
-            // download reference artifacts
+            // download reference artifacts and guess Java version and OS
+            String javaVersion = null;
+            String osName = null;
             Map<Artifact, File> referenceArtifacts = new HashMap<>();
             for ( Artifact artifact : artifacts.keySet() )
             {
                 try
                 {
-                    referenceArtifacts.put( artifact, downloadReference( repo, artifact ) );
+                    // download
+                    File file = downloadReference( repo, artifact );
+                    referenceArtifacts.put( artifact, file );
+                    
+                    // guess Java version and OS
+                    if ( ( javaVersion == null ) && JAR_TYPES.contains( artifact.getType() ) )
+                    {
+                        log.debug( "Guessing java.version and os.name from jar " + file );
+                        try ( JarFile jar = new JarFile( file ) )
+                        {
+                            Manifest manifest = jar.getManifest();
+                            if ( manifest != null )
+                            {
+                                javaVersion = extractJavaVersion( manifest );
+                                osName = extractOsName( jar );
+                            }
+                            else
+                            {
+                                log.warn( "no MANIFEST.MF found in jar " + file );
+                            }
+                        }
+                        catch ( IOException e )
+                        {
+                            log.warn( "unable to open jar file " + file, e );
+                        }
+                    }
                 }
                 catch ( ArtifactNotFoundException e )
                 {
@@ -107,6 +155,21 @@ public class ReferenceBuildinfoUtil
                                                                              Charsets.ISO_8859_1 ) ) ) )
             {
                 BuildInfoWriter bi = new BuildInfoWriter( log, p, mono );
+
+                if ( javaVersion != null || osName != null )
+                {
+                    p.println( "# effective build environment information" );
+                    if ( javaVersion != null )
+                    {
+                        p.println( "java.version=" + javaVersion );
+                        log.info( "Reference build java.version: " + javaVersion );
+                    }
+                    if ( osName != null )
+                    {
+                        p.println( "os.name=" + osName );
+                        log.info( "Reference build os.name: " + osName );
+                    }
+                }
 
                 for ( Map.Entry<Artifact, String> entry : artifacts.entrySet() )
                 {
@@ -128,6 +191,47 @@ public class ReferenceBuildinfoUtil
         }
 
         return referenceBuildinfo;
+    }
+
+    private String extractJavaVersion( Manifest manifest )
+    {
+        Attributes attr = manifest.getMainAttributes();
+
+        String value = attr.getValue( "Build-Jdk-Spec" ); // MSHARED-797
+        if ( value != null )
+        {
+            return value + " (from MANIFEST.MF Build-Jdk-Spec)";
+        }
+
+        value = attr.getValue( "Build-Jdk" );
+        if ( value != null )
+        {
+            return String.valueOf( value ) + " (from MANIFEST.MF Build-Jdk)";
+        }
+
+        return null;
+    }
+
+    private String extractOsName( JarFile jar )
+    {
+        try ( InputStream in = jar.getInputStream( jar.getEntry( JarFile.MANIFEST_NAME ) ) )
+        {
+            String content = IOUtil.toString( in, WriterFactory.UTF_8 );
+            log.debug( "Manifest content: " + content );
+            if ( content.contains( "\r\n" ) )
+            {
+                return "Windows (from MANIFEST.MF newline)";
+            }
+            else if ( content.contains( "\n" ) )
+            {
+                return "Unix (from MANIFEST.MF newline)";
+            }
+        }
+        catch ( IOException e )
+        {
+            log.warn( "Unable to read MANIFEST.MF from " + jar, e );
+        }
+        return null;
     }
 
     private File downloadReferenceBuildinfo( RemoteRepository repo, MavenProject project )
