@@ -294,13 +294,14 @@ public class BuildinfoMojo
 
         if ( ko + missing > 0 )
         {
-            getLog().warn( "Reproducible Build output summary: " + ok + " files ok, " + ko + " different, " + missing
-                + " missing" );
+            getLog().warn( "Reproducible Build output summary: " + MessageUtils.buffer().success( ok + " files ok" )
+                + ", " + MessageUtils.buffer().failure( ko + " different" )
+                + ( ( missing == 0 ) ? "" : ( ", " + MessageUtils.buffer().warning( missing + " missing" ) ) ) );
             getLog().warn( "diff " + relative( referenceBuildinfo ) + " " + relative( buildinfoFile ) );
         }
         else
         {
-            getLog().info( "Reproducible Build output summary: " + ok + " files ok" );
+            getLog().info( "Reproducible Build output summary: " + MessageUtils.buffer().strong( ok + " files ok" ) );
         }
 
         if ( referenceCompareSave )
