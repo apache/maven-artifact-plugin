@@ -69,6 +69,7 @@ public class ReferenceBuildinfoUtil
         types.add( "war" );
         types.add( "ear" );
         types.add( "rar" );
+        types.add( "maven-plugin" );
         JAR_TYPES = Collections.unmodifiableSet( types );
     }
 
