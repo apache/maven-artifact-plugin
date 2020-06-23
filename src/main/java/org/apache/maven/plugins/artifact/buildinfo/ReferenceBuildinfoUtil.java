@@ -130,7 +130,7 @@ public class ReferenceBuildinfoUtil
                             if ( manifest != null )
                             {
                                 javaVersion = extractJavaVersion( manifest );
-                                osName = extractOsName( jar );
+                                osName = extractOsName( artifact, jar );
                             }
                             else
                             {
@@ -213,24 +213,25 @@ public class ReferenceBuildinfoUtil
         return null;
     }
 
-    private String extractOsName( JarFile jar )
+    private String extractOsName( Artifact a, JarFile jar )
     {
-        try ( InputStream in = jar.getInputStream( jar.getEntry( JarFile.MANIFEST_NAME ) ) )
+        String entryName = "META-INF/maven/" + a.getGroupId() + '/' + a.getArtifactId() + "/pom.properties";
+        try ( InputStream in = jar.getInputStream( jar.getEntry( entryName ) ) )
         {
             String content = IOUtil.toString( in, WriterFactory.UTF_8 );
             log.debug( "Manifest content: " + content );
             if ( content.contains( "\r\n" ) )
             {
-                return "Windows (from MANIFEST.MF newline)";
+                return "Windows (from pom.properties newline)";
             }
             else if ( content.contains( "\n" ) )
             {
-                return "Unix (from MANIFEST.MF newline)";
+                return "Unix (from pom.properties newline)";
             }
         }
         catch ( IOException e )
         {
-            log.warn( "Unable to read MANIFEST.MF from " + jar, e );
+            log.warn( "Unable to read " + entryName + " from " + jar, e );
         }
         return null;
     }
