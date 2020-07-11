@@ -353,7 +353,8 @@ public class BuildinfoMojo
     {
         File actual = a.getFile();
         File reference = new File( referenceDir, actual.getName() );
-        return ": diffoscope " + relative( reference ) + " " + relative( actual );
+        return ": investigate with "
+            + MessageUtils.buffer().project( "diffoscope " + relative( reference ) + " " + relative( actual ) );
     }
 
     private String relative( File file )
