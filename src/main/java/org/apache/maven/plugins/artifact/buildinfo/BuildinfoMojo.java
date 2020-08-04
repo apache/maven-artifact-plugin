@@ -295,8 +295,9 @@ public class BuildinfoMojo
             getLog().warn( "Reproducible Build output summary: " + MessageUtils.buffer().success( ok + " files ok" )
                 + ", " + MessageUtils.buffer().failure( ko + " different" )
                 + ( ( missing == 0 ) ? "" : ( ", " + MessageUtils.buffer().warning( missing + " missing" ) ) ) );
-            getLog().warn( "diff " + relative( referenceBuildinfo ) + " " + relative( buildinfoFile ) );
-        }
+            getLog().warn( "see " + MessageUtils.buffer().project( "diff " + relative( referenceBuildinfo ) + " "
+                + relative( buildinfoFile ) ).toString() );
+          }
         else
         {
             getLog().info( "Reproducible Build output summary: " + MessageUtils.buffer().strong( ok + " files ok" ) );
