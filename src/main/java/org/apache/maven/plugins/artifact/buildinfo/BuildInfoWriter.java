@@ -213,7 +213,7 @@ public class BuildInfoWriter
      *
      * @param buildinfo the build info file
      * @return output properties
-     * @throws MojoExecutionException
+     * @throws MojoExecutionException thrown on error reading buildinfo file
      */
     public static Properties loadOutputProperties( File buildinfo )
         throws MojoExecutionException
