@@ -169,6 +169,20 @@ public class ReferenceBuildinfoUtil
                     {
                         p.println( "os.name=" + osName );
                         log.info( "Reference build os.name: " + osName );
+
+                        // check against current line separator
+                        String expectedLs = osName.startsWith( "Windows" ) ? "\r\n" : "\n";
+                        if ( !expectedLs.equals( System.lineSeparator() ) )
+                        {
+                            log.warn( "Current System.lineSeparator() does not match reference build OS" );
+
+                            String ls = System.getProperty( "line.separator" );
+                            if ( !ls.equals( System.lineSeparator() ) )
+                            {
+                                log.warn( "System.lineSeparator() != System.getProperty( \"line.separator\" ): "
+                                    + "too late standard system property update..." );
+                            }
+                        }
                     }
                 }
 
