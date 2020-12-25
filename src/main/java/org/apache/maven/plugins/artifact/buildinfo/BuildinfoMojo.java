@@ -22,6 +22,7 @@ package org.apache.maven.plugins.artifact.buildinfo;
 import org.apache.commons.codec.Charsets;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
+import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 
@@ -137,6 +138,9 @@ public class BuildinfoMojo
      */
     @Parameter( defaultValue = "${project.remoteProjectRepositories}", readonly = true )
     private List<RemoteRepository> remoteRepos;
+
+    @Component
+    private ArtifactRepositoryLayout artifactRepositoryLayout;
 
     public void execute()
         throws MojoExecutionException
@@ -353,9 +357,17 @@ public class BuildinfoMojo
     private String diffoscope( Artifact a, File referenceDir )
     {
         File actual = a.getFile();
-        File reference = new File( referenceDir, actual.getName() );
+        // notice: actual file name may have been defined in pom
+        // reference file name is taken from repository format
+        File reference = new File( referenceDir, getRepositoryFilename( a ) );
         return ": investigate with "
             + MessageUtils.buffer().project( "diffoscope " + relative( reference ) + " " + relative( actual ) );
+    }
+
+    private String getRepositoryFilename( Artifact a )
+    {
+        String path = artifactRepositoryLayout.pathOf( a );
+        return path.substring( path.lastIndexOf( '/' ) );
     }
 
     private String relative( File file )
