@@ -301,6 +301,7 @@ public class BuildinfoMojo
                 + ( ( missing == 0 ) ? "" : ( ", " + MessageUtils.buffer().warning( missing + " missing" ) ) ) );
             getLog().warn( "see " + MessageUtils.buffer().project( "diff " + relative( referenceBuildinfo ) + " "
                 + relative( buildinfoFile ) ).toString() );
+            getLog().warn( "see also https://maven.apache.org/guides/mini/guide-reproducible-builds.html" );
           }
         else
         {
