@@ -305,7 +305,7 @@ public class BuildinfoMojo
           }
         else
         {
-            getLog().info( "Reproducible Build output summary: " + MessageUtils.buffer().strong( ok + " files ok" ) );
+            getLog().info( "Reproducible Build output summary: " + MessageUtils.buffer().success( ok + " files ok" ) );
         }
 
         if ( referenceCompareSave )
