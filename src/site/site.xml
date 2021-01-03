@@ -32,5 +32,9 @@ under the License.
       <item name="License" href="http://www.apache.org/licenses/"/>
       <item name="Download" href="download.html"/>
     </menu>
+
+    <menu name="Examples">
+      <item name="Diagnosing Reproducible Build Issues" href="reproducible.html"/>
+    </menu>
   </body>
 </project>

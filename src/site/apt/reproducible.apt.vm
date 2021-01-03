@@ -1,0 +1,120 @@
+ ------
+ Diagnosing Reproducible Build Issue
+ ------
+ Hervé Boutemy
+ ------
+ 2020-06-20
+ ------
+
+~~ Licensed to the Apache Software Foundation (ASF) under one
+~~ or more contributor license agreements.  See the NOTICE file
+~~ distributed with this work for additional information
+~~ regarding copyright ownership.  The ASF licenses this file
+~~ to you under the Apache License, Version 2.0 (the
+~~ "License"); you may not use this file except in compliance
+~~ with the License.  You may obtain a copy of the License at
+~~
+~~   http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing,
+~~ software distributed under the License is distributed on an
+~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+~~ KIND, either express or implied.  See the License for the
+~~ specific language governing permissions and limitations
+~~ under the License.
+
+~~ NOTE: For help with the syntax of this file, see:
+~~ http://maven.apache.org/doxia/references/apt-format.html
+
+Diagnosing Reproducible Build Issues
+
+  When checking Reproducible Build, you may find that the current build output is not the same as the reference:
+
+-------
+$ mvn -Papache-release clean verify -Dgpg.skip artifact:buildinfo -Dreference.repo=central
+[INFO] Scanning for projects...
+...
+[INFO] --- maven-artifact-plugin:${project.version}:buildinfo (default-cli) @ doxia-module-markdown ---
+[INFO] Saved aggregate info on build to /tmp/doxia-1.9.1/doxia-modules/doxia-module-markdown/target/doxia-module-markdown-1.9.1.buildinfo
+[INFO] Checking against reference build from central...
+Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-module-markdown/1.9.1/doxia-module-markdown-1.9.1.buildinfo
+[WARNING] Reference buildinfo file not found: it will be generated from downloaded reference artifacts
+[INFO] Reference build java.version: 1.8 (from MANIFEST.MF Build-Jdk-Spec)
+[INFO] Reference build os.name: Unix (from pom.properties newline)
+[INFO] Minimal buildinfo generated from downloaded artifacts: /tmp/doxia-1.9.1/target/reference/doxia-module-markdown-1.9.1.buildinfo
+[WARNING] size mismatch doxia-logging-api-1.9.1.jar: investigate with diffoscope target/reference/doxia-logging-api-1.9.1.jar doxia-logging-api/target/doxia-logging-api-1.9.1.jar
+[WARNING] size mismatch doxia-sink-api-1.9.1.jar: investigate with diffoscope target/reference/doxia-sink-api-1.9.1.jar doxia-sink-api/target/doxia-sink-api-1.9.1.jar
+[WARNING] sha512 mismatch doxia-test-docs-1.9.1.jar: investigate with diffoscope target/reference/doxia-test-docs-1.9.1.jar doxia-test-docs/target/doxia-test-docs-1.9.1.jar
+...
+[WARNING] Reproducible Build output summary: 20 files ok, 18 different
+[WARNING] see diff target/reference/doxia-module-markdown-1.9.1.buildinfo doxia-modules/doxia-module-markdown/target/doxia-module-markdown-1.9.1.buildinfo
+[WARNING] see also https://maven.apache.org/guides/mini/guide-reproducible-builds.html
+...
+-------
+
+  Multiple interesting parts are available:
+  
+  * the summary: <<<[WARNING] Reproducible Build output summary: 20 files ok, 18 different>>>
+
+  * key information on reference build environment:\
+    <<<[INFO] Reference build java.version: 1.8 (from MANIFEST.MF Build-Jdk-Spec)>>>\
+    <<<[INFO] Reference build os.name: Unix (from pom.properties newline)>>>\
+    which are the key requirements (JDK major version and Operating System) for the build environment to reproduce the reference build
+
+  * on each artifact different from reference, a command is provided to investigate differences using {{{https://diffoscope.org/}diffoscope tool}}, a diff tool working inside archives (jar, zip, tar, ...):\
+    simply copy paste provided command like <<<diffoscope target/reference/doxia-logging-api-1.9.1.jar doxia-logging-api/target/doxia-logging-api-1.9.1.jar>>> and you'll see where differences are:
+
++----------
+$ diffoscope target/reference/doxia-logging-api-1.9.1.jar doxia-logging-api/target/doxia-logging-api-1.9.1.jar
+--- target/reference/doxia-logging-api-1.9.1.jar
++++ doxia-logging-api/target/doxia-logging-api-1.9.1.jar
+├── zipinfo /dev/stdin
+│ @@ -1,8 +1,8 @@
+│ -Zip file size: 11516 bytes, number of entries: 19
+│ +Zip file size: 11497 bytes, number of entries: 19
+│  -rw-r--r--  2.0 unx      337 b- defN 20-Feb-13 21:11 META-INF/MANIFEST.MF
+│  drwxr-xr-x  2.0 unx        0 b- stor 20-Feb-13 21:11 META-INF/
+│  drwxr-xr-x  2.0 unx        0 b- stor 20-Feb-13 21:11 org/
+│  drwxr-xr-x  2.0 unx        0 b- stor 20-Feb-13 21:11 org/apache/
+│  drwxr-xr-x  2.0 unx        0 b- stor 20-Feb-13 21:11 org/apache/maven/
+│  drwxr-xr-x  2.0 unx        0 b- stor 20-Feb-13 21:11 org/apache/maven/doxia/
+│  drwxr-xr-x  2.0 unx        0 b- stor 20-Feb-13 21:11 org/apache/maven/doxia/logging/
+│ @@ -11,11 +11,11 @@
+│  drwxr-xr-x  2.0 unx        0 b- stor 20-Feb-13 21:11 META-INF/maven/org.apache.maven.doxia/doxia-logging-api/
+│  -rw-r--r--  2.0 unx     1641 b- defN 20-Feb-13 21:11 META-INF/DEPENDENCIES
+│  -rw-r--r--  2.0 unx    11358 b- defN 20-Feb-13 21:11 META-INF/LICENSE
+│  -rw-r--r--  2.0 unx      177 b- defN 20-Feb-13 21:11 META-INF/NOTICE
+│  -rw-r--r--  2.0 unx      716 b- defN 20-Feb-13 21:11 org/apache/maven/doxia/logging/Log.class
+│  -rw-r--r--  2.0 unx      198 b- defN 20-Feb-13 21:11 org/apache/maven/doxia/logging/LogEnabled.class
+│  -rw-r--r--  2.0 unx     2840 b- defN 20-Feb-13 21:11 org/apache/maven/doxia/logging/PlexusLoggerWrapper.class
+│ --rw-r--r--  2.0 unx     4208 b- defN 20-Feb-13 21:11 org/apache/maven/doxia/logging/SystemStreamLog.class
+│ +-rw-r--r--  2.0 unx     4192 b- defN 20-Feb-13 21:11 org/apache/maven/doxia/logging/SystemStreamLog.class
+│  -rw-r--r--  2.0 unx     1539 b- defN 20-Feb-13 21:11 META-INF/maven/org.apache.maven.doxia/doxia-logging-api/pom.xml
+│  -rw-r--r--  2.0 unx       74 b- defN 20-Feb-13 21:11 META-INF/maven/org.apache.maven.doxia/doxia-logging-api/pom.properties
+│ -19 files, 23088 bytes uncompressed, 8842 bytes compressed:  61.7%
+│ +19 files, 23072 bytes uncompressed, 8823 bytes compressed:  61.8%
+├── META-INF/MANIFEST.MF
+│ @@ -1,10 +1,10 @@
+│  Manifest-Version: 1.0
+│ +Implementation-Vendor: The Apache Software Foundation
+│  Implementation-Title: Doxia :: Logging API
+│  Implementation-Version: 1.9.1
+│ +Build-Jdk-Spec: 1.7
+│  Specification-Vendor: The Apache Software Foundation
+│ -Specification-Title: Doxia :: Logging API
+│ -Build-Jdk-Spec: 1.8
+│  Created-By: Maven Jar Plugin 3.2.0
+│ +Specification-Title: Doxia :: Logging API
+│  Specification-Version: 1.9
+│ -Implementation-Vendor: The Apache Software Foundation
+├── org/apache/maven/doxia/logging/PlexusLoggerWrapper.class
+...
++----------
+
+  []
+
+  In this example, reference build was done with JDK 8 (see <<<│ -Build-Jdk-Spec: 1.8>>>), but the current build was done with JDK 7 (see <<<│ +Build-Jdk-Spec: 1.7>>>): this explains both
+  difference in content of <<<META-INF/MANIFEST.MF>>> of every .jar file, but also of some bytecode in <<<.class>>> files.
+
+  When general environment issues have been fixed, for each remaining issue, you'll have to find which Maven plugin generated the content and see if there is an update of the plugin
+  that generates reproducible output: see the plugins table of the {{{Configuring for Reproducible Builds guide}/guides/mini/guide-reproducible-builds.html}} for an initial list.

@@ -29,3 +29,48 @@
 Usage
 
   The Maven Artifact Plugin...
+
+* Recording <<<.buildinfo>>> File
+
+  Recording build result into a <<<.buildinfo>>> file is typically done on command line by calling <<<artifact:buildinfo>>> goal after the normal build:
+
+-------
+$ mvn clean verify artifact:buildinfo
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------< org.apache.maven.sample:test-project >----------------
+[INFO] Building Test Project 1.0-SNAPSHOT
+[INFO] --------------------------------[ jar ]---------------------------------
+...
+[INFO] --- maven-artifact-plugin:${project.version}:buildinfo (default-cli) @ test-project ---
+[INFO] Saved info on build to /tmp/test-project/target/test-project-1.0-SNAPSHOT.buildinfo
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+-------
+
+  This records data on the current build results into a <<<.buildinfo>>> file using {{{https://reproducible-builds.org/docs/jvm/}Reproducible Builds <<<.buildinfo>>> for the JVM}} format.
+
+  Notice that if the build is multi-module, only 1 <<<.buildinfo>>> file is generated, in the last module of the reactor, that will record aggregated results for all the modules.
+
+* Checking Reproducible Build: Comparing Current Build Against Previous One
+
+  When the <<<artifact:buildinfo>>> goal is used with <<<reference.repo>>> command-line parameter, it uses the parameter value as a reference of a remote repository
+  (either its id like <<<central>>> or an url like <<<https://repository.apache.org/content/repositories/maven-1619>>>)
+  to get reference artifacts from it, then compares reference artifacts against current build output to display <<Reproducible Build output summary>>:
+
+-------
+$ mvn -Papache-release clean verify -Dgpg.skip artifact:buildinfo -Dreference.repo=central
+[INFO] Scanning for projects...
+...
+[INFO] --- maven-artifact-plugin:${project.version}:buildinfo (default-cli) @ doxia-module-markdown ---
+[INFO] Saved aggregate info on build to /tmp/doxia-1.9.1/doxia-modules/doxia-module-markdown/target/doxia-module-markdown-1.9.1.buildinfo
+[INFO] Checking against reference build from central...
+Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-module-markdown/1.9.1/doxia-module-markdown-1.9.1.buildinfo
+[WARNING] Reference buildinfo file not found: it will be generated from downloaded reference artifacts
+[INFO] Reference build java.version: 1.8 (from MANIFEST.MF Build-Jdk-Spec)
+[INFO] Reference build os.name: Unix (from pom.properties newline)
+[INFO] Minimal buildinfo generated from downloaded artifacts: /tmp/doxia-1.9.1/target/reference/doxia-module-markdown-1.9.1.buildinfo
+[INFO] Reproducible Build output summary: 38 files ok
+...
+-------

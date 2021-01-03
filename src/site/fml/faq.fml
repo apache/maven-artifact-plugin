@@ -19,11 +19,15 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-
-<faqs xmlns="http://maven.apache.org/FML/1.0.1"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/FML/1.0.1 http://maven.apache.org/xsd/fml-1.0.1.xsd"
+<faqs xmlns="http://maven.apache.org/FML/1.0.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/FML/1.0.1 https://maven.apache.org/xsd/fml-1.0.1.xsd"
   id="FAQ" title="Frequently Asked Questions">
   <part id="General">
-  </part>
+   <faq id="Configure Reproducible Builds">
+     <question>How to configure my Maven build for Reproducible Builds?</question>
+     <answer>
+       <p>See the <a href="/guides/mini/guide-reproducible-builds.html">Configuring for Reproducible Builds guide</a>.</p>
+     </answer>
+   </faq>
+ </part>
 </faqs>
