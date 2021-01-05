@@ -47,10 +47,10 @@
     <url>https://github.com/apache/maven-artifact-plugin/tree/${project.scm.tag}</url>
     <tag>master</tag>
   </scm>
-  <!-->issueManagement>
+  <issueManagement>
     <system>JIRA</system>
-    <url>https://issues.apache.org/jira/browse/MJAR</url>
-  </issueManagement-->
+    <url>https://issues.apache.org/jira/browse/MARTIFACT</url>
+  </issueManagement>
   <ciManagement>
     <system>Jenkins</system>
     <url>https://ci-builds.apache.org/job/Maven/job/maven-box/job/maven-artifact-plugin/</url>
