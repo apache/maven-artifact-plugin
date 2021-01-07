@@ -79,6 +79,12 @@ public class BuildinfoMojo
     private File buildinfoFile;
 
     /**
+     * Ignore javadoc attached artifacts from buildinfo generation.
+     */
+    @Parameter( property = "buildinfo.ignoreJavadoc", defaultValue = "true" )
+    private boolean ignoreJavadoc;
+
+    /**
      * Specifies whether to attach the generated buildinfo file to the project.
      */
     @Parameter( property = "buildinfo.attach", defaultValue = "true" )
@@ -205,6 +211,7 @@ public class BuildinfoMojo
                 new OutputStreamWriter( new FileOutputStream( buildinfoFile ), Charsets.ISO_8859_1 ) ) ) )
         {
             BuildInfoWriter bi = new BuildInfoWriter( getLog(), p, mono );
+            bi.setIgnoreJavadoc( ignoreJavadoc );
 
             bi.printHeader( root );
 

@@ -43,6 +43,7 @@ public class BuildInfoWriter
     private final boolean mono;
     private final Map<Artifact, String> artifacts = new LinkedHashMap<>();
     private int projectCount = -1;
+    private boolean ignoreJavadoc = true;
 
     BuildInfoWriter( Log log, PrintWriter p, boolean mono )
     {
@@ -143,7 +144,7 @@ public class BuildInfoWriter
                 // ignore pgp signatures
                 continue;
             }
-            if ( "javadoc".equals( attached.getClassifier() ) )
+            if ( ignoreJavadoc && "javadoc".equals( attached.getClassifier() ) )
             {
                 // TEMPORARY ignore javadoc, waiting for MJAVADOC-627 in m-javadoc-p 3.2.0
                 continue;
@@ -236,4 +237,13 @@ public class BuildInfoWriter
         }
     }
 
+    public boolean getIgnoreJavadoc()
+    {
+        return ignoreJavadoc;
+    }
+
+    public void setIgnoreJavadoc( boolean ignoreJavadoc )
+    {
+        this.ignoreJavadoc = ignoreJavadoc;
+    }
 }
