@@ -28,7 +28,7 @@
 
 ${project.name}
 
-  The Artifact Plugin is used when ...
+  The Artifact Plugin is used to manage artifacts tasks.
 
 * Goals Overview
 

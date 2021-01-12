@@ -30,7 +30,7 @@ you dig right into the code, there are a few guidelines that we need
 contributors to follow so that we can have a chance of keeping on top of
 things.
 
-This plugin contains `buildinfo`goal for [Reproducible Builds](https://reproducible-builds.org/) tooling,
+This plugin contains `buildinfo` goal for [Reproducible Builds](https://reproducible-builds.org/) tooling,
 to ease reproducing Maven builds that are [expected to be reproducible](https://maven.apache.org/guides/mini/guide-reproducible-builds.html).
 
 The purpose of this goal is:
@@ -41,7 +41,7 @@ The purpose of this goal is:
 - help rebuilders to check that they local build produces the same Reproducible Build output than the reference build
   published to a remote repository
 
-To use this plugin, you'll need to build and install from source, or use SHAPSHOT from ```https://repository.apache.org/content/repositories/snapshots```
+To use this plugin, you'll need to build and install from source, or use SHAPSHOT from `https://repository.apache.org/content/repositories/snapshots`
 
 Generating buildinfo after a build
 --------------

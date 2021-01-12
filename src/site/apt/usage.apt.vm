@@ -28,8 +28,6 @@
 
 Usage
 
-  The Maven Artifact Plugin...
-
 * Recording <<<.buildinfo>>> File
 
   Recording build result into a <<<.buildinfo>>> file is typically done on command line by calling <<<artifact:buildinfo>>> goal after the normal build:
