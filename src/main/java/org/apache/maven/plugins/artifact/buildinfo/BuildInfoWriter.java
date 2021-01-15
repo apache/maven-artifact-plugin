@@ -52,7 +52,7 @@ public class BuildInfoWriter
         this.mono = mono;
     }
 
-    public void printHeader( MavenProject project )
+    public void printHeader( MavenProject project, MavenProject aggregate )
     {
         p.println( "# https://reproducible-builds.org/docs/jvm/" );
         p.println( "buildinfo.version=1.0-SNAPSHOT" );
@@ -81,6 +81,12 @@ public class BuildInfoWriter
             // TODO wrong algorithm, should reuse algorithm written in versions-maven-plugin
             p.println( "mvn.minimum.version=" + project.getPrerequisites().getMaven() );
         }
+
+        if ( !mono && ( aggregate != null ) )
+        {
+            p.println( "mvn.aggregate.artifact-id=" + aggregate.getArtifactId() );
+        }
+
         p.println();
         p.println( "# " + ( mono ? "" : "aggregated " ) + "output" );
     }

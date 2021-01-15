@@ -41,6 +41,7 @@ assert buildinfo.contains( "outputs.1.0.filename=multi-modA-1.0-SNAPSHOT.jar" )
 assert buildinfo.contains( "outputs.2.coordinates=org.apache.maven.plugins.it:multi-modB" )
 assert buildinfo.contains( "outputs.2.0.filename=multi-modB-1.0-SNAPSHOT.jar" )
 assert !buildinfo.contains( ".buildinfo" )
+assert buildinfo.contains( "mvn.aggregate.artifact-id=multi-modB" )
 
 // check existence of buildinfo in local repository
 File localModB = new File( basedir, "../../local-repo/org/apache/maven/plugins/it/multi-modB/1.0-SNAPSHOT/multi-modB-1.0-SNAPSHOT.buildinfo")

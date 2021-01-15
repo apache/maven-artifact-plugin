@@ -232,7 +232,7 @@ public class BuildinfoMojo
             BuildInfoWriter bi = new BuildInfoWriter( getLog(), p, mono );
             bi.setIgnoreJavadoc( ignoreJavadoc );
 
-            bi.printHeader( root );
+            bi.printHeader( root, mono ? null : project );
 
             // artifact(s) fingerprints
             if ( mono )
