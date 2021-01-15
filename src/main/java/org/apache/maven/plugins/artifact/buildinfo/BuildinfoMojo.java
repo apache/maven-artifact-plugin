@@ -32,6 +32,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
+import org.apache.maven.shared.utils.io.FileUtils;
 import org.apache.maven.shared.utils.logging.MessageUtils;
 import org.codehaus.plexus.util.StringUtils;
 import org.eclipse.aether.RepositorySystem;
@@ -177,11 +178,29 @@ public class BuildinfoMojo
         // eventually attach
         if ( attach )
         {
+            getLog().info( "Attaching buildinfo" );
             projectHelper.attachArtifact( project, "buildinfo", buildinfoFile );
         }
         else
         {
             getLog().info( "NOT adding buildinfo to the list of attached artifacts." );
+        }
+
+        if ( !mono )
+        {
+            // copy aggregate buildinfo to root target directory
+            MavenProject root = getExecutionRoot();
+            File rootCopy = new File( root.getBuild().getDirectory(),
+                                      root.getArtifactId() + '-' + root.getVersion() + ".buildinfo" );
+            try
+            {
+                FileUtils.copyFile( buildinfoFile, rootCopy );
+                getLog().info( "Aggregate buildinfo copied to " + rootCopy );
+            }
+            catch ( IOException ioe )
+            {
+                throw new MojoExecutionException( "Could not copy " + buildinfoFile + "to " + rootCopy );
+            }
         }
 
         // eventually check against reference

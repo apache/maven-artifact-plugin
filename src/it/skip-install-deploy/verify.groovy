@@ -18,9 +18,9 @@
  * under the License.
  */
 
-// check existence of generated aggregate buildinfo in target
+// check existence of generated aggregate buildinfo in target and root copy
 File buildinfoFile = new File( basedir, "target/multi-1.0-SNAPSHOT.buildinfo" );
-assert !buildinfoFile.isFile()
+assert buildinfoFile.isFile()
 
 File modA = new File( basedir, "modA/target/multi-modA-1.0-SNAPSHOT.buildinfo")
 assert !modA.isFile()
