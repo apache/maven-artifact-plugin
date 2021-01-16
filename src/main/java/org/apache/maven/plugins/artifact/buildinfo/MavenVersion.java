@@ -33,7 +33,8 @@ import java.util.Properties;
  * in CLIReportingUtils.
  * @see org.apache.maven.cli.CLIReportingUtils
  */
-public class MavenVersion
+
+class MavenVersion
 {
     static String createMavenVersionString()
     {
@@ -95,7 +96,7 @@ public class MavenVersion
         return properties;
     }
 
-    public static String formatTimestamp( long timestamp )
+    private static String formatTimestamp( long timestamp )
     {
         SimpleDateFormat sdf = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ssXXX" );
         return sdf.format( new Date( timestamp ) );

@@ -31,7 +31,7 @@ import java.security.NoSuchAlgorithmException;
 /**
  * Helper to calculate sha512.
  */
-public class DigestHelper
+class DigestHelper
 {
     static String calculateSha512( File file )
             throws MojoExecutionException

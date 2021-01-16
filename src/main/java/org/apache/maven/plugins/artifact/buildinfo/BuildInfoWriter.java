@@ -36,7 +36,7 @@ import org.codehaus.plexus.util.PropertyUtils;
 /**
  * Buildinfo content writer.
  */
-public class BuildInfoWriter
+class BuildInfoWriter
 {
     private final Log log;
     private final PrintWriter p;
@@ -52,7 +52,7 @@ public class BuildInfoWriter
         this.mono = mono;
     }
 
-    public void printHeader( MavenProject project, MavenProject aggregate )
+    void printHeader( MavenProject project, MavenProject aggregate )
     {
         p.println( "# https://reproducible-builds.org/docs/jvm/" );
         p.println( "buildinfo.version=1.0-SNAPSHOT" );
@@ -119,7 +119,7 @@ public class BuildInfoWriter
         }
     }
 
-    public void printArtifacts( MavenProject project )
+    void printArtifacts( MavenProject project )
         throws MojoExecutionException
     {
         if ( project.getArtifact() == null )
@@ -195,7 +195,7 @@ public class BuildInfoWriter
         return path.toString();
     }
 
-    public void printFile( String prefix, File file )
+    void printFile( String prefix, File file )
         throws MojoExecutionException
     {
         printFile( prefix, file, file.getName() );
@@ -210,7 +210,7 @@ public class BuildInfoWriter
         p.println( prefix + ".checksums.sha512=" + DigestHelper.calculateSha512( file ) );
     }
 
-    public Map<Artifact, String> getArtifacts()
+    Map<Artifact, String> getArtifacts()
     {
         return artifacts;
     }
@@ -222,7 +222,7 @@ public class BuildInfoWriter
      * @return output properties
      * @throws MojoExecutionException
      */
-    public static Properties loadOutputProperties( File buildinfo )
+    static Properties loadOutputProperties( File buildinfo )
         throws MojoExecutionException
     {
         try
@@ -243,12 +243,12 @@ public class BuildInfoWriter
         }
     }
 
-    public boolean getIgnoreJavadoc()
+    boolean getIgnoreJavadoc()
     {
         return ignoreJavadoc;
     }
 
-    public void setIgnoreJavadoc( boolean ignoreJavadoc )
+    void setIgnoreJavadoc( boolean ignoreJavadoc )
     {
         this.ignoreJavadoc = ignoreJavadoc;
     }

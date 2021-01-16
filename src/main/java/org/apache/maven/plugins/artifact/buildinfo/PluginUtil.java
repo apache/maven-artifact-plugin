@@ -28,9 +28,9 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
 /**
  * Plugin utility to detect if install or deploy is skipped in a build.
  */
-public class PluginUtil
+class PluginUtil
 {
-    public static boolean isSkip( MavenProject project )
+    static boolean isSkip( MavenProject project )
     {
         return isSkip( project, "install" ) || isSkip( project, "deploy" );
     }

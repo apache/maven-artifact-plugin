@@ -64,13 +64,13 @@ public class BuildinfoMojo
      * The Maven project.
      */
     @Parameter( defaultValue = "${project}", readonly = true )
-    protected MavenProject project;
+    private MavenProject project;
 
     /**
      * The reactor projects.
      */
     @Parameter( defaultValue = "${reactorProjects}", required = true, readonly = true )
-    protected List<MavenProject> reactorProjects;
+    private List<MavenProject> reactorProjects;
 
     /**
      * Location of the generated buildinfo file.
@@ -149,6 +149,7 @@ public class BuildinfoMojo
     @Component
     private ArtifactRepositoryLayout artifactRepositoryLayout;
 
+    @Override
     public void execute()
         throws MojoExecutionException
     {
