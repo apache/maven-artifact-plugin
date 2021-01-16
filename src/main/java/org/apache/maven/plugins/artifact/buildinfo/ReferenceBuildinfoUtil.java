@@ -24,7 +24,6 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.utils.WriterFactory;
 import org.apache.maven.shared.utils.io.IOUtil;
@@ -37,6 +36,8 @@ import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.repository.WorkspaceReader;
 import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -73,7 +74,7 @@ public class ReferenceBuildinfoUtil
         JAR_TYPES = Collections.unmodifiableSet( types );
     }
 
-    private final Log log;
+    private static final Logger LOGGER = LoggerFactory.getLogger( ReferenceBuildinfoUtil.class );
 
     /**
      * Directory of the downloaded reference files.
@@ -88,11 +89,10 @@ public class ReferenceBuildinfoUtil
 
     private final RepositorySystemSession repoSession;
 
-    public ReferenceBuildinfoUtil( Log log, File referenceDir, Map<Artifact, String> artifacts,
+    public ReferenceBuildinfoUtil( File referenceDir, Map<Artifact, String> artifacts,
                                       ArtifactFactory artifactFactory, RepositorySystem repoSystem,
                                       RepositorySystemSession repoSession )
     {
-        this.log = log;
         this.referenceDir = referenceDir;
         this.artifacts = artifacts;
         this.artifactFactory = artifactFactory;
@@ -123,7 +123,7 @@ public class ReferenceBuildinfoUtil
                     // guess Java version and OS
                     if ( ( javaVersion == null ) && JAR_TYPES.contains( artifact.getType() ) )
                     {
-                        log.debug( "Guessing java.version and os.name from jar " + file );
+                        LOGGER.debug( "Guessing java.version and os.name from jar {}", file );
                         try ( JarFile jar = new JarFile( file ) )
                         {
                             Manifest manifest = jar.getManifest();
@@ -134,18 +134,18 @@ public class ReferenceBuildinfoUtil
                             }
                             else
                             {
-                                log.warn( "no MANIFEST.MF found in jar " + file );
+                                LOGGER.warn( "no MANIFEST.MF found in jar {}", file );
                             }
                         }
                         catch ( IOException e )
                         {
-                            log.warn( "unable to open jar file " + file, e );
+                            LOGGER.warn( "unable to open jar file {}", file, e );
                         }
                     }
                 }
                 catch ( ArtifactNotFoundException e )
                 {
-                    log.warn( "Reference artifact not found " + artifact );
+                    LOGGER.warn( "Reference artifact not found {}", artifact );
                 }
             }
 
@@ -155,7 +155,7 @@ public class ReferenceBuildinfoUtil
                 new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( referenceBuildinfo ),
                                                                              Charsets.ISO_8859_1 ) ) ) )
             {
-                BuildInfoWriter bi = new BuildInfoWriter( log, p, mono );
+                BuildInfoWriter bi = new BuildInfoWriter( p, mono );
 
                 if ( javaVersion != null || osName != null )
                 {
@@ -163,23 +163,23 @@ public class ReferenceBuildinfoUtil
                     if ( javaVersion != null )
                     {
                         p.println( "java.version=" + javaVersion );
-                        log.info( "Reference build java.version: " + javaVersion );
+                        LOGGER.info( "Reference build java.version: {}", javaVersion );
                     }
                     if ( osName != null )
                     {
                         p.println( "os.name=" + osName );
-                        log.info( "Reference build os.name: " + osName );
+                        LOGGER.info( "Reference build os.name: {}", osName );
 
                         // check against current line separator
                         String expectedLs = osName.startsWith( "Windows" ) ? "\r\n" : "\n";
                         if ( !expectedLs.equals( System.lineSeparator() ) )
                         {
-                            log.warn( "Current System.lineSeparator() does not match reference build OS" );
+                            LOGGER.warn( "Current System.lineSeparator() does not match reference build OS" );
 
                             String ls = System.getProperty( "line.separator" );
                             if ( !ls.equals( System.lineSeparator() ) )
                             {
-                                log.warn( "System.lineSeparator() != System.getProperty( \"line.separator\" ): "
+                                LOGGER.warn( "System.lineSeparator() != System.getProperty( \"line.separator\" ): "
                                     + "too late standard system property update..." );
                             }
                         }
@@ -197,7 +197,7 @@ public class ReferenceBuildinfoUtil
                     }
                 }
 
-                log.info( "Minimal buildinfo generated from downloaded artifacts: " + referenceBuildinfo );
+                LOGGER.info( "Minimal buildinfo generated from downloaded artifacts: {}", referenceBuildinfo );
             }
             catch ( IOException e )
             {
@@ -233,7 +233,7 @@ public class ReferenceBuildinfoUtil
         try ( InputStream in = jar.getInputStream( jar.getEntry( entryName ) ) )
         {
             String content = IOUtil.toString( in, WriterFactory.UTF_8 );
-            log.debug( "Manifest content: " + content );
+            LOGGER.debug( "Manifest content: {}", content );
             if ( content.contains( "\r\n" ) )
             {
                 return "Windows (from pom.properties newline)";
@@ -245,7 +245,7 @@ public class ReferenceBuildinfoUtil
         }
         catch ( IOException e )
         {
-            log.warn( "Unable to read " + entryName + " from " + jar, e );
+            LOGGER.warn( "Unable to read {} from {}", entryName, jar, e );
         }
         return null;
     }
@@ -260,13 +260,13 @@ public class ReferenceBuildinfoUtil
         {
             File file = downloadReference( repo, buildinfo );
 
-            log.info( "Reference buildinfo file found, copied to " + file );
+            LOGGER.info( "Reference buildinfo file found, copied to {}", file );
 
             return file;
         }
         catch ( ArtifactNotFoundException e )
         {
-            log.warn( "Reference buildinfo file not found: "
+            LOGGER.warn( "Reference buildinfo file not found: "
                 + "it will be generated from downloaded reference artifacts" );
         }
 

@@ -29,25 +29,25 @@ import java.util.Properties;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.handler.ArtifactHandler;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.PropertyUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Buildinfo content writer.
  */
 public class BuildInfoWriter
 {
-    private final Log log;
+    private static final Logger LOGGER = LoggerFactory.getLogger( BuildInfoWriter.class );
     private final PrintWriter p;
     private final boolean mono;
     private final Map<Artifact, String> artifacts = new LinkedHashMap<>();
     private int projectCount = -1;
     private boolean ignoreJavadoc = true;
 
-    BuildInfoWriter( Log log, PrintWriter p, boolean mono )
+    BuildInfoWriter( PrintWriter p, boolean mono )
     {
-        this.log = log;
         this.p = p;
         this.mono = mono;
     }
@@ -103,8 +103,9 @@ public class BuildInfoWriter
             p.println( "source.scm.tag=" + project.getScm().getTag() );
             if ( project.getArtifact().isSnapshot() )
             {
-                log.warn( "SCM source tag in buildinfo source.scm.tag=" + project.getScm().getTag()
-                    + " does not permit rebuilders reproducible source checkout" );
+                LOGGER.warn( "SCM source tag in buildinfo source.scm.tag={} "
+                                + "does not permit rebuilders reproducible source checkout",
+                        project.getScm().getTag() );
                 // TODO is it possible to use Scm API to get SCM version?
             }
         }
@@ -115,7 +116,7 @@ public class BuildInfoWriter
 
         if ( !sourceAvailable )
         {
-            log.warn( "No source information available in buildinfo for rebuilders..." );
+            LOGGER.warn( "No source information available in buildinfo for rebuilders..." );
         }
     }
 

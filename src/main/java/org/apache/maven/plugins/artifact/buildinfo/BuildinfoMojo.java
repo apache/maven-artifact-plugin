@@ -25,7 +25,6 @@ import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -38,6 +37,8 @@ import org.codehaus.plexus.util.StringUtils;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -60,6 +61,9 @@ import java.util.Properties;
 public class BuildinfoMojo
     extends AbstractMojo
 {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger( BuildinfoMojo.class );
+
     /**
      * The Maven project.
      */
@@ -159,31 +163,31 @@ public class BuildinfoMojo
             // if module skips install and/or deploy
             if ( PluginUtil.isSkip( project ) )
             {
-                getLog().info( "Skipping buildinfo for module that skips install and/or deploy" );
+                LOGGER.info( "Skipping buildinfo for module that skips install and/or deploy" );
                 return;
             }
             // if multi-module build, generate (aggregate) buildinfo only in last module
             MavenProject last = getLastProject();
             if  ( project != last )
             {
-                getLog().info( "Skipping intermediate buildinfo, aggregate will be " + last.getArtifactId() );
+                LOGGER.info( "Skipping intermediate buildinfo, aggregate will be {}", last.getArtifactId() );
                 return;
             }
         }
 
         // generate buildinfo
         Map<Artifact, String> artifacts = generateBuildinfo( mono );
-        getLog().info( "Saved " + ( mono ? "" : "aggregate " ) + "info on build to " + buildinfoFile );
+        LOGGER.info( "Saved {}info on build to {}", ( mono ? "" : "aggregate " ), buildinfoFile );
 
         // eventually attach
         if ( attach )
         {
-            getLog().info( "Attaching buildinfo" );
+            LOGGER.info( "Attaching buildinfo" );
             projectHelper.attachArtifact( project, "buildinfo", buildinfoFile );
         }
         else
         {
-            getLog().info( "NOT adding buildinfo to the list of attached artifacts." );
+            LOGGER.info( "NOT adding buildinfo to the list of attached artifacts." );
         }
 
         if ( !mono )
@@ -195,7 +199,7 @@ public class BuildinfoMojo
             try
             {
                 FileUtils.copyFile( buildinfoFile, rootCopy );
-                getLog().info( "Aggregate buildinfo copied to " + rootCopy );
+                LOGGER.info( "Aggregate buildinfo copied to {}", rootCopy );
             }
             catch ( IOException ioe )
             {
@@ -206,7 +210,7 @@ public class BuildinfoMojo
         // eventually check against reference
         if ( referenceRepo != null )
         {
-            getLog().info( "Checking against reference build from " + referenceRepo + "..." );
+            LOGGER.info( "Checking against reference build from {} ...", referenceRepo );
             checkAgainstReference( mono, artifacts );
         }
     }
@@ -229,7 +233,7 @@ public class BuildinfoMojo
         try ( PrintWriter p = new PrintWriter( new BufferedWriter(
                 new OutputStreamWriter( new FileOutputStream( buildinfoFile ), Charsets.ISO_8859_1 ) ) ) )
         {
-            BuildInfoWriter bi = new BuildInfoWriter( getLog(), p, mono );
+            BuildInfoWriter bi = new BuildInfoWriter( p, mono );
             bi.setIgnoreJavadoc( ignoreJavadoc );
 
             bi.printHeader( root, mono ? null : project );
@@ -285,7 +289,7 @@ public class BuildinfoMojo
     {
         RemoteRepository repo = createReferenceRepo();
 
-        ReferenceBuildinfoUtil rmb = new ReferenceBuildinfoUtil( getLog(), referenceDir, artifacts,
+        ReferenceBuildinfoUtil rmb = new ReferenceBuildinfoUtil( referenceDir, artifacts,
                                                                        artifactFactory, repoSystem, repoSession );
 
         return rmb.downloadOrCreateReferenceBuildinfo( repo, project, buildinfoFile, mono );
@@ -322,16 +326,17 @@ public class BuildinfoMojo
 
         if ( ko + missing > 0 )
         {
-            getLog().warn( "Reproducible Build output summary: " + MessageUtils.buffer().success( ok + " files ok" )
-                + ", " + MessageUtils.buffer().failure( ko + " different" )
-                + ( ( missing == 0 ) ? "" : ( ", " + MessageUtils.buffer().warning( missing + " missing" ) ) ) );
-            getLog().warn( "see " + MessageUtils.buffer().project( "diff " + relative( referenceBuildinfo ) + " "
-                + relative( buildinfoFile ) ).toString() );
-            getLog().warn( "see also https://maven.apache.org/guides/mini/guide-reproducible-builds.html" );
+            LOGGER.warn( "Reproducible Build output summary: {}, {} {}",
+                    MessageUtils.buffer().success( ok + " files ok" ),
+                    MessageUtils.buffer().failure( ko + " different" ),
+                    ( missing == 0 ) ? "" : ( ", " + MessageUtils.buffer().warning( missing + " missing" ) ) );
+            LOGGER.warn( "see {}", MessageUtils.buffer().project( "diff " + relative( referenceBuildinfo ) + " "
+                    + relative( buildinfoFile ) ) );
+            LOGGER.warn( "see also https://maven.apache.org/guides/mini/guide-reproducible-builds.html" );
           }
         else
         {
-            getLog().info( "Reproducible Build output summary: " + MessageUtils.buffer().success( ok + " files ok" ) );
+            LOGGER.info( "Reproducible Build output summary: {}", MessageUtils.buffer().success( ok + " files ok" ) );
         }
 
         if ( referenceCompareSave )
@@ -346,7 +351,7 @@ public class BuildinfoMojo
                 p.println( "ko=" + ko );
                 p.println( "okFiles=\"" + StringUtils.join( okFilenames.iterator(), " " ) + '"' ); 
                 p.println( "koFiles=\"" + StringUtils.join( koFilenames.iterator(), " " ) + '"' ); 
-                getLog().info( "Reproducible Build comparison saved to " + compare );
+                LOGGER.info( "Reproducible Build comparison saved to {}", compare );
             }
             catch ( IOException e )
             {
@@ -368,14 +373,14 @@ public class BuildinfoMojo
 
         if ( !actualLength.equals( referenceLength ) )
         {
-            getLog().warn( "size mismatch " + MessageUtils.buffer().strong( actualFilename )
-                + diffoscope( artifact, referenceDir ) );
+            LOGGER.warn( "size mismatch {} {}", MessageUtils.buffer().strong( actualFilename ),
+                    diffoscope( artifact, referenceDir ) );
             return false;
         }
         else if ( !actualSha512.equals( referenceSha512 ) )
         {
-            getLog().warn( "sha512 mismatch " + MessageUtils.buffer().strong( actualFilename )
-                + diffoscope( artifact, referenceDir ) );
+            LOGGER.warn( "sha512 mismatch {} {}", MessageUtils.buffer().strong( actualFilename ),
+                    diffoscope( artifact, referenceDir ) );
             return false;
         }
         return true;
