@@ -57,7 +57,7 @@ import java.util.jar.Manifest;
 /**
  * Utility to download or generate reference buildinfo.
  */
-public class ReferenceBuildinfoUtil
+class ReferenceBuildinfoUtil
 {
     private static final Set<String> JAR_TYPES;
     
@@ -88,7 +88,7 @@ public class ReferenceBuildinfoUtil
 
     private final RepositorySystemSession repoSession;
 
-    public ReferenceBuildinfoUtil( Log log, File referenceDir, Map<Artifact, String> artifacts,
+    ReferenceBuildinfoUtil( Log log, File referenceDir, Map<Artifact, String> artifacts,
                                       ArtifactFactory artifactFactory, RepositorySystem repoSystem,
                                       RepositorySystemSession repoSession )
     {
@@ -100,7 +100,7 @@ public class ReferenceBuildinfoUtil
         this.repoSession = repoSession;
     }
 
-    public File downloadOrCreateReferenceBuildinfo( RemoteRepository repo, MavenProject project, File buildinfoFile,
+    File downloadOrCreateReferenceBuildinfo( RemoteRepository repo, MavenProject project, File buildinfoFile,
                                                     boolean mono )
         throws MojoExecutionException
     {
