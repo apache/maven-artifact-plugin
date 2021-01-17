@@ -19,7 +19,6 @@ package org.apache.maven.plugins.artifact.buildinfo;
  * under the License.
  */
 
-import org.apache.commons.codec.Charsets;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
@@ -45,6 +44,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -228,7 +228,7 @@ public class BuildinfoMojo
         buildinfoFile.getParentFile().mkdirs();
 
         try ( PrintWriter p = new PrintWriter( new BufferedWriter(
-                new OutputStreamWriter( new FileOutputStream( buildinfoFile ), Charsets.ISO_8859_1 ) ) ) )
+                new OutputStreamWriter( new FileOutputStream( buildinfoFile ), StandardCharsets.UTF_8 ) ) ) )
         {
             BuildInfoWriter bi = new BuildInfoWriter( getLog(), p, mono );
             bi.setIgnoreJavadoc( ignoreJavadoc );
@@ -340,7 +340,7 @@ public class BuildinfoMojo
             File compare = new File( buildinfoFile.getParentFile(), buildinfoFile.getName() + ".compare" );
             try ( PrintWriter p =
                 new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( compare ),
-                                                                             Charsets.ISO_8859_1 ) ) ) )
+                                                                             StandardCharsets.UTF_8 ) ) ) )
             {
                 p.println( "version=" + project.getVersion() );
                 p.println( "ok=" + ok );
