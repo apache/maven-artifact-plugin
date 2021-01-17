@@ -33,7 +33,7 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.shared.utils.io.FileUtils;
 import org.apache.maven.shared.utils.logging.MessageUtils;
-import org.codehaus.plexus.util.StringUtils;
+import org.apache.maven.shared.utils.StringUtils;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;

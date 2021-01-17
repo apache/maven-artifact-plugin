@@ -26,7 +26,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.utils.io.IOUtil;
-import org.codehaus.plexus.util.FileUtils;
+import org.apache.maven.shared.utils.io.FileUtils;
 import org.eclipse.aether.AbstractForwardingRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;

@@ -31,7 +31,7 @@ import org.apache.maven.artifact.handler.ArtifactHandler;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.util.PropertyUtils;
+import org.apache.maven.shared.utils.PropertyUtils;
 
 /**
  * Buildinfo content writer.

@@ -20,7 +20,7 @@ package org.apache.maven.plugins.artifact.buildinfo;
  */
 
 import org.apache.maven.cli.MavenCli;
-import org.codehaus.plexus.util.StringUtils;
+import org.apache.maven.shared.utils.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
