@@ -1,7 +1,5 @@
 package org.apache.maven.plugins.artifact.buildinfo;
 
-import org.apache.commons.lang3.StringUtils;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -21,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
  * under the License.
  */
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.cli.MavenCli;
 
 import java.io.IOException;
