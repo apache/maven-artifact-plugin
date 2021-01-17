@@ -19,6 +19,8 @@ package org.apache.maven.plugins.artifact.buildinfo;
  * under the License.
  */
 
+import org.apache.commons.lang3.StringUtils;
+
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
@@ -33,7 +35,6 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.shared.utils.io.FileUtils;
 import org.apache.maven.shared.utils.logging.MessageUtils;
-import org.codehaus.plexus.util.StringUtils;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -350,8 +351,8 @@ public class BuildinfoMojo
                 p.println( "version=" + project.getVersion() );
                 p.println( "ok=" + ok );
                 p.println( "ko=" + ko );
-                p.println( "okFiles=\"" + StringUtils.join( okFilenames.iterator(), " " ) + '"' ); 
-                p.println( "koFiles=\"" + StringUtils.join( koFilenames.iterator(), " " ) + '"' ); 
+                p.println( "okFiles=\"" + StringUtils.join( okFilenames, " " ) + '"' ); 
+                p.println( "koFiles=\"" + StringUtils.join( koFilenames, " " ) + '"' ); 
                 getLog().info( "Reproducible Build comparison saved to " + compare );
             }
             catch ( IOException e )
