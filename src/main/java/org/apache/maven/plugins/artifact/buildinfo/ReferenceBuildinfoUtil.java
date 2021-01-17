@@ -19,14 +19,12 @@ package org.apache.maven.plugins.artifact.buildinfo;
  * under the License.
  */
 
-import org.apache.commons.codec.Charsets;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.shared.utils.WriterFactory;
 import org.apache.maven.shared.utils.io.IOUtil;
 import org.codehaus.plexus.util.FileUtils;
 import org.eclipse.aether.AbstractForwardingRepositorySystemSession;
@@ -45,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -153,7 +152,7 @@ class ReferenceBuildinfoUtil
             referenceBuildinfo = getReference( buildinfoFile );
             try ( PrintWriter p =
                 new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( referenceBuildinfo ),
-                                                                             Charsets.ISO_8859_1 ) ) ) )
+                                                                             StandardCharsets.UTF_8 ) ) ) )
             {
                 BuildInfoWriter bi = new BuildInfoWriter( log, p, mono );
 
@@ -232,7 +231,7 @@ class ReferenceBuildinfoUtil
         String entryName = "META-INF/maven/" + a.getGroupId() + '/' + a.getArtifactId() + "/pom.properties";
         try ( InputStream in = jar.getInputStream( jar.getEntry( entryName ) ) )
         {
-            String content = IOUtil.toString( in, WriterFactory.UTF_8 );
+            String content = IOUtil.toString( in, StandardCharsets.UTF_8.name() );
             log.debug( "Manifest content: " + content );
             if ( content.contains( "\r\n" ) )
             {
