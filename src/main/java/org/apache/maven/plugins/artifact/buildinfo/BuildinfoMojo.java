@@ -251,6 +251,11 @@ public class BuildinfoMojo
                 }
             }
 
+            if ( p.checkError() )
+            {
+                throw new MojoExecutionException( "Write error to " + buildinfoFile );
+            }
+
             return bi.getArtifacts();
         }
         catch ( IOException e )

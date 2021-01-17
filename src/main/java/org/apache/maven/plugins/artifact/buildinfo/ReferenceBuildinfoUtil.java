@@ -196,6 +196,11 @@ class ReferenceBuildinfoUtil
                     }
                 }
 
+                if ( p.checkError() )
+                {
+                    throw new MojoExecutionException( "Write error to " + referenceBuildinfo );
+                }
+
                 log.info( "Minimal buildinfo generated from downloaded artifacts: " + referenceBuildinfo );
             }
             catch ( IOException e )
