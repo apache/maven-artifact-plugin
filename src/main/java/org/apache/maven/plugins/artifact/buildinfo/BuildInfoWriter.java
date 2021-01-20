@@ -20,7 +20,6 @@ package org.apache.maven.plugins.artifact.buildinfo;
  */
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -31,7 +30,7 @@ import org.apache.maven.artifact.handler.ArtifactHandler;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.util.PropertyUtils;
+import org.apache.maven.shared.utils.PropertyUtils;
 
 /**
  * Buildinfo content writer.
@@ -225,22 +224,15 @@ class BuildInfoWriter
     static Properties loadOutputProperties( File buildinfo )
         throws MojoExecutionException
     {
-        try
+        Properties prop = PropertyUtils.loadOptionalProperties( buildinfo );
+        for ( String name : prop.stringPropertyNames() )
         {
-            Properties prop = PropertyUtils.loadProperties( buildinfo );
-            for ( String name : prop.stringPropertyNames() )
+            if ( !name.startsWith( "outputs." ) || name.endsWith( ".coordinates" ) )
             {
-                if ( !name.startsWith( "outputs." ) || name.endsWith( ".coordinates" ) )
-                {
-                    prop.remove( name );
-                }
+                prop.remove( name );
             }
-            return prop;
         }
-        catch ( IOException ioe )
-        {
-            throw new MojoExecutionException( "Error reading buildinfo file " + buildinfo, ioe );
-        }
+        return prop;
     }
 
     boolean getIgnoreJavadoc()
