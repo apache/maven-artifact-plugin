@@ -89,14 +89,20 @@
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
+      <artifactId>maven-model</artifactId>
+      <version>${mavenVersion}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven</groupId>
       <artifactId>maven-artifact</artifactId>
       <version>${mavenVersion}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.maven.resolver</groupId>
-      <artifactId>maven-resolver-api</artifactId>
-      <version>1.4.1</version>
+      <groupId>org.eclipse.aether</groupId>
+      <artifactId>aether-api</artifactId>
+      <version>0.9.0.M2</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
