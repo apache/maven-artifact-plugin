@@ -102,10 +102,11 @@ public class BuildinfoMojo
      * Format: <code>id</code> or <code>url</code> or <code>id::url</code>
      * <dl>
      * <dt>id</dt>
-     * <dd>The id can be used to pick up the correct credentials from the settings.xml</dd>
+     * <dd>The repository id</dd>
      * <dt>url</dt>
-     * <dd>The location of the repository</dd>
+     * <dd>The url of the repository</dd>
      * </dl>
+     * @see <a href="https://maven.apache.org/ref/current/maven-model/maven.html#repository">repository definition</a>
      */
     @Parameter( property = "reference.repo" )
     private String referenceRepo;
