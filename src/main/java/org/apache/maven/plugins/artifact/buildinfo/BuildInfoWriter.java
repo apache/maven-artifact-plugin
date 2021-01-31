@@ -172,7 +172,7 @@ class BuildInfoWriter
         printFile( prefix, artifact.getFile(), getArtifactFilename( artifact ) );
         artifacts.put( artifact, prefix );
     }
-    
+
     private String getArtifactFilename( Artifact artifact )
     {
         StringBuilder path = new StringBuilder( 128 );

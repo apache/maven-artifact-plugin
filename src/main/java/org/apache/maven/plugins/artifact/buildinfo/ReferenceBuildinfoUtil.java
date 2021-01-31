@@ -59,7 +59,7 @@ import java.util.jar.Manifest;
 class ReferenceBuildinfoUtil
 {
     private static final Set<String> JAR_TYPES;
-    
+
     static
     {
         Set<String> types = new HashSet<>();
@@ -118,7 +118,7 @@ class ReferenceBuildinfoUtil
                     // download
                     File file = downloadReference( repo, artifact );
                     referenceArtifacts.put( artifact, file );
-                    
+
                     // guess Java version and OS
                     if ( ( javaVersion == null ) && JAR_TYPES.contains( artifact.getType() ) )
                     {
