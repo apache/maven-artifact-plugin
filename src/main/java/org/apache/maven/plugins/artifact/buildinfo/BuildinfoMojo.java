@@ -188,28 +188,38 @@ public class BuildinfoMojo
             getLog().info( "NOT adding buildinfo to the list of attached artifacts." );
         }
 
-        if ( !mono )
-        {
-            // copy aggregate buildinfo to root target directory
-            MavenProject root = getExecutionRoot();
-            File rootCopy = new File( root.getBuild().getDirectory(),
-                                      root.getArtifactId() + '-' + root.getVersion() + ".buildinfo" );
-            try
-            {
-                FileUtils.copyFile( buildinfoFile, rootCopy );
-                getLog().info( "Aggregate buildinfo copied to " + rootCopy );
-            }
-            catch ( IOException ioe )
-            {
-                throw new MojoExecutionException( "Could not copy " + buildinfoFile + "to " + rootCopy );
-            }
-        }
+        copyAggregateToRoot( buildinfoFile );
 
         // eventually check against reference
         if ( referenceRepo != null )
         {
             getLog().info( "Checking against reference build from " + referenceRepo + "..." );
             checkAgainstReference( mono, artifacts );
+        }
+    }
+
+    private void copyAggregateToRoot( File aggregate )
+        throws MojoExecutionException
+    {
+        if ( reactorProjects.size() == 1 )
+        {
+            // mono-module, no aggregate buildinfo to deal with
+            return;
+        }
+
+        // copy aggregate buildinfo to root target directory
+        MavenProject root = getExecutionRoot();
+        String compare = aggregate.getName().endsWith( ".compare" ) ? ".compare" : "";
+        File rootCopy = new File( root.getBuild().getDirectory(),
+                                  root.getArtifactId() + '-' + root.getVersion() + ".buildinfo" + compare );
+        try
+        {
+            FileUtils.copyFile( aggregate, rootCopy );
+            getLog().info( "Aggregate buildinfo" + compare + " copied to " + rootCopy );
+        }
+        catch ( IOException ioe )
+        {
+            throw new MojoExecutionException( "Could not copy " + aggregate + "to " + rootCopy );
         }
     }
 
@@ -359,6 +369,8 @@ public class BuildinfoMojo
             {
                 throw new MojoExecutionException( "Error creating file " + compare, e );
             }
+
+            copyAggregateToRoot( compare );
         }
     }
 
