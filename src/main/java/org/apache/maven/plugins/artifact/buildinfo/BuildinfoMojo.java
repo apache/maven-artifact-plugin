@@ -121,6 +121,12 @@ public class BuildinfoMojo
     private boolean referenceCompareSave;
 
     /**
+     * Detect projects/modules with install or deploy skipped: avoid taking fingerprinting.
+     */
+    @Parameter( property = "buildinfo.detect.skip", defaultValue = "true" )
+    private boolean detectSkip;
+
+    /**
      * Used for attaching the buildinfo file in the project.
      */
     @Component
@@ -159,7 +165,7 @@ public class BuildinfoMojo
         if ( !mono )
         {
             // if module skips install and/or deploy
-            if ( PluginUtil.isSkip( project ) )
+            if ( detectSkip && PluginUtil.isSkip( project ) )
             {
                 getLog().info( "Skipping buildinfo for module that skips install and/or deploy" );
                 return;
