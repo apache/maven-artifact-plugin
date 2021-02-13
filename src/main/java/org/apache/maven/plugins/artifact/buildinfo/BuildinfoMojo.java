@@ -165,7 +165,7 @@ public class BuildinfoMojo
         if ( !mono )
         {
             // if module skips install and/or deploy
-            if ( detectSkip && PluginUtil.isSkip( project ) )
+            if ( isSkip( project ) )
             {
                 getLog().info( "Skipping buildinfo for module that skips install and/or deploy" );
                 return;
@@ -261,7 +261,7 @@ public class BuildinfoMojo
             {
                 for ( MavenProject project : reactorProjects )
                 {
-                    if ( !PluginUtil.isSkip( project ) )
+                    if ( !isSkip( project ) )
                     {
                         bi.printArtifacts( project );
                     }
@@ -491,11 +491,16 @@ public class BuildinfoMojo
         while ( i > 0 )
         {
             MavenProject project = reactorProjects.get( --i );
-            if ( !PluginUtil.isSkip( project ) )
+            if ( !isSkip( project ) )
             {
                 return project;
             }
         }
         return null;
+    }
+
+    private boolean isSkip( MavenProject project )
+    {
+        return detectSkip && PluginUtil.isSkip( project );
     }
 }
