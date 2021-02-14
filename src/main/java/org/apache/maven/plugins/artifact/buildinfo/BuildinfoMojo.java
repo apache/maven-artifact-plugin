@@ -22,6 +22,7 @@ package org.apache.maven.plugins.artifact.buildinfo;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 
@@ -33,6 +34,8 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.shared.utils.io.FileUtils;
 import org.apache.maven.shared.utils.logging.MessageUtils;
+import org.apache.maven.toolchain.Toolchain;
+import org.apache.maven.toolchain.ToolchainManager;
 import org.apache.maven.shared.utils.StringUtils;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
@@ -156,6 +159,18 @@ public class BuildinfoMojo
     @Component
     private ArtifactRepositoryLayout artifactRepositoryLayout;
 
+    /**
+     * The current build session instance. This is used for toolchain manager API calls.
+     */
+    @Parameter( defaultValue = "${session}", readonly = true, required = true )
+    private MavenSession session;
+
+    /**
+     * To obtain a toolchain if possible.
+     */
+    @Component
+    private ToolchainManager toolchainManager;
+
     @Override
     public void execute()
         throws MojoExecutionException
@@ -249,6 +264,7 @@ public class BuildinfoMojo
         {
             BuildInfoWriter bi = new BuildInfoWriter( getLog(), p, mono );
             bi.setIgnoreJavadoc( ignoreJavadoc );
+            bi.setToolchain( getToolchain() );
 
             bi.printHeader( root, mono ? null : project );
 
@@ -502,5 +518,16 @@ public class BuildinfoMojo
     private boolean isSkip( MavenProject project )
     {
         return detectSkip && PluginUtil.isSkip( project );
+    }
+
+    private Toolchain getToolchain()
+    {
+        Toolchain tc = null;
+        if ( toolchainManager != null )
+        {
+            tc = toolchainManager.getToolchainFromBuildContext( "jdk", session );
+        }
+
+        return tc;
     }
 }

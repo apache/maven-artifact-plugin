@@ -31,6 +31,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.utils.PropertyUtils;
+import org.apache.maven.toolchain.Toolchain;
 
 /**
  * Buildinfo content writer.
@@ -43,6 +44,7 @@ class BuildInfoWriter
     private final Map<Artifact, String> artifacts = new LinkedHashMap<>();
     private int projectCount = -1;
     private boolean ignoreJavadoc = true;
+    private Toolchain toolchain;
 
     BuildInfoWriter( Log log, PrintWriter p, boolean mono )
     {
@@ -79,6 +81,10 @@ class BuildInfoWriter
         {
             // TODO wrong algorithm, should reuse algorithm written in versions-maven-plugin
             p.println( "mvn.minimum.version=" + project.getPrerequisites().getMaven() );
+        }
+        if ( toolchain != null )
+        {
+            p.println( "mvn.toolchain.jdk=" + JdkToolchainUtil.getJavaVersion( toolchain ) );
         }
 
         if ( !mono && ( aggregate != null ) )
@@ -243,5 +249,10 @@ class BuildInfoWriter
     void setIgnoreJavadoc( boolean ignoreJavadoc )
     {
         this.ignoreJavadoc = ignoreJavadoc;
+    }
+
+    public void setToolchain( Toolchain toolchain )
+    {
+        this.toolchain = toolchain;
     }
 }
