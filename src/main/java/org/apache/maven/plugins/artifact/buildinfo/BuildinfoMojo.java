@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Creates a buildinfo file recording build environment and output, as specified in
@@ -87,6 +88,12 @@ public class BuildinfoMojo
      */
     @Parameter( property = "buildinfo.ignoreJavadoc", defaultValue = "true" )
     private boolean ignoreJavadoc;
+
+    /**
+     * Artifacts to ignore, specified as <code>extension</code> or <code>classifier.extension</code>.
+     */
+    @Parameter( property = "buildinfo.ignore", defaultValue = "" )
+    private Set<String> ignore;
 
     /**
      * Specifies whether to attach the generated buildinfo file to the project.
@@ -264,6 +271,7 @@ public class BuildinfoMojo
         {
             BuildInfoWriter bi = new BuildInfoWriter( getLog(), p, mono );
             bi.setIgnoreJavadoc( ignoreJavadoc );
+            bi.setIgnore( ignore );
             bi.setToolchain( getToolchain() );
 
             bi.printHeader( root, mono ? null : project );

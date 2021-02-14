@@ -24,6 +24,7 @@ import java.io.PrintWriter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.handler.ArtifactHandler;
@@ -44,6 +45,7 @@ class BuildInfoWriter
     private final Map<Artifact, String> artifacts = new LinkedHashMap<>();
     private int projectCount = -1;
     private boolean ignoreJavadoc = true;
+    private Set<String> ignore;
     private Toolchain toolchain;
 
     BuildInfoWriter( Log log, PrintWriter p, boolean mono )
@@ -160,6 +162,10 @@ class BuildInfoWriter
                 // TEMPORARY ignore javadoc, waiting for MJAVADOC-627 in m-javadoc-p 3.2.0
                 continue;
             }
+            if ( isIgnore( attached ) )
+            {
+                continue;
+            }
             printArtifact( prefix, n++, attached );
         }
     }
@@ -249,6 +255,19 @@ class BuildInfoWriter
     void setIgnoreJavadoc( boolean ignoreJavadoc )
     {
         this.ignoreJavadoc = ignoreJavadoc;
+    }
+
+    void setIgnore( Set<String> ignore )
+    {
+        this.ignore = ignore;
+    }
+
+    private boolean isIgnore( Artifact attached )
+    {
+        String classifier = attached.getClassifier();
+        String extension = attached.getType();
+        String search = ( classifier == null ) ? "" : ( classifier + '.' ) + extension;
+        return ignore.contains( search );
     }
 
     public void setToolchain( Toolchain toolchain )
