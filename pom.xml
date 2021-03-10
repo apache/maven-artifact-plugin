@@ -145,6 +145,34 @@
     </dependency-->
   </dependencies>
 
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.simplify4u.plugins</groupId>
+          <artifactId>pgpverify-maven-plugin</artifactId>
+          <version>1.11.0</version>
+          <configuration>
+            <keysMapLocation>${project.basedir}/pgp-keys-map.list</keysMapLocation>
+          </configuration>                        
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.simplify4u.plugins</groupId>
+        <artifactId>pgpverify-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
   <profiles>
     <profile>
       <id>run-its</id>
