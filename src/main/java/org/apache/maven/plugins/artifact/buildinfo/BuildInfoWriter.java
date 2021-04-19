@@ -24,6 +24,7 @@ import java.io.PrintWriter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.handler.ArtifactHandler;
@@ -31,6 +32,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.utils.PropertyUtils;
+import org.apache.maven.toolchain.Toolchain;
 
 /**
  * Buildinfo content writer.
@@ -43,6 +45,8 @@ class BuildInfoWriter
     private final Map<Artifact, String> artifacts = new LinkedHashMap<>();
     private int projectCount = -1;
     private boolean ignoreJavadoc = true;
+    private Set<String> ignore;
+    private Toolchain toolchain;
 
     BuildInfoWriter( Log log, PrintWriter p, boolean mono )
     {
@@ -79,6 +83,10 @@ class BuildInfoWriter
         {
             // TODO wrong algorithm, should reuse algorithm written in versions-maven-plugin
             p.println( "mvn.minimum.version=" + project.getPrerequisites().getMaven() );
+        }
+        if ( toolchain != null )
+        {
+            p.println( "mvn.toolchain.jdk=" + JdkToolchainUtil.getJavaVersion( toolchain ) );
         }
 
         if ( !mono && ( aggregate != null ) )
@@ -154,6 +162,10 @@ class BuildInfoWriter
                 // TEMPORARY ignore javadoc, waiting for MJAVADOC-627 in m-javadoc-p 3.2.0
                 continue;
             }
+            if ( isIgnore( attached ) )
+            {
+                continue;
+            }
             printArtifact( prefix, n++, attached );
         }
     }
@@ -172,7 +184,7 @@ class BuildInfoWriter
         printFile( prefix, artifact.getFile(), getArtifactFilename( artifact ) );
         artifacts.put( artifact, prefix );
     }
-    
+
     private String getArtifactFilename( Artifact artifact )
     {
         StringBuilder path = new StringBuilder( 128 );
@@ -243,5 +255,23 @@ class BuildInfoWriter
     void setIgnoreJavadoc( boolean ignoreJavadoc )
     {
         this.ignoreJavadoc = ignoreJavadoc;
+    }
+
+    void setIgnore( Set<String> ignore )
+    {
+        this.ignore = ignore;
+    }
+
+    private boolean isIgnore( Artifact attached )
+    {
+        String classifier = attached.getClassifier();
+        String extension = attached.getType();
+        String search = ( classifier == null ) ? "" : ( classifier + '.' ) + extension;
+        return ignore.contains( search );
+    }
+
+    public void setToolchain( Toolchain toolchain )
+    {
+        this.toolchain = toolchain;
     }
 }

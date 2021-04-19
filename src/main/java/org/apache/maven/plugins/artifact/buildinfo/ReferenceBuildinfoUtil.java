@@ -52,6 +52,7 @@ import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
+import java.util.zip.ZipEntry;
 
 /**
  * Utility to download or generate reference buildinfo.
@@ -59,7 +60,7 @@ import java.util.jar.Manifest;
 class ReferenceBuildinfoUtil
 {
     private static final Set<String> JAR_TYPES;
-    
+
     static
     {
         Set<String> types = new HashSet<>();
@@ -118,7 +119,7 @@ class ReferenceBuildinfoUtil
                     // download
                     File file = downloadReference( repo, artifact );
                     referenceArtifacts.put( artifact, file );
-                    
+
                     // guess Java version and OS
                     if ( ( javaVersion == null ) && JAR_TYPES.contains( artifact.getType() ) )
                     {
@@ -234,7 +235,12 @@ class ReferenceBuildinfoUtil
     private String extractOsName( Artifact a, JarFile jar )
     {
         String entryName = "META-INF/maven/" + a.getGroupId() + '/' + a.getArtifactId() + "/pom.properties";
-        try ( InputStream in = jar.getInputStream( jar.getEntry( entryName ) ) )
+        ZipEntry zipEntry = jar.getEntry( entryName );
+        if ( zipEntry == null )
+        {
+            return null;
+        }
+        try ( InputStream in = jar.getInputStream( zipEntry ) )
         {
             String content = IOUtil.toString( in, StandardCharsets.UTF_8.name() );
             log.debug( "Manifest content: " + content );

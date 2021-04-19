@@ -8,6 +8,8 @@ bin/
 *.ipr
 *.iml
 .idea
+.vscode/
+.factorypath
 out/
 .DS_Store
 /bootstrap

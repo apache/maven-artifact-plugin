@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 
@@ -35,6 +36,8 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.shared.utils.io.FileUtils;
 import org.apache.maven.shared.utils.logging.MessageUtils;
+import org.apache.maven.toolchain.Toolchain;
+import org.apache.maven.toolchain.ToolchainManager;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -50,6 +53,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Creates a buildinfo file recording build environment and output, as specified in
@@ -87,6 +91,12 @@ public class BuildinfoMojo
     private boolean ignoreJavadoc;
 
     /**
+     * Artifacts to ignore, specified as <code>extension</code> or <code>classifier.extension</code>.
+     */
+    @Parameter( property = "buildinfo.ignore", defaultValue = "" )
+    private Set<String> ignore;
+
+    /**
      * Specifies whether to attach the generated buildinfo file to the project.
      */
     @Parameter( property = "buildinfo.attach", defaultValue = "true" )
@@ -103,10 +113,11 @@ public class BuildinfoMojo
      * Format: <code>id</code> or <code>url</code> or <code>id::url</code>
      * <dl>
      * <dt>id</dt>
-     * <dd>The id can be used to pick up the correct credentials from the settings.xml</dd>
+     * <dd>The repository id</dd>
      * <dt>url</dt>
-     * <dd>The location of the repository</dd>
+     * <dd>The url of the repository</dd>
      * </dl>
+     * @see <a href="https://maven.apache.org/ref/current/maven-model/maven.html#repository">repository definition</a>
      */
     @Parameter( property = "reference.repo" )
     private String referenceRepo;
@@ -119,6 +130,12 @@ public class BuildinfoMojo
      */
     @Parameter( property = "reference.compare.save", defaultValue = "false" )
     private boolean referenceCompareSave;
+
+    /**
+     * Detect projects/modules with install or deploy skipped: avoid taking fingerprinting.
+     */
+    @Parameter( property = "buildinfo.detect.skip", defaultValue = "true" )
+    private boolean detectSkip;
 
     /**
      * Used for attaching the buildinfo file in the project.
@@ -150,6 +167,18 @@ public class BuildinfoMojo
     @Component
     private ArtifactRepositoryLayout artifactRepositoryLayout;
 
+    /**
+     * The current build session instance. This is used for toolchain manager API calls.
+     */
+    @Parameter( defaultValue = "${session}", readonly = true, required = true )
+    private MavenSession session;
+
+    /**
+     * To obtain a toolchain if possible.
+     */
+    @Component
+    private ToolchainManager toolchainManager;
+
     @Override
     public void execute()
         throws MojoExecutionException
@@ -159,7 +188,7 @@ public class BuildinfoMojo
         if ( !mono )
         {
             // if module skips install and/or deploy
-            if ( PluginUtil.isSkip( project ) )
+            if ( isSkip( project ) )
             {
                 getLog().info( "Skipping buildinfo for module that skips install and/or deploy" );
                 return;
@@ -188,28 +217,38 @@ public class BuildinfoMojo
             getLog().info( "NOT adding buildinfo to the list of attached artifacts." );
         }
 
-        if ( !mono )
-        {
-            // copy aggregate buildinfo to root target directory
-            MavenProject root = getExecutionRoot();
-            File rootCopy = new File( root.getBuild().getDirectory(),
-                                      root.getArtifactId() + '-' + root.getVersion() + ".buildinfo" );
-            try
-            {
-                FileUtils.copyFile( buildinfoFile, rootCopy );
-                getLog().info( "Aggregate buildinfo copied to " + rootCopy );
-            }
-            catch ( IOException ioe )
-            {
-                throw new MojoExecutionException( "Could not copy " + buildinfoFile + "to " + rootCopy );
-            }
-        }
+        copyAggregateToRoot( buildinfoFile );
 
         // eventually check against reference
         if ( referenceRepo != null )
         {
             getLog().info( "Checking against reference build from " + referenceRepo + "..." );
             checkAgainstReference( mono, artifacts );
+        }
+    }
+
+    private void copyAggregateToRoot( File aggregate )
+        throws MojoExecutionException
+    {
+        if ( reactorProjects.size() == 1 )
+        {
+            // mono-module, no aggregate buildinfo to deal with
+            return;
+        }
+
+        // copy aggregate buildinfo to root target directory
+        MavenProject root = getExecutionRoot();
+        String compare = aggregate.getName().endsWith( ".compare" ) ? ".compare" : "";
+        File rootCopy = new File( root.getBuild().getDirectory(),
+                                  root.getArtifactId() + '-' + root.getVersion() + ".buildinfo" + compare );
+        try
+        {
+            FileUtils.copyFile( aggregate, rootCopy );
+            getLog().info( "Aggregate buildinfo" + compare + " copied to " + rootCopy );
+        }
+        catch ( IOException ioe )
+        {
+            throw new MojoExecutionException( "Could not copy " + aggregate + "to " + rootCopy );
         }
     }
 
@@ -233,6 +272,8 @@ public class BuildinfoMojo
         {
             BuildInfoWriter bi = new BuildInfoWriter( getLog(), p, mono );
             bi.setIgnoreJavadoc( ignoreJavadoc );
+            bi.setIgnore( ignore );
+            bi.setToolchain( getToolchain() );
 
             bi.printHeader( root, mono ? null : project );
 
@@ -245,7 +286,7 @@ public class BuildinfoMojo
             {
                 for ( MavenProject project : reactorProjects )
                 {
-                    if ( !PluginUtil.isSkip( project ) )
+                    if ( !isSkip( project ) )
                     {
                         bi.printArtifacts( project );
                     }
@@ -359,6 +400,8 @@ public class BuildinfoMojo
             {
                 throw new MojoExecutionException( "Error creating file " + compare, e );
             }
+
+            copyAggregateToRoot( compare );
         }
     }
 
@@ -473,11 +516,27 @@ public class BuildinfoMojo
         while ( i > 0 )
         {
             MavenProject project = reactorProjects.get( --i );
-            if ( !PluginUtil.isSkip( project ) )
+            if ( !isSkip( project ) )
             {
                 return project;
             }
         }
         return null;
+    }
+
+    private boolean isSkip( MavenProject project )
+    {
+        return detectSkip && PluginUtil.isSkip( project );
+    }
+
+    private Toolchain getToolchain()
+    {
+        Toolchain tc = null;
+        if ( toolchainManager != null )
+        {
+            tc = toolchainManager.getToolchainFromBuildContext( "jdk", session );
+        }
+
+        return tc;
     }
 }
