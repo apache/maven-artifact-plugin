@@ -51,6 +51,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 
@@ -196,7 +197,8 @@ public class BuildinfoMojo
             MavenProject last = getLastProject();
             if  ( project != last )
             {
-                getLog().info( "Skipping intermediate buildinfo, aggregate will be " + last.getArtifactId() );
+                getLog().info( "Skipping intermediate buildinfo, aggregate will be "
+                        + Objects.requireNonNull(last).getArtifactId() );
                 return;
             }
         }
@@ -448,7 +450,7 @@ public class BuildinfoMojo
 
     private String relative( File file )
     {
-        return file.getPath().substring( getExecutionRoot().getBasedir().getPath().length() + 1 );
+        return file.getPath().substring( Objects.requireNonNull(getExecutionRoot()).getBasedir().getPath().length() + 1 );
     }
 
     private static String findPrefix( Properties reference, String actualFilename )
