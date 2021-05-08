@@ -139,6 +139,8 @@ public class BuildinfoMojo
     /**
      * Makes the generated {@code .buildinfo} file reproducible, by dropping detailed environment recording: OS will be
      * recorded as "Windows" or "Unix", JVM version only as major version.
+     *
+     * @since 3.1.0
      */
     @Parameter( property = "buildinfo.reproducible", defaultValue = "false" )
     private boolean reproducible;
