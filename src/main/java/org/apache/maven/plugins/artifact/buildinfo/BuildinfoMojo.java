@@ -137,6 +137,13 @@ public class BuildinfoMojo
     private boolean detectSkip;
 
     /**
+     * Makes the generated {@code .buildinfo} file reproducible, by dropping detailed environment recording: OS will be
+     * recorded as "Windows" or "Unix", JVM version only as major version.
+     */
+    @Parameter( property = "buildinfo.reproducible", defaultValue = "false" )
+    private boolean reproducible;
+
+    /**
      * Used for attaching the buildinfo file in the project.
      */
     @Component
@@ -274,7 +281,7 @@ public class BuildinfoMojo
             bi.setIgnore( ignore );
             bi.setToolchain( getToolchain() );
 
-            bi.printHeader( root, mono ? null : project );
+            bi.printHeader( root, mono ? null : project, reproducible );
 
             // artifact(s) fingerprints
             if ( mono )

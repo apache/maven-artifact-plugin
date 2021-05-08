@@ -55,7 +55,7 @@ class BuildInfoWriter
         this.mono = mono;
     }
 
-    void printHeader( MavenProject project, MavenProject aggregate )
+    void printHeader( MavenProject project, MavenProject aggregate, boolean reproducible )
     {
         p.println( "# https://reproducible-builds.org/docs/jvm/" );
         p.println( "buildinfo.version=1.0-SNAPSHOT" );
@@ -71,14 +71,27 @@ class BuildInfoWriter
         p.println( "build-tool=mvn" );
         //p.println( "# optional build setup url, as plugin parameter" );
         p.println();
-        p.println( "# effective build environment information" );
-        p.println( "java.version=" + System.getProperty( "java.version" ) );
-        p.println( "java.vendor=" + System.getProperty( "java.vendor" ) );
-        p.println( "os.name=" + System.getProperty( "os.name" ) );
+        if ( reproducible )
+        {
+            p.println( "# build environment information (simplified for reproducibility)" );
+            p.println( "java.version=" + extractJavaMajorVersion( System.getProperty( "java.version" ) ) );
+            String ls = System.getProperty( "line.separator" );
+            p.println( "os.name=" + ( "\n".equals( ls ) ? "Unix" : "Windows" ) );
+        }
+        else
+        {
+            p.println( "# effective build environment information" );
+            p.println( "java.version=" + System.getProperty( "java.version" ) );
+            p.println( "java.vendor=" + System.getProperty( "java.vendor" ) );
+            p.println( "os.name=" + System.getProperty( "os.name" ) );
+        }
         p.println();
         p.println( "# Maven rebuild instructions and effective environment" );
         //p.println( "mvn.rebuild-args=" + rebuildArgs );
-        p.println( "mvn.version=" + MavenVersion.createMavenVersionString() );
+        if ( !reproducible )
+        {
+            p.println( "mvn.version=" + MavenVersion.createMavenVersionString() );
+        }
         if ( ( project.getPrerequisites() != null ) && ( project.getPrerequisites().getMaven() != null ) )
         {
             // TODO wrong algorithm, should reuse algorithm written in versions-maven-plugin
@@ -86,7 +99,12 @@ class BuildInfoWriter
         }
         if ( toolchain != null )
         {
-            p.println( "mvn.toolchain.jdk=" + JdkToolchainUtil.getJavaVersion( toolchain ) );
+            String javaVersion = JdkToolchainUtil.getJavaVersion( toolchain );
+            if ( reproducible )
+            {
+                javaVersion = extractJavaMajorVersion( javaVersion );
+            }
+            p.println( "mvn.toolchain.jdk=" + javaVersion );
         }
 
         if ( !mono && ( aggregate != null ) )
@@ -96,6 +114,15 @@ class BuildInfoWriter
 
         p.println();
         p.println( "# " + ( mono ? "" : "aggregated " ) + "output" );
+    }
+
+    private static String extractJavaMajorVersion( String javaVersion )
+    {
+        if ( javaVersion.startsWith( "1." ) )
+        {
+            javaVersion = javaVersion.substring( 2 );
+        }
+        return javaVersion.substring( 0, javaVersion.indexOf( '.' ) );
     }
 
     private void printSourceInformation( MavenProject project )
