@@ -347,13 +347,15 @@ public class BuildinfoMojo
         int ok = 0;
         List<String> okFilenames = new ArrayList<>();
         List<String> koFilenames = new ArrayList<>();
+        List<String> diffoscopes = new ArrayList<>();
         File referenceDir = referenceBuildinfo.getParentFile();
         for ( Map.Entry<Artifact, String> entry : artifacts.entrySet() )
         {
             Artifact artifact = entry.getKey();
             String prefix = entry.getValue();
 
-            if ( checkArtifact( artifact, prefix, reference, actual, referenceDir ) )
+            String diffoscope = checkArtifact( artifact, prefix, reference, actual, referenceDir ); 
+            if ( diffoscope == null )
             {
                 ok++;
                 okFilenames.add( artifact.getFile().getName() );
@@ -361,6 +363,7 @@ public class BuildinfoMojo
             else
             {
                 koFilenames.add( artifact.getFile().getName() );
+                diffoscopes.add( diffoscope );
             }
         }
 
@@ -391,8 +394,13 @@ public class BuildinfoMojo
                 p.println( "version=" + project.getVersion() );
                 p.println( "ok=" + ok );
                 p.println( "ko=" + ko );
-                p.println( "okFiles=\"" + StringUtils.join( okFilenames.iterator(), " " ) + '"' ); 
-                p.println( "koFiles=\"" + StringUtils.join( koFilenames.iterator(), " " ) + '"' ); 
+                p.println( "okFiles=\"" + StringUtils.join( okFilenames.iterator(), " " ) + '"' );
+                p.println( "koFiles=\"" + StringUtils.join( koFilenames.iterator(), " " ) + '"' );
+                for ( String diffoscope : diffoscopes )
+                {
+                    p.print( "# " );
+                    p.println( diffoscope );
+                }
                 getLog().info( "Reproducible Build comparison saved to " + compare );
             }
             catch ( IOException e )
@@ -404,8 +412,8 @@ public class BuildinfoMojo
         }
     }
 
-    private boolean checkArtifact( Artifact artifact, String prefix, Properties reference, Properties actual,
-                                   File referenceDir )
+    private String checkArtifact( Artifact artifact, String prefix, Properties reference, Properties actual,
+                                  File referenceDir )
     {
         String actualFilename = (String) actual.remove( prefix + ".filename" );
         String actualLength = (String) actual.remove( prefix + ".length" );
@@ -415,19 +423,24 @@ public class BuildinfoMojo
         String referenceLength = (String) reference.remove( referencePrefix + ".length" );
         String referenceSha512 = (String) reference.remove( referencePrefix + ".checksums.sha512" );
 
+        String issue = null;
         if ( !actualLength.equals( referenceLength ) )
         {
-            getLog().warn( "size mismatch " + MessageUtils.buffer().strong( actualFilename )
-                + diffoscope( artifact, referenceDir ) );
-            return false;
+            issue = "size";
         }
         else if ( !actualSha512.equals( referenceSha512 ) )
         {
-            getLog().warn( "sha512 mismatch " + MessageUtils.buffer().strong( actualFilename )
-                + diffoscope( artifact, referenceDir ) );
-            return false;
+            issue = "sha512";
         }
-        return true;
+
+        if ( issue != null )
+        {
+            String diffoscope = diffoscope( artifact, referenceDir );
+            getLog().warn( issue + " mismatch " + MessageUtils.buffer().strong( actualFilename ) + ": investigate with "
+                + MessageUtils.buffer().project( diffoscope ) );
+            return diffoscope;
+        }
+        return null;
     }
 
     private String diffoscope( Artifact a, File referenceDir )
@@ -436,8 +449,7 @@ public class BuildinfoMojo
         // notice: actual file name may have been defined in pom
         // reference file name is taken from repository format
         File reference = new File( referenceDir, getRepositoryFilename( a ) );
-        return ": investigate with "
-            + MessageUtils.buffer().project( "diffoscope " + relative( reference ) + " " + relative( actual ) );
+        return "diffoscope " + relative( reference ) + " " + relative( actual );
     }
 
     private String getRepositoryFilename( Artifact a )
