@@ -36,6 +36,7 @@ import org.apache.maven.shared.utils.io.FileUtils;
 import org.apache.maven.shared.utils.logging.MessageUtils;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
+import org.apache.maven.shared.utils.PropertyUtils;
 import org.apache.maven.shared.utils.StringUtils;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
@@ -405,6 +406,17 @@ public class BuildinfoMojo
                 p.println( "ko=" + ko );
                 p.println( "okFiles=\"" + StringUtils.join( okFilenames.iterator(), " " ) + '"' );
                 p.println( "koFiles=\"" + StringUtils.join( koFilenames.iterator(), " " ) + '"' );
+                Properties ref = PropertyUtils.loadOptionalProperties( referenceBuildinfo );
+                String v = ref.getProperty( "java.version" );
+                if ( v != null )
+                {
+                    p.println( "reference_java_version=" + v );
+                }
+                v = ref.getProperty( "os.name" );
+                if ( v != null )
+                {
+                    p.println( "reference_os_name=" + v );
+                }
                 for ( String diffoscope : diffoscopes )
                 {
                     p.print( "# " );
