@@ -410,12 +410,12 @@ public class BuildinfoMojo
                 String v = ref.getProperty( "java.version" );
                 if ( v != null )
                 {
-                    p.println( "reference_java_version=" + v );
+                    p.println( "reference_java_version=\"" + v + '"' );
                 }
                 v = ref.getProperty( "os.name" );
                 if ( v != null )
                 {
-                    p.println( "reference_os_name=" + v );
+                    p.println( "reference_os_name=\"" + v + '"' );
                 }
                 for ( String diffoscope : diffoscopes )
                 {
