@@ -158,19 +158,6 @@
         </plugin>
       </plugins>
     </pluginManagement>
-    <plugins>
-      <plugin>
-        <groupId>org.simplify4u.plugins</groupId>
-        <artifactId>pgpverify-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
   </build>
 
   <profiles>
@@ -205,6 +192,30 @@
                 <id>buildinfo</id>
                 <goals>
                   <goal>buildinfo</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>pgpverify</id>
+      <activation>
+        <property>
+          <name>pgpverify.skip</name>
+          <value>!true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.simplify4u.plugins</groupId>
+            <artifactId>pgpverify-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>check</goal>
                 </goals>
               </execution>
             </executions>
