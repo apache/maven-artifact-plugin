@@ -87,7 +87,6 @@ class BuildInfoWriter
         }
         p.println();
         p.println( "# Maven rebuild instructions and effective environment" );
-        //p.println( "mvn.rebuild-args=" + rebuildArgs );
         if ( !reproducible )
         {
             p.println( "mvn.version=" + MavenVersion.createMavenVersionString() );
