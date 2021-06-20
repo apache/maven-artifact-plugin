@@ -111,6 +111,8 @@ class ReferenceBuildinfoUtil
             // download reference artifacts and guess Java version and OS
             String javaVersion = null;
             String osName = null;
+            String currentJavaVersion = null;
+            String currentOsName = null;
             Map<Artifact, File> referenceArtifacts = new HashMap<>();
             for ( Artifact artifact : artifacts.keySet() )
             {
@@ -123,23 +125,15 @@ class ReferenceBuildinfoUtil
                     // guess Java version and OS
                     if ( ( javaVersion == null ) && JAR_TYPES.contains( artifact.getType() ) )
                     {
-                        log.debug( "Guessing java.version and os.name from jar " + file );
-                        try ( JarFile jar = new JarFile( file ) )
+                        ReproducibleEnv env = extractEnv( file, artifact );
+                        if ( ( env != null ) && ( env.javaVersion != null ) )
                         {
-                            Manifest manifest = jar.getManifest();
-                            if ( manifest != null )
-                            {
-                                javaVersion = extractJavaVersion( manifest );
-                                osName = extractOsName( artifact, jar );
-                            }
-                            else
-                            {
-                                log.warn( "no MANIFEST.MF found in jar " + file );
-                            }
-                        }
-                        catch ( IOException e )
-                        {
-                            log.warn( "unable to open jar file " + file, e );
+                            javaVersion = env.javaVersion;
+                            osName = env.osName;
+
+                            ReproducibleEnv currentEnv = extractEnv( artifact.getFile(), artifact );
+                            currentJavaVersion = currentEnv.javaVersion;
+                            currentOsName = currentEnv.osName;
                         }
                     }
                 }
@@ -164,6 +158,10 @@ class ReferenceBuildinfoUtil
                     {
                         p.println( "java.version=" + javaVersion );
                         log.info( "Reference build java.version: " + javaVersion );
+                        if ( !javaVersion.equals( currentJavaVersion ) )
+                        {
+                            log.error( "Current build java.version: " + currentJavaVersion );
+                        }
                     }
                     if ( osName != null )
                     {
@@ -171,6 +169,10 @@ class ReferenceBuildinfoUtil
                         log.info( "Reference build os.name: " + osName );
 
                         // check against current line separator
+                        if ( !osName.equals( currentOsName ) )
+                        {
+                            log.error( "Current build os.name: " + currentOsName );
+                        }
                         String expectedLs = osName.startsWith( "Windows" ) ? "\r\n" : "\n";
                         if ( !expectedLs.equals( System.lineSeparator() ) )
                         {
@@ -211,6 +213,30 @@ class ReferenceBuildinfoUtil
         }
 
         return referenceBuildinfo;
+    }
+
+    private ReproducibleEnv extractEnv( File file, Artifact artifact )
+    {
+        log.debug( "Guessing java.version and os.name from jar " + file );
+        try ( JarFile jar = new JarFile( file ) )
+        {
+            Manifest manifest = jar.getManifest();
+            if ( manifest != null )
+            {
+                String javaVersion = extractJavaVersion( manifest );
+                String osName = extractOsName( artifact, jar );
+                return new ReproducibleEnv( javaVersion, osName );
+            }
+            else
+            {
+                log.warn( "no MANIFEST.MF found in jar " + file );
+            }
+        }
+        catch ( IOException e )
+        {
+            log.warn( "unable to open jar file " + file, e );
+        }
+        return null;
     }
 
     private String extractJavaVersion( Manifest manifest )
@@ -343,6 +369,21 @@ class ReferenceBuildinfoUtil
         public WorkspaceReader getWorkspaceReader()
         {
             return null;
+        }
+    }
+
+    private static class ReproducibleEnv
+    {
+        @SuppressWarnings( "checkstyle:visibilitymodifier" )
+        public final String javaVersion;
+
+        @SuppressWarnings( "checkstyle:visibilitymodifier" )
+        public final String osName;
+
+        ReproducibleEnv( String javaVersion, String osName )
+        {
+            this.javaVersion = javaVersion;
+            this.osName = osName;
         }
     }
 }

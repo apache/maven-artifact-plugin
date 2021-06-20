@@ -22,7 +22,6 @@ package org.apache.maven.plugins.artifact.buildinfo;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
-import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import org.apache.maven.plugins.annotations.Component;
@@ -30,7 +29,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.utils.logging.MessageUtils;
-import org.apache.maven.toolchain.ToolchainManager;
 import org.apache.maven.shared.utils.PropertyUtils;
 import org.apache.maven.shared.utils.StringUtils;
 import org.eclipse.aether.RepositorySystem;
@@ -95,18 +93,6 @@ public class CompareMojo
 
     @Component
     private ArtifactRepositoryLayout artifactRepositoryLayout;
-
-    /**
-     * The current build session instance. This is used for toolchain manager API calls.
-     */
-    @Parameter( defaultValue = "${session}", readonly = true, required = true )
-    private MavenSession session;
-
-    /**
-     * To obtain a toolchain if possible.
-     */
-    @Component
-    private ToolchainManager toolchainManager;
 
     @Override
     public void execute( Map<Artifact, String> artifacts )
