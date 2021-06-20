@@ -154,19 +154,19 @@ public abstract class AbstractBuildinfoMojo
     {
         if ( reactorProjects.size() == 1 )
         {
-            // mono-module, no aggregate buildinfo to deal with
+            // mono-module, no aggregate file to deal with
             return;
         }
 
-        // copy aggregate buildinfo to root target directory
+        // copy aggregate file to root target directory
         MavenProject root = getExecutionRoot();
-        String compare = aggregate.getName().endsWith( ".compare" ) ? ".compare" : "";
+        String extension = aggregate.getName().substring( aggregate.getName().lastIndexOf( '.' ) );
         File rootCopy = new File( root.getBuild().getDirectory(),
-                                  root.getArtifactId() + '-' + root.getVersion() + ".buildinfo" + compare );
+                                  root.getArtifactId() + '-' + root.getVersion() + extension );
         try
         {
             FileUtils.copyFile( aggregate, rootCopy );
-            getLog().info( "Aggregate buildinfo" + compare + " copied to " + rootCopy );
+            getLog().info( "Aggregate " + extension.substring( 1 ) + " copied to " + rootCopy );
         }
         catch ( IOException ioe )
         {

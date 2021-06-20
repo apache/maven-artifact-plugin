@@ -72,15 +72,6 @@ public class CompareMojo
     @Parameter( property = "reference.repo", defaultValue = "central" )
     private String referenceRepo;
 
-    /**
-     * Specifies if reference comparison output file should be saved.
-     * This is expected to be a temporary feature to ease
-     * <a href="https://github.com/jvm-repo-rebuild/reproducible-central">Central Repository rebuild</a>
-     * results display.
-     */
-    @Parameter( property = "reference.compare.save", defaultValue = "false" )
-    private boolean referenceCompareSave;
-
     @Component
     private ArtifactFactory artifactFactory;
 
@@ -204,43 +195,43 @@ public class CompareMojo
             getLog().info( "Reproducible Build output summary: " + MessageUtils.buffer().success( ok + " files ok" ) );
         }
 
-        if ( referenceCompareSave )
-        {
-            File compare = new File( buildinfoFile.getParentFile(), buildinfoFile.getName() + ".compare" );
-            try ( PrintWriter p =
-                new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( compare ),
-                                                                             StandardCharsets.UTF_8 ) ) ) )
-            {
-                p.println( "version=" + project.getVersion() );
-                p.println( "ok=" + ok );
-                p.println( "ko=" + ko );
-                p.println( "okFiles=\"" + StringUtils.join( okFilenames.iterator(), " " ) + '"' );
-                p.println( "koFiles=\"" + StringUtils.join( koFilenames.iterator(), " " ) + '"' );
-                Properties ref = PropertyUtils.loadOptionalProperties( referenceBuildinfo );
-                String v = ref.getProperty( "java.version" );
-                if ( v != null )
-                {
-                    p.println( "reference_java_version=\"" + v + '"' );
-                }
-                v = ref.getProperty( "os.name" );
-                if ( v != null )
-                {
-                    p.println( "reference_os_name=\"" + v + '"' );
-                }
-                for ( String diffoscope : diffoscopes )
-                {
-                    p.print( "# " );
-                    p.println( diffoscope );
-                }
-                getLog().info( "Reproducible Build comparison saved to " + compare );
-            }
-            catch ( IOException e )
-            {
-                throw new MojoExecutionException( "Error creating file " + compare, e );
-            }
 
-            copyAggregateToRoot( compare );
+        // save .compare file
+        File compare = new File( buildinfoFile.getParentFile(),
+                                 buildinfoFile.getName().replaceFirst( ".buildinfo$", ".compare" ) );
+        try ( PrintWriter p =
+            new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( compare ),
+                                                                         StandardCharsets.UTF_8 ) ) ) )
+        {
+            p.println( "version=" + project.getVersion() );
+            p.println( "ok=" + ok );
+            p.println( "ko=" + ko );
+            p.println( "okFiles=\"" + StringUtils.join( okFilenames.iterator(), " " ) + '"' );
+            p.println( "koFiles=\"" + StringUtils.join( koFilenames.iterator(), " " ) + '"' );
+            Properties ref = PropertyUtils.loadOptionalProperties( referenceBuildinfo );
+            String v = ref.getProperty( "java.version" );
+            if ( v != null )
+            {
+                p.println( "reference_java_version=\"" + v + '"' );
+            }
+            v = ref.getProperty( "os.name" );
+            if ( v != null )
+            {
+                p.println( "reference_os_name=\"" + v + '"' );
+            }
+            for ( String diffoscope : diffoscopes )
+            {
+                p.print( "# " );
+                p.println( diffoscope );
+            }
+            getLog().info( "Reproducible Build output comparison saved to " + compare );
         }
+        catch ( IOException e )
+        {
+            throw new MojoExecutionException( "Error creating file " + compare, e );
+        }
+
+        copyAggregateToRoot( compare );
     }
 
     private String checkArtifact( Artifact artifact, String prefix, Properties reference, Properties actual,
