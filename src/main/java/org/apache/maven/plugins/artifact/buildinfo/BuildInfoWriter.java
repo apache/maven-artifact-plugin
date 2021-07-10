@@ -121,7 +121,12 @@ class BuildInfoWriter
         {
             javaVersion = javaVersion.substring( 2 );
         }
-        return javaVersion.substring( 0, javaVersion.indexOf( '.' ) );
+        int index = javaVersion.indexOf( '.' ); // for example 8.0_202
+        if ( index < 0 )
+        {
+            index = javaVersion.indexOf( '-' ); // for example 17-ea
+        }
+        return ( index < 0 ) ? javaVersion : javaVersion.substring( 0, index );
     }
 
     private void printSourceInformation( MavenProject project )
