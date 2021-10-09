@@ -19,11 +19,11 @@ package org.apache.maven.plugins.artifact.buildinfo;
  * under the License.
  */
 
+import org.apache.maven.archiver.MavenArchiver;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -38,6 +38,8 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -103,6 +105,16 @@ public abstract class AbstractBuildinfoMojo
     private MavenSession session;
 
     /**
+     * Timestamp for reproducible output archive entries, either formatted as ISO 8601
+     * <code>yyyy-MM-dd'T'HH:mm:ssXXX</code> or as an int representing seconds since the epoch (like
+     * <a href="https://reproducible-builds.org/docs/source-date-epoch/">SOURCE_DATE_EPOCH</a>).
+     *
+     * @since 3.2.0
+     */
+    @Parameter( defaultValue = "${project.build.outputTimestamp}" )
+    private String outputTimestamp;
+
+    /**
      * To obtain a toolchain if possible.
      */
     @Component
@@ -129,6 +141,19 @@ public abstract class AbstractBuildinfoMojo
                 getLog().info( "Skipping intermediate goal run, aggregate will be " + last.getArtifactId() );
                 return;
             }
+        }
+
+        MavenArchiver archiver = new MavenArchiver();
+        Date timestamp = archiver.parseOutputTimestamp( outputTimestamp );
+        if ( timestamp == null )
+        {
+            getLog().warn( "Reproducible Build not activated by project.build.outputTimestamp property: "
+                + "see https://maven.apache.org/guides/mini/guide-reproducible-builds.html" );
+        }
+        else if ( getLog().isDebugEnabled() )
+        {
+            getLog().debug( "project.build.outputTimestamp = \"" + outputTimestamp + "\" => "
+                + new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ssXXX" ).format( timestamp ) );
         }
 
         // generate buildinfo
