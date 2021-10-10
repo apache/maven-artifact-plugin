@@ -302,7 +302,7 @@ class ReferenceBuildinfoUtil
         }
         catch ( ArtifactNotFoundException e )
         {
-            log.warn( "Reference buildinfo file not found: "
+            log.info( "Reference buildinfo file not found: "
                 + "it will be generated from downloaded reference artifacts" );
         }
 
