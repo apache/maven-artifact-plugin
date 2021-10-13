@@ -317,7 +317,9 @@ class ReferenceBuildinfoUtil
             ArtifactRequest request = new ArtifactRequest();
             request.setArtifact( new DefaultArtifact( artifact.getGroupId(), artifact.getArtifactId(),
                                                       artifact.getClassifier(),
-                                                      artifact.getArtifactHandler().getExtension(),
+                                                      ( artifact.getArtifactHandler() != null )
+                                                                      ? artifact.getArtifactHandler().getExtension()
+                                                                      : artifact.getType(),
                                                       artifact.getVersion() ) );
             request.setRepositories( Collections.singletonList( repo ) );
 

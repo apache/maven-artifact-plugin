@@ -27,6 +27,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.artifact.handler.ArtifactHandler;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -160,11 +161,6 @@ class BuildInfoWriter
     void printArtifacts( MavenProject project )
         throws MojoExecutionException
     {
-        if ( project.getArtifact() == null )
-        {
-            return;
-        }
-
         String prefix = "outputs.";
         if ( !mono )
         {
@@ -176,6 +172,16 @@ class BuildInfoWriter
         }
 
         int n = 0;
+        artifacts.put( new DefaultArtifact( project.getGroupId(), project.getArtifactId(), project.getVersion(), null,
+                                            "pom", "", null ),
+                       prefix + n );
+        printFile( prefix + n++, project.getFile(), project.getArtifactId() + '-' + project.getVersion() + ".pom" );
+
+        if ( project.getArtifact() == null )
+        {
+            return;
+        }
+
         if ( project.getArtifact().getFile() != null )
         {
             printArtifact( prefix, n++, project.getArtifact() );

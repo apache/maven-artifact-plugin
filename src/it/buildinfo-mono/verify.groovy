@@ -25,7 +25,8 @@ assert buildinfoFile.isFile()
 // check generated buildinfo content
 String buildinfo = buildinfoFile.text
 
-assert buildinfo.contains( "outputs.0.filename=mono-1.0-SNAPSHOT.jar" )
+assert buildinfo.contains( "outputs.0.filename=mono-1.0-SNAPSHOT.pom" )
+assert buildinfo.contains( "outputs.1.filename=mono-1.0-SNAPSHOT.jar" )
 assert buildinfo.contains( "mvn.minimum.version=3.0.5" )
 
 // check existence of buildinfo in local repository

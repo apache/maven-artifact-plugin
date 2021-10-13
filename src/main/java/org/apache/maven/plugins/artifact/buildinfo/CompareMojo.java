@@ -151,15 +151,18 @@ public class CompareMojo
             Artifact artifact = entry.getKey();
             String prefix = entry.getValue();
 
-            String diffoscope = checkArtifact( artifact, prefix, reference, actual, referenceDir ); 
+            String diffoscope = checkArtifact( artifact, prefix, reference, actual, referenceDir );
+            String filename =
+                ( artifact.getFile() == null ) ? ( artifact.getArtifactId() + '-' + artifact.getVersion() + ".pom" )
+                                : artifact.getFile().getName();
             if ( diffoscope == null )
             {
                 ok++;
-                okFilenames.add( artifact.getFile().getName() );
+                okFilenames.add( filename );
             }
             else
             {
-                koFilenames.add( artifact.getFile().getName() );
+                koFilenames.add( filename );
                 diffoscopes.add( diffoscope );
             }
         }
