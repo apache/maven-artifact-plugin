@@ -30,4 +30,9 @@ assert compare.contains( "ok=1" )
 assert compare.contains( "ko=1" )
 assert compare.contains( 'okFiles="mono-1.0-SNAPSHOT.pom"' )
 assert compare.contains( 'koFiles="mono-1.0-SNAPSHOT.jar"' )
-assert compare.contains( '# diffoscope target/reference/mono-1.0-SNAPSHOT.jar target/mono-1.0-SNAPSHOT.jar' )
+if( File.separator == '/' ) {
+  assert compare.contains( '# diffoscope target/reference/mono-1.0-SNAPSHOT.jar target/mono-1.0-SNAPSHOT.jar' )
+} else {
+  assert compare.contains( '# diffoscope target\\reference\\mono-1.0-SNAPSHOT.jar target\\mono-1.0-SNAPSHOT.jar' )
+}
+
