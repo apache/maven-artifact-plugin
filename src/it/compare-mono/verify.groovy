@@ -19,7 +19,7 @@
  */
 
 // check existence of generated compare in target
-File compareFile = new File( basedir, "target/mono-1.0-SNAPSHOT.compare" );
+File compareFile = new File( basedir, "target/mono-1.0-SNAPSHOT.buildcompare" );
 assert compareFile.isFile()
 
 // check generated compare content

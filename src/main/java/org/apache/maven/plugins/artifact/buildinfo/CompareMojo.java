@@ -48,7 +48,8 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * Compare current build output with reference either previously installed or downloaded from a remote repository.
+ * Compare current build output with reference either previously installed or downloaded from a remote repository:
+ * results go to {@code .buildcompare} file.
  *
  * @since 3.2.0
  */
@@ -186,10 +187,10 @@ public class CompareMojo
 
 
         // save .compare file
-        File compare = new File( buildinfoFile.getParentFile(),
-                                 buildinfoFile.getName().replaceFirst( ".buildinfo$", ".compare" ) );
+        File buildcompare = new File( buildinfoFile.getParentFile(),
+                                 buildinfoFile.getName().replaceFirst( ".buildinfo$", ".buildcompare" ) );
         try ( PrintWriter p =
-            new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( compare ),
+            new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( buildcompare ),
                                                                          StandardCharsets.UTF_8 ) ) ) )
         {
             p.println( "version=" + project.getVersion() );
@@ -213,14 +214,14 @@ public class CompareMojo
                 p.print( "# " );
                 p.println( diffoscope );
             }
-            getLog().info( "Reproducible Build output comparison saved to " + compare );
+            getLog().info( "Reproducible Build output comparison saved to " + buildcompare );
         }
         catch ( IOException e )
         {
-            throw new MojoExecutionException( "Error creating file " + compare, e );
+            throw new MojoExecutionException( "Error creating file " + buildcompare, e );
         }
 
-        copyAggregateToRoot( compare );
+        copyAggregateToRoot( buildcompare );
     }
 
     private String checkArtifact( Artifact artifact, String prefix, Properties reference, Properties actual,
