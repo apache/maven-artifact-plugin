@@ -71,6 +71,13 @@ public class CompareMojo
     @Parameter( property = "reference.repo", defaultValue = "central" )
     private String referenceRepo;
 
+    /**
+     * Compare aggregate only (ie wait for the last module) or do buildcompare on each module.
+     * @since 3.2.0
+     */
+    @Parameter( property = "compare.aggregate.only", defaultValue = "false" )
+    private boolean aggregateOnly;
+
     @Component
     private ArtifactFactory artifactFactory;
 
@@ -100,7 +107,20 @@ public class CompareMojo
         throws MojoExecutionException
     {
         getLog().info( "Checking against reference build from " + referenceRepo + "..." );
-        checkAgainstReference( artifacts );
+        checkAgainstReference( artifacts, reactorProjects.size() == 1 );
+    }
+
+    @Override
+    protected void skip( MavenProject last )
+        throws MojoExecutionException
+    {
+        if ( aggregateOnly )
+        {
+            return;
+        }
+
+        // try to download reference artifacts for current project and check if there are issues to give early feedback
+        checkAgainstReference( generateBuildinfo( true ), true );
     }
 
     /**
@@ -110,10 +130,9 @@ public class CompareMojo
      *            (<code>outputs.[#module.].#artifact</code>)
      * @throws MojoExecutionException
      */
-    private void checkAgainstReference( Map<Artifact, String> artifacts )
+    private void checkAgainstReference( Map<Artifact, String> artifacts, boolean mono )
         throws MojoExecutionException
     {
-        boolean mono = reactorProjects.size() == 1;
         MavenProject root = mono  ? project : getExecutionRoot();
         File referenceDir = new File( root.getBuild().getDirectory(), "reference" );
         referenceDir.mkdirs();

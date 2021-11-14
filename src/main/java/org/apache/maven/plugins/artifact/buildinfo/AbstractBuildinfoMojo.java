@@ -130,23 +130,6 @@ public abstract class AbstractBuildinfoMojo
     {
         boolean mono = reactorProjects.size() == 1;
 
-        if ( !mono )
-        {
-            // if module skips install and/or deploy
-            if ( isSkip( project ) )
-            {
-                getLog().info( "Skipping goal because module skips install and/or deploy" );
-                return;
-            }
-            // if multi-module build, generate (aggregate) buildinfo only in last module
-            MavenProject last = getLastProject();
-            if  ( project != last )
-            {
-                getLog().info( "Skipping intermediate goal run, aggregate will be " + last.getArtifactId() );
-                return;
-            }
-        }
-
         MavenArchiver archiver = new MavenArchiver();
         Date timestamp = archiver.parseOutputTimestamp( outputTimestamp );
         if ( timestamp == null )
@@ -177,6 +160,23 @@ public abstract class AbstractBuildinfoMojo
             }
         }
 
+        if ( !mono )
+        {
+            // if module skips install and/or deploy
+            if ( isSkip( project ) )
+            {
+                getLog().info( "Skipping goal because module skips install and/or deploy" );
+                return;
+            }
+            // if multi-module build, generate (aggregate) buildinfo only in last module
+            MavenProject last = getLastProject();
+            if  ( project != last )
+            {
+                skip( last );
+                return;
+            }
+        }
+
         // generate buildinfo
         Map<Artifact, String> artifacts = generateBuildinfo( mono );
         getLog().info( "Saved " + ( mono ? "" : "aggregate " ) + "info on build to " + buildinfoFile );
@@ -194,6 +194,12 @@ public abstract class AbstractBuildinfoMojo
      */
     abstract void execute( Map<Artifact, String> artifacts )
         throws MojoExecutionException;
+
+    protected void skip( MavenProject last )
+        throws MojoExecutionException
+    {
+        getLog().info( "Skipping intermediate goal run, aggregate will be " + last.getArtifactId() );
+    }
 
     protected void copyAggregateToRoot( File aggregate )
         throws MojoExecutionException
@@ -228,8 +234,8 @@ public abstract class AbstractBuildinfoMojo
      *         (<code>outputs.[#module.].#artifact</code>)
      * @throws MojoExecutionException
      */
-    private Map<Artifact, String> generateBuildinfo( boolean mono )
-            throws MojoExecutionException
+    protected Map<Artifact, String> generateBuildinfo( boolean mono )
+        throws MojoExecutionException
     {
         MavenProject root = mono ? project : getExecutionRoot();
 
