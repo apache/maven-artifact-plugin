@@ -175,9 +175,12 @@ class BuildInfoWriter
         }
 
         int n = 0;
-        artifacts.put( new DefaultArtifact( project.getGroupId(), project.getArtifactId(), project.getVersion(), null,
-                                            "pom", "", artifactHandlerManager.getArtifactHandler( "pom" ) ),
-                       prefix + n );
+        Artifact pomArtifact =
+            new DefaultArtifact( project.getGroupId(), project.getArtifactId(), project.getVersion(), null, "pom", "",
+                                 artifactHandlerManager.getArtifactHandler( "pom" ) );
+        pomArtifact.setFile( project.getFile() );
+
+        artifacts.put( pomArtifact, prefix + n );
         printFile( prefix + n++, project.getFile(), project.getArtifactId() + '-' + project.getVersion() + ".pom" );
 
         if ( project.getArtifact() == null )

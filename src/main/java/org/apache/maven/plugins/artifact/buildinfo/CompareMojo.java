@@ -152,10 +152,10 @@ public class CompareMojo
             Artifact artifact = entry.getKey();
             String prefix = entry.getValue();
 
-            String diffoscope = checkArtifact( artifact, prefix, reference, actual, referenceDir );
-            String filename =
-                ( artifact.getFile() == null ) ? ( artifact.getArtifactId() + '-' + artifact.getVersion() + ".pom" )
-                                : artifact.getFile().getName();
+            String[] checkResult = checkArtifact( artifact, prefix, reference, actual, referenceDir );
+            String filename = checkResult[0];
+            String diffoscope = checkResult[1];
+
             if ( diffoscope == null )
             {
                 ok++;
@@ -224,7 +224,8 @@ public class CompareMojo
         copyAggregateToRoot( buildcompare );
     }
 
-    private String checkArtifact( Artifact artifact, String prefix, Properties reference, Properties actual,
+    // { filename, diffoscope }
+    private String[] checkArtifact( Artifact artifact, String prefix, Properties reference, Properties actual,
                                   File referenceDir )
     {
         String actualFilename = (String) actual.remove( prefix + ".filename" );
@@ -250,9 +251,9 @@ public class CompareMojo
             String diffoscope = diffoscope( artifact, referenceDir );
             getLog().warn( issue + " mismatch " + MessageUtils.buffer().strong( actualFilename ) + ": investigate with "
                 + MessageUtils.buffer().project( diffoscope ) );
-            return diffoscope;
+            return new String[] { actualFilename,  diffoscope };
         }
-        return null;
+        return new String[] { actualFilename, null };
     }
 
     private String diffoscope( Artifact a, File referenceDir )
