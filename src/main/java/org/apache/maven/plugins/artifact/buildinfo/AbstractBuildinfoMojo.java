@@ -154,10 +154,27 @@ public abstract class AbstractBuildinfoMojo
             getLog().warn( "Reproducible Build not activated by project.build.outputTimestamp property: "
                 + "see https://maven.apache.org/guides/mini/guide-reproducible-builds.html" );
         }
-        else if ( getLog().isDebugEnabled() )
+        else
         {
-            getLog().debug( "project.build.outputTimestamp = \"" + outputTimestamp + "\" => "
-                + new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ssXXX" ).format( timestamp ) );
+            if ( getLog().isDebugEnabled() )
+            {
+                getLog().debug( "project.build.outputTimestamp = \"" + outputTimestamp + "\" => "
+                    + new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ssXXX" ).format( timestamp ) );
+            }
+
+            // check if timestamp well defined in a project from reactor
+            MavenProject reactorParent = project;
+            while ( reactorProjects.contains( reactorParent.getParent() ) )
+            {
+                reactorParent = reactorParent.getParent();
+            }
+            String prop =
+                reactorParent.getOriginalModel().getProperties().getProperty( "project.build.outputTimestamp" );
+            if ( prop == null )
+            {
+                getLog().warn( "project.build.outputTimestamp property should not be inherited "
+                    + "but defined in parent POM from reactor " + reactorParent.getFile() );
+            }
         }
 
         // generate buildinfo

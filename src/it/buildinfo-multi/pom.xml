@@ -23,6 +23,12 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>org.apache.maven</groupId>
+    <artifactId>maven-parent</artifactId>
+    <version>34</version>
+  </parent>
+
   <groupId>org.apache.maven.plugins.it</groupId>
   <artifactId>multi</artifactId>
   <version>1.0-SNAPSHOT</version>
@@ -32,7 +38,6 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.build.outputTimestamp>2019-12-03T10:04:00Z</project.build.outputTimestamp>
   </properties>
 
   <prerequisites>

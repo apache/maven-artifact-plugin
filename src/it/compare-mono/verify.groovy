@@ -35,4 +35,3 @@ if( File.separator == '/' ) {
 } else {
   assert compare.contains( '# diffoscope target\\reference\\mono-1.0-SNAPSHOT.jar target\\mono-1.0-SNAPSHOT.jar' )
 }
-
