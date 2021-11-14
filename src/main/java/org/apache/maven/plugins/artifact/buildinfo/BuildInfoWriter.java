@@ -29,6 +29,7 @@ import java.util.Set;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.artifact.handler.ArtifactHandler;
+import org.apache.maven.artifact.handler.manager.ArtifactHandlerManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
@@ -43,17 +44,19 @@ class BuildInfoWriter
     private final Log log;
     private final PrintWriter p;
     private final boolean mono;
+    private final ArtifactHandlerManager artifactHandlerManager;
     private final Map<Artifact, String> artifacts = new LinkedHashMap<>();
     private int projectCount = -1;
     private boolean ignoreJavadoc = true;
     private Set<String> ignore;
     private Toolchain toolchain;
 
-    BuildInfoWriter( Log log, PrintWriter p, boolean mono )
+    BuildInfoWriter( Log log, PrintWriter p, boolean mono, ArtifactHandlerManager artifactHandlerManager )
     {
         this.log = log;
         this.p = p;
         this.mono = mono;
+        this.artifactHandlerManager = artifactHandlerManager;
     }
 
     void printHeader( MavenProject project, MavenProject aggregate, boolean reproducible )
@@ -173,7 +176,7 @@ class BuildInfoWriter
 
         int n = 0;
         artifacts.put( new DefaultArtifact( project.getGroupId(), project.getArtifactId(), project.getVersion(), null,
-                                            "pom", "", null ),
+                                            "pom", "", artifactHandlerManager.getArtifactHandler( "pom" ) ),
                        prefix + n );
         printFile( prefix + n++, project.getFile(), project.getArtifactId() + '-' + project.getVersion() + ".pom" );
 
@@ -214,6 +217,11 @@ class BuildInfoWriter
         File artifactFile = artifact.getFile();
         if ( artifactFile.isDirectory() )
         {
+            if ( "pom".equals( artifact.getType() ) )
+            {
+                // ignore .pom files: they should not be treated as Artifacts
+                return;
+            }
             // edge case found in a distribution module with default packaging and skip set for
             // m-jar-p: should use pom packaging instead
             throw new MojoExecutionException( "Artifact " + artifact.getId() + " points to a directory: "

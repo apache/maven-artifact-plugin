@@ -130,8 +130,8 @@ public class CompareMojo
     {
         RemoteRepository repo = createReferenceRepo();
 
-        ReferenceBuildinfoUtil rmb = new ReferenceBuildinfoUtil( getLog(), referenceDir, artifacts,
-                                                                       artifactFactory, repoSystem, repoSession );
+        ReferenceBuildinfoUtil rmb = new ReferenceBuildinfoUtil( getLog(), referenceDir, artifacts, artifactFactory,
+                                                                 repoSystem, repoSession, artifactHandlerManager );
 
         return rmb.downloadOrCreateReferenceBuildinfo( repo, project, buildinfoFile, mono );
     }
@@ -261,6 +261,12 @@ public class CompareMojo
         // notice: actual file name may have been defined in pom
         // reference file name is taken from repository format
         File reference = new File( referenceDir, getRepositoryFilename( a ) );
+        if ( ( actual == null ) || ( reference == null ) )
+        {
+            return "missing file for " + a.getId() + " reference = "
+                + ( reference == null ? "null" : relative( reference ) ) + " actual = "
+                + ( actual == null ? "null" : relative( actual ) );
+        }
         return "diffoscope " + relative( reference ) + " " + relative( actual );
     }
 
@@ -272,7 +278,10 @@ public class CompareMojo
 
     private String relative( File file )
     {
-        return file.getPath().substring( getExecutionRoot().getBasedir().getPath().length() + 1 );
+        File basedir = getExecutionRoot().getBasedir();
+        int length = basedir.getPath().length();
+        String path = file.getPath();
+        return path.substring( length + 1 );
     }
 
     private static String findPrefix( Properties reference, String actualFilename )

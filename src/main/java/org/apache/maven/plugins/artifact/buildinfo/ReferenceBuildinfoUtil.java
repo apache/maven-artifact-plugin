@@ -21,6 +21,7 @@ package org.apache.maven.plugins.artifact.buildinfo;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
+import org.apache.maven.artifact.handler.manager.ArtifactHandlerManager;
 import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -88,9 +89,12 @@ class ReferenceBuildinfoUtil
 
     private final RepositorySystemSession repoSession;
 
+    private final ArtifactHandlerManager artifactHandlerManager;
+
     ReferenceBuildinfoUtil( Log log, File referenceDir, Map<Artifact, String> artifacts,
                                       ArtifactFactory artifactFactory, RepositorySystem repoSystem,
-                                      RepositorySystemSession repoSession )
+                                      RepositorySystemSession repoSession,
+                                      ArtifactHandlerManager artifactHandlerManager )
     {
         this.log = log;
         this.referenceDir = referenceDir;
@@ -98,6 +102,7 @@ class ReferenceBuildinfoUtil
         this.artifactFactory = artifactFactory;
         this.repoSystem = repoSystem;
         this.repoSession = repoSession;
+        this.artifactHandlerManager = artifactHandlerManager;
     }
 
     File downloadOrCreateReferenceBuildinfo( RemoteRepository repo, MavenProject project, File buildinfoFile,
@@ -149,7 +154,7 @@ class ReferenceBuildinfoUtil
                 new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( referenceBuildinfo ),
                                                                              StandardCharsets.UTF_8 ) ) ) )
             {
-                BuildInfoWriter bi = new BuildInfoWriter( log, p, mono );
+                BuildInfoWriter bi = new BuildInfoWriter( log, p, mono, artifactHandlerManager );
 
                 if ( javaVersion != null || osName != null )
                 {
