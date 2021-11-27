@@ -53,22 +53,27 @@ $ mvn clean verify artifact:buildinfo
 
 * Checking Reproducible Build: Comparing Current Build Against Previous One
 
-  When the <<<artifact:buildinfo>>> goal is used with <<<reference.repo>>> command-line parameter, it uses the parameter value as a reference of a remote repository
-  (either its id like <<<central>>> or an url like <<<https://repository.apache.org/content/repositories/maven-1619>>>)
-  to get reference artifacts from it, then compares reference artifacts against current build output to display <<Reproducible Build output summary>>:
+  <<<artifact:compare>>> goal compares reference artifacts against current build output to display <<Reproducible Build output summary>>:
 
 -------
-$ mvn -Papache-release clean verify -Dgpg.skip artifact:buildinfo -Dreference.repo=central
+$ mvn -Papache-release clean verify -Dgpg.skip artifact:compare
 [INFO] Scanning for projects...
 ...
-[INFO] --- maven-artifact-plugin:${project.version}:buildinfo (default-cli) @ doxia-module-markdown ---
+[INFO] --- maven-artifact-plugin:${project.version}:compare (default-cli) @ doxia-module-markdown ---
 [INFO] Saved aggregate info on build to /tmp/doxia-1.9.1/doxia-modules/doxia-module-markdown/target/doxia-module-markdown-1.9.1.buildinfo
 [INFO] Checking against reference build from central...
 Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-module-markdown/1.9.1/doxia-module-markdown-1.9.1.buildinfo
 [WARNING] Reference buildinfo file not found: it will be generated from downloaded reference artifacts
 [INFO] Reference build java.version: 1.8 (from MANIFEST.MF Build-Jdk-Spec)
+[ERROR] Current build java.version: 1.7 (from MANIFEST.MF Build-Jdk-Spec)
 [INFO] Reference build os.name: Unix (from pom.properties newline)
 [INFO] Minimal buildinfo generated from downloaded artifacts: /tmp/doxia-1.9.1/target/reference/doxia-module-markdown-1.9.1.buildinfo
-[INFO] Reproducible Build output summary: 38 files ok
+[WARNING] size mismatch doxia-logging-api-1.9.1.jar: investigate with diffoscope target/reference/doxia-logging-api-1.9.1.jar doxia-logging-api/target/doxia-logging-api-1.9.1.jar
 ...
+[WARNING] size mismatch doxia-module-markdown-1.9.1.jar: investigate with diffoscope target/reference/doxia-module-markdown-1.9.1.jar doxia-modules/doxia-module-markdown/target/doxia-module-markdown-1.9.1.jar
+[WARNING] Reproducible Build output summary: 39 files ok, 18 different
+[WARNING] see diff target/reference/doxia-module-markdown-1.9.1.buildinfo doxia-modules/doxia-module-markdown/target/doxia-module-markdown-1.9.1.buildinfo
+[WARNING] see also https://maven.apache.org/guides/mini/guide-reproducible-builds.html
+[INFO] Reproducible Build output comparison saved to /tmp/doxia-1.9.1/doxia-modules/doxia-module-markdown/target/doxia-module-markdown-1.9.1.buildcompare
+[INFO] Aggregate buildcompare copied to /tmp/doxia-1.9.1/target/doxia-1.9.1.buildcompare
 -------

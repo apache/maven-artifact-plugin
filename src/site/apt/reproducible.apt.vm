@@ -31,7 +31,7 @@ Diagnosing Reproducible Build Issues
   When checking Reproducible Build, you may find that the current build output is not the same as the reference:
 
 -------
-$ mvn -Papache-release clean verify -Dgpg.skip artifact:buildinfo -Dreference.repo=central
+$ mvn -Papache-release clean verify -Dgpg.skip artifact:compare
 [INFO] Scanning for projects...
 ...
 [INFO] --- maven-artifact-plugin:${project.version}:buildinfo (default-cli) @ doxia-module-markdown ---
@@ -40,26 +40,32 @@ $ mvn -Papache-release clean verify -Dgpg.skip artifact:buildinfo -Dreference.re
 Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-module-markdown/1.9.1/doxia-module-markdown-1.9.1.buildinfo
 [WARNING] Reference buildinfo file not found: it will be generated from downloaded reference artifacts
 [INFO] Reference build java.version: 1.8 (from MANIFEST.MF Build-Jdk-Spec)
+[INFO] Reference build java.version: 1.8 (from MANIFEST.MF Build-Jdk-Spec)
+[ERROR] Current build java.version: 1.7 (from MANIFEST.MF Build-Jdk-Spec)
 [INFO] Reference build os.name: Unix (from pom.properties newline)
 [INFO] Minimal buildinfo generated from downloaded artifacts: /tmp/doxia-1.9.1/target/reference/doxia-module-markdown-1.9.1.buildinfo
 [WARNING] size mismatch doxia-logging-api-1.9.1.jar: investigate with diffoscope target/reference/doxia-logging-api-1.9.1.jar doxia-logging-api/target/doxia-logging-api-1.9.1.jar
-[WARNING] size mismatch doxia-sink-api-1.9.1.jar: investigate with diffoscope target/reference/doxia-sink-api-1.9.1.jar doxia-sink-api/target/doxia-sink-api-1.9.1.jar
-[WARNING] sha512 mismatch doxia-test-docs-1.9.1.jar: investigate with diffoscope target/reference/doxia-test-docs-1.9.1.jar doxia-test-docs/target/doxia-test-docs-1.9.1.jar
 ...
-[WARNING] Reproducible Build output summary: 20 files ok, 18 different
+[WARNING] size mismatch doxia-module-markdown-1.9.1.jar: investigate with diffoscope target/reference/doxia-module-markdown-1.9.1.jar doxia-modules/doxia-module-markdown/target/doxia-module-markdown-1.9.1.jar
+[WARNING] Reproducible Build output summary: 39 files ok, 18 different
 [WARNING] see diff target/reference/doxia-module-markdown-1.9.1.buildinfo doxia-modules/doxia-module-markdown/target/doxia-module-markdown-1.9.1.buildinfo
 [WARNING] see also https://maven.apache.org/guides/mini/guide-reproducible-builds.html
+[INFO] Reproducible Build output comparison saved to /tmp/doxia-1.9.1/doxia-modules/doxia-module-markdown/target/doxia-module-markdown-1.9.1.buildcompare
+[INFO] Aggregate buildcompare copied to /tmp/doxia-1.9.1/target/doxia-1.9.1.buildcompare
 ...
 -------
 
   Multiple interesting parts are available:
   
-  * the summary: <<<[WARNING] Reproducible Build output summary: 20 files ok, 18 different>>>
+  * the summary: <<<[WARNING] Reproducible Build output summary: 39 files ok, 18 different>>>
 
   * key information on reference build environment:\
     <<<[INFO] Reference build java.version: 1.8 (from MANIFEST.MF Build-Jdk-Spec)>>>\
     <<<[INFO] Reference build os.name: Unix (from pom.properties newline)>>>\
     which are the key requirements (JDK major version and Operating System) for the build environment to reproduce the reference build
+
+  * eventual mismatch with current build environment:\
+    <<<[ERROR] Current build java.version: 1.7 (from MANIFEST.MF Build-Jdk-Spec)>>>
 
   * on each artifact different from reference, a command is provided to investigate differences using {{{https://diffoscope.org/}diffoscope tool}}, a diff tool working inside archives (jar, zip, tar, ...):\
     simply copy paste provided command like <<<diffoscope target/reference/doxia-logging-api-1.9.1.jar doxia-logging-api/target/doxia-logging-api-1.9.1.jar>>> and you'll see where differences are:

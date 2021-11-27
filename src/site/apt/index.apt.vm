@@ -34,8 +34,9 @@ ${project.name}
 
   The Artifact Plugin only has one goal currently.
 
-  * {{{./buildinfo-mojo.html}artifact:buildinfo}} records current build results in {{{https://reproducible-builds.org/docs/jvm/}Reproducible Builds buildinfo}} file
-    and eventually compares against reference build previously published.
+  * {{{./buildinfo-mojo.html}artifact:buildinfo}} records current build results in {{{https://reproducible-builds.org/docs/jvm/}Reproducible Builds buildinfo}} file,
+
+  * {{{./compare-mojo.html}artifact:compare}} compares current build output against reference build previously published.
 
 * Usage
 
