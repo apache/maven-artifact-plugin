@@ -32,7 +32,7 @@ ${project.name}
 
 * Goals Overview
 
-  The Artifact Plugin only has one goal currently.
+  The Artifact Plugin only has two goals currently:
 
   * {{{./buildinfo-mojo.html}artifact:buildinfo}} records current build results in {{{https://reproducible-builds.org/docs/jvm/}Reproducible Builds buildinfo}} file,
 
