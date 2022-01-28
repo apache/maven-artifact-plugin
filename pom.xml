@@ -62,8 +62,8 @@
   </distributionManagement>
 
   <properties>
-    <mavenVersion>3.1.1</mavenVersion>
-    <javaVersion>7</javaVersion>
+    <mavenVersion>4.0.0-alpha-1-SNAPSHOT</mavenVersion>
+    <javaVersion>8</javaVersion>
     <project.build.outputTimestamp>2021-11-27T17:53:42Z</project.build.outputTimestamp>
   </properties>
 
@@ -99,10 +99,9 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.eclipse.aether</groupId>
-      <artifactId>aether-api</artifactId>
-      <version>0.9.0.M2</version>
-      <scope>provided</scope>
+      <groupId>org.apache.maven.resolver</groupId>
+      <artifactId>maven-resolver-api</artifactId>
+      <version>1.8.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
@@ -112,12 +111,12 @@
     <dependency>
       <groupId>org.apache.maven.shared</groupId>
       <artifactId>maven-shared-utils</artifactId>
-      <version>3.3.3</version>
+      <version>4.0.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
       <artifactId>maven-archiver</artifactId>
-      <version>3.5.0</version>
+      <version>3.5.3-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>org.tukaani</groupId>
@@ -173,7 +172,7 @@
           <version>1.11.0</version>
           <configuration>
             <keysMapLocation>${project.basedir}/pgp-keys-map.list</keysMapLocation>
-          </configuration>                        
+          </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>
