@@ -29,7 +29,6 @@ import java.util.Set;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.lifecycle.DefaultLifecycles;
 import org.apache.maven.lifecycle.LifecycleExecutor;
 import org.apache.maven.lifecycle.MavenExecutionPlan;
 import org.apache.maven.model.Plugin;
@@ -39,16 +38,17 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 
 /**
- * Check from buildplan that plugins used don't have know reproducible builds issues.
+ * Check from buildplan that plugins used don't have known reproducible builds issues.
  */
 @Mojo( name = "check-buildplan", threadSafe = true, requiresProject = true )
 public class CheckBuildPlanMojo
     extends AbstractMojo
 {
-    @Component( role = DefaultLifecycles.class )
-    DefaultLifecycles defaultLifecycles;
+    @Parameter( defaultValue = "${project}", readonly = true )
+    private MavenProject project;
 
     @Parameter( defaultValue = "${session}", readonly = true )
     private MavenSession session;
@@ -119,6 +119,12 @@ public class CheckBuildPlanMojo
 
         if ( fail )
         {
+            getLog().info( "current module pom.xml is " + project.getBasedir() + "/pom.xml" );
+            MavenProject parent = project;
+            while ( ( parent = parent.getParent() ) != null )
+            {
+                getLog().info( "        parent pom.xml is " + parent.getBasedir() + "/pom.xml" );
+            }
             throw new MojoExecutionException( "plugin with non-reproducible output found with fix available" );
         }
     }
