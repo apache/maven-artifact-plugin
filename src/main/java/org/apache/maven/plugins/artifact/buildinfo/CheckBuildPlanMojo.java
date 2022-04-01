@@ -21,11 +21,15 @@ package org.apache.maven.plugins.artifact.buildinfo;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.maven.archiver.MavenArchiver;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.execution.MavenSession;
@@ -42,11 +46,16 @@ import org.apache.maven.project.MavenProject;
 
 /**
  * Check from buildplan that plugins used don't have known reproducible builds issues.
+ *
+ * @since 3.3.0
  */
 @Mojo( name = "check-buildplan", threadSafe = true, requiresProject = true )
 public class CheckBuildPlanMojo
     extends AbstractMojo
 {
+    @Parameter( defaultValue = "${reactorProjects}", required = true, readonly = true )
+    private List<MavenProject> reactorProjects;
+
     @Parameter( defaultValue = "${project}", readonly = true )
     private MavenProject project;
 
@@ -59,6 +68,14 @@ public class CheckBuildPlanMojo
     /** Allow to specify which goals/phases will be used to calculate execution plan. */
     @Parameter( property = "buildplan.tasks", defaultValue = "deploy" )
     private String[] tasks;
+
+    /**
+     * Timestamp for reproducible output archive entries, either formatted as ISO 8601
+     * <code>yyyy-MM-dd'T'HH:mm:ssXXX</code> or as an int representing seconds since the epoch (like
+     * <a href="https://reproducible-builds.org/docs/source-date-epoch/">SOURCE_DATE_EPOCH</a>).
+     */
+    @Parameter( defaultValue = "${project.build.outputTimestamp}" )
+    private String outputTimestamp;
 
     protected MavenExecutionPlan calculateExecutionPlan()
         throws MojoExecutionException
@@ -77,12 +94,14 @@ public class CheckBuildPlanMojo
     public void execute()
         throws MojoExecutionException
     {
+        boolean fail = hasBadOutputTimestamp();
+        // TODO check maven-jar-plugin module-info.class?
+
         Properties issues = loadIssues();
 
         MavenExecutionPlan plan = calculateExecutionPlan();
 
         Set<String> plugins = new HashSet<>();
-        boolean fail = false;
         for ( MojoExecution exec : plan.getMojoExecutions() )
         {
             Plugin plugin = exec.getPlugin();
@@ -121,17 +140,61 @@ public class CheckBuildPlanMojo
         {
             getLog().info( "current module pom.xml is " + project.getBasedir() + "/pom.xml" );
             MavenProject parent = project;
-            while ( ( parent = parent.getParent() ) != null )
+            while ( true )
             {
+                parent = parent.getParent();
+                if ( ( parent == null ) || !reactorProjects.contains( parent ) )
+                {
+                    break;
+                }
                 getLog().info( "        parent pom.xml is " + parent.getBasedir() + "/pom.xml" );
             }
-            throw new MojoExecutionException( "plugin with non-reproducible output found with fix available" );
+            throw new MojoExecutionException( "non-reproducible plugin or configuration found with fix available" );
         }
+    }
+
+    private boolean hasBadOutputTimestamp()
+    {
+        MavenArchiver archiver = new MavenArchiver();
+        Date timestamp = archiver.parseOutputTimestamp( outputTimestamp );
+        if ( timestamp == null )
+        {
+            getLog().error( "Reproducible Build not activated by project.build.outputTimestamp property: "
+                + "see https://maven.apache.org/guides/mini/guide-reproducible-builds.html" );
+            return true;
+        }
+        else
+        {
+            if ( getLog().isDebugEnabled() )
+            {
+                getLog().debug( "project.build.outputTimestamp = \"" + outputTimestamp + "\" => "
+                    + new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ssXXX" ).format( timestamp ) );
+            }
+
+            // check if timestamp well defined in a project from reactor
+            boolean parentInReactor = false;
+            MavenProject reactorParent = project;
+            while ( reactorProjects.contains( reactorParent.getParent() ) )
+            {
+                parentInReactor = true;
+                reactorParent = reactorParent.getParent();
+            }
+            String prop =
+                reactorParent.getOriginalModel().getProperties().getProperty( "project.build.outputTimestamp" );
+            if ( prop == null )
+            {
+                getLog().error( "project.build.outputTimestamp property should not be inherited but defined in "
+                    + ( parentInReactor ? "parent POM from reactor " : "POM " ) + reactorParent.getFile() );
+                return true;
+            }
+        }
+        return false;
     }
 
     private Properties loadIssues()
         throws MojoExecutionException
     {
+        // TODO add issues source override, that downloads from GitHub (disabled by default)
         try ( InputStream in = getClass().getResourceAsStream( "not-reproducible-plugins.properties" ) )
         {
             Properties prop = new Properties();

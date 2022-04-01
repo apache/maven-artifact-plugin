@@ -146,17 +146,19 @@ public abstract class AbstractBuildinfoMojo
             }
 
             // check if timestamp well defined in a project from reactor
+            boolean parentInReactor = false;
             MavenProject reactorParent = project;
             while ( reactorProjects.contains( reactorParent.getParent() ) )
             {
+                parentInReactor = true;
                 reactorParent = reactorParent.getParent();
             }
             String prop =
                 reactorParent.getOriginalModel().getProperties().getProperty( "project.build.outputTimestamp" );
             if ( prop == null )
             {
-                getLog().warn( "project.build.outputTimestamp property should not be inherited "
-                    + "but defined in parent POM from reactor " + reactorParent.getFile() );
+                getLog().error( "project.build.outputTimestamp property should not be inherited but defined in "
+                    + ( parentInReactor ? "parent POM from reactor " : "POM " ) + reactorParent.getFile() );
             }
         }
 
