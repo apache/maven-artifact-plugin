@@ -19,6 +19,8 @@ package org.apache.maven.plugins.artifact.buildinfo;
  * under the License.
  */
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -66,7 +68,7 @@ public class CheckBuildPlanMojo
     private LifecycleExecutor lifecycleExecutor;
 
     /** Allow to specify which goals/phases will be used to calculate execution plan. */
-    @Parameter( property = "buildplan.tasks", defaultValue = "deploy" )
+    @Parameter( property = "check.buildplan.tasks", defaultValue = "deploy" )
     private String[] tasks;
 
     /**
@@ -76,6 +78,12 @@ public class CheckBuildPlanMojo
      */
     @Parameter( defaultValue = "${project.build.outputTimestamp}" )
     private String outputTimestamp;
+
+    /**
+     * Provide a plugin issues property file to override plugin's <code>not-reproducible-plugins.properties</code>.
+     */
+    @Parameter( property = "check.plugin-issues" )
+    private File pluginIssues;
 
     protected MavenExecutionPlan calculateExecutionPlan()
         throws MojoExecutionException
@@ -194,8 +202,9 @@ public class CheckBuildPlanMojo
     private Properties loadIssues()
         throws MojoExecutionException
     {
-        // TODO add issues source override, that downloads from GitHub (disabled by default)
-        try ( InputStream in = getClass().getResourceAsStream( "not-reproducible-plugins.properties" ) )
+        try ( InputStream in =
+            ( pluginIssues == null ) ? getClass().getResourceAsStream( "not-reproducible-plugins.properties" )
+                            : new FileInputStream( pluginIssues ) )
         {
             Properties prop = new Properties();
             prop.load( in );
