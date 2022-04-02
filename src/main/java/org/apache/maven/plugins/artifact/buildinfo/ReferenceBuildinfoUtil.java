@@ -56,7 +56,7 @@ import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 
 /**
- * Utility to download or generate reference buildinfo.
+ * Utility to download reference artifacts and download or generate reference buildinfo.
  */
 class ReferenceBuildinfoUtil
 {
@@ -110,6 +110,14 @@ class ReferenceBuildinfoUtil
         throws MojoExecutionException
     {
         File referenceBuildinfo = downloadReferenceBuildinfo( repo, project );
+
+        if ( referenceBuildinfo != null )
+        {
+            log.warn( "dropping downloaded reference buildinfo because it may be generated"
+                + " from different maven-artifact-plugin release..." );
+            // TODO keep a save?
+            referenceBuildinfo = null;
+        }
 
         if ( referenceBuildinfo == null )
         {
