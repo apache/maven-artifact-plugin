@@ -80,7 +80,7 @@ Usage
 *--------+--------------------------------------------------------------------+-------+--------------+
 | org.eclipse.jetty | jetty-jspc-maven-plugin | - | no fixed release available, see {{{https://github.com/eclipse/jetty.project/}reference}}
 *--------+--------------------------------------------------------------------+-------+--------------+
-| org.springframework.boot | springboot-maven-plugin | 2.3.0-M4 | 
+| org.springframework.boot | spring-boot-maven-plugin | - | no fixed release available, see {{{https://github.com/spring-projects/spring-boot/issues/21005}reference}}
 *--------+--------------------------------------------------------------------+-------+--------------+
 | org.vafer | jdeb | 1.10 | 
 *--------+--------------------------------------------------------------------+-------+--------------+
