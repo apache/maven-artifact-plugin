@@ -85,6 +85,12 @@ public class CheckBuildPlanMojo
     @Parameter( property = "check.plugin-issues" )
     private File pluginIssues;
 
+    /**
+     * Make build fail if execution plan contains non-reproducible plugins.
+     */
+    @Parameter( property = "check.failOnNonReproducible", defaultValue = "true" )
+    private boolean failOnNonReproducible;
+
     protected MavenExecutionPlan calculateExecutionPlan()
         throws MojoExecutionException
     {
@@ -125,7 +131,17 @@ public class CheckBuildPlanMojo
                 }
                 else if ( issue.startsWith( "fail:" ) )
                 {
-                    getLog().warn( "plugin without solution " + id );
+                    String logMessage = "plugin without solution " + id + ", see " + issue.substring( 5 );
+                    if ( failOnNonReproducible )
+                    {
+                        getLog().error( logMessage );
+                    }
+                    else
+                    {
+                        getLog().warn( logMessage );
+                    }
+                    fail = true;
+
                 }
                 else
                 {
@@ -133,7 +149,15 @@ public class CheckBuildPlanMojo
                     ArtifactVersion version = new DefaultArtifactVersion( plugin.getVersion() );
                     if ( version.compareTo( minimum ) < 0 )
                     {
-                        getLog().error( "plugin with non-reproducible output: " + id + ", require minimum " + issue );
+                        String logMessage = "plugin with non-reproducible output: " + id + ", require minimum " + issue;
+                        if ( failOnNonReproducible )
+                        {
+                            getLog().error( logMessage );
+                        }
+                        else
+                        {
+                            getLog().warn( logMessage );
+                        }
                         fail = true;
                     }
                     else
@@ -157,7 +181,15 @@ public class CheckBuildPlanMojo
                 }
                 getLog().info( "        parent pom.xml is " + parent.getBasedir() + "/pom.xml" );
             }
-            throw new MojoExecutionException( "non-reproducible plugin or configuration found with fix available" );
+            String message = "non-reproducible plugin or configuration found with fix available";
+            if ( failOnNonReproducible )
+            {
+                throw new MojoExecutionException( message );
+            }
+            else
+            {
+                getLog().warn( message );
+            }
         }
     }
 
