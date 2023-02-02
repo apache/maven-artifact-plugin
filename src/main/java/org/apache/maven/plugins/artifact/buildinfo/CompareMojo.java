@@ -192,12 +192,12 @@ public class CompareMojo
 
         if ( ko + missing > 0 )
         {
-            getLog().warn( "Reproducible Build output summary: " + MessageUtils.buffer().success( ok + " files ok" )
+            getLog().error( "Reproducible Build output summary: " + MessageUtils.buffer().success( ok + " files ok" )
                 + ", " + MessageUtils.buffer().failure( ko + " different" )
-                + ( ( missing == 0 ) ? "" : ( ", " + MessageUtils.buffer().warning( missing + " missing" ) ) ) );
-            getLog().warn( "see " + MessageUtils.buffer().project( "diff " + relative( referenceBuildinfo ) + " "
+                + ( ( missing == 0 ) ? "" : ( ", " + MessageUtils.buffer().failure( missing + " missing" ) ) ) );
+            getLog().error( "see " + MessageUtils.buffer().project( "diff " + relative( referenceBuildinfo ) + " "
                 + relative( buildinfoFile ) ).toString() );
-            getLog().warn( "see also https://maven.apache.org/guides/mini/guide-reproducible-builds.html" );
+            getLog().error( "see also https://maven.apache.org/guides/mini/guide-reproducible-builds.html" );
           }
         else
         {
@@ -241,6 +241,11 @@ public class CompareMojo
         }
 
         copyAggregateToRoot( buildcompare );
+
+        if ( ko + missing > 0 )
+        {
+            throw new MojoExecutionException( "Build artifacts are different from reference" );
+        }
     }
 
     // { filename, diffoscope }
@@ -268,8 +273,8 @@ public class CompareMojo
         if ( issue != null )
         {
             String diffoscope = diffoscope( artifact, referenceDir );
-            getLog().warn( issue + " mismatch " + MessageUtils.buffer().strong( actualFilename ) + ": investigate with "
-                + MessageUtils.buffer().project( diffoscope ) );
+            getLog().error( issue + " mismatch " + MessageUtils.buffer().strong( actualFilename )
+                + ": investigate with " + MessageUtils.buffer().project( diffoscope ) );
             return new String[] { actualFilename,  diffoscope };
         }
         return new String[] { actualFilename, null };
