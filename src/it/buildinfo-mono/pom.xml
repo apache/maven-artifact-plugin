@@ -29,11 +29,6 @@
 
   <description>A simple IT verifying the basic use case of buildinfo file for mono-module build.</description>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.build.outputTimestamp>2019-12-03T10:04:00Z</project.build.outputTimestamp>
-  </properties>
-
   <prerequisites>
     <maven>3.0.5</maven>
   </prerequisites>
@@ -52,6 +47,11 @@
       <uniqueVersion>false</uniqueVersion>
     </snapshotRepository>
   </distributionManagement>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.outputTimestamp>2019-12-03T10:04:00Z</project.build.outputTimestamp>
+  </properties>
 
   <build>
     <plugins>

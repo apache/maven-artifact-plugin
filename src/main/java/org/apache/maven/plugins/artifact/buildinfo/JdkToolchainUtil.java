@@ -1,5 +1,3 @@
-package org.apache.maven.plugins.artifact.buildinfo;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,6 +16,7 @@ package org.apache.maven.plugins.artifact.buildinfo;
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.maven.plugins.artifact.buildinfo;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,47 +32,36 @@ import org.apache.maven.toolchain.Toolchain;
 /**
  * A helper to get JDK version from a JDK toolchain.
  */
-class JdkToolchainUtil
-{
-    static String getJavaVersion( Toolchain toolchain )
-    {
+class JdkToolchainUtil {
+    static String getJavaVersion(Toolchain toolchain) {
         String version = "unknown";
-        String java = toolchain.findTool( "java" );
-        if ( java != null )
-        {
-            try
-            {
-                Commandline cl = new Commandline( java + " -version" );
-                LineConsumer out = new LineConsumer(); 
-                LineConsumer err = new LineConsumer(); 
-                CommandLineUtils.executeCommandLine( cl, out, err );
-                version = StringUtils.join( err.getLines().iterator(), ":" );
-                if ( version == null )
-                {
+        String java = toolchain.findTool("java");
+        if (java != null) {
+            try {
+                Commandline cl = new Commandline(java + " -version");
+                LineConsumer out = new LineConsumer();
+                LineConsumer err = new LineConsumer();
+                CommandLineUtils.executeCommandLine(cl, out, err);
+                version = StringUtils.join(err.getLines().iterator(), ":");
+                if (version == null) {
                     version = "unable to detect...";
                 }
-            }
-            catch ( CommandLineException cle )
-            {
+            } catch (CommandLineException cle) {
                 version = cle.toString();
             }
         }
         return version;
     }
 
-    private static class LineConsumer implements StreamConsumer
-    {
+    private static class LineConsumer implements StreamConsumer {
         private List<String> lines = new ArrayList<>();
 
         @Override
-        public void consumeLine( String line )
-            throws IOException
-        {
-            lines.add( line );
+        public void consumeLine(String line) throws IOException {
+            lines.add(line);
         }
 
-        List<String> getLines()
-        {
+        List<String> getLines() {
             return lines;
         }
     }

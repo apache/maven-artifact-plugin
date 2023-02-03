@@ -1,5 +1,3 @@
-package org.apache.maven.plugins.artifact.buildinfo;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,25 +16,7 @@ package org.apache.maven.plugins.artifact.buildinfo;
  * specific language governing permissions and limitations
  * under the License.
  */
-
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.handler.manager.ArtifactHandlerManager;
-import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.rtinfo.RuntimeInformation;
-import org.apache.maven.shared.utils.io.IOUtil;
-import org.apache.maven.shared.utils.io.FileUtils;
-import org.eclipse.aether.AbstractForwardingRepositorySystemSession;
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.repository.WorkspaceReader;
-import org.eclipse.aether.resolution.ArtifactRequest;
-import org.eclipse.aether.resolution.ArtifactResult;
+package org.apache.maven.plugins.artifact.buildinfo;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -56,23 +36,40 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.factory.ArtifactFactory;
+import org.apache.maven.artifact.handler.manager.ArtifactHandlerManager;
+import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.rtinfo.RuntimeInformation;
+import org.apache.maven.shared.utils.io.FileUtils;
+import org.apache.maven.shared.utils.io.IOUtil;
+import org.eclipse.aether.AbstractForwardingRepositorySystemSession;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.repository.WorkspaceReader;
+import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResult;
+
 /**
  * Utility to download reference artifacts and download or generate reference buildinfo.
  */
-class ReferenceBuildinfoUtil
-{
+class ReferenceBuildinfoUtil {
     private static final Set<String> JAR_TYPES;
 
-    static
-    {
+    static {
         Set<String> types = new HashSet<>();
-        types.add( "jar" );
-        types.add( "test-jar" );
-        types.add( "war" );
-        types.add( "ear" );
-        types.add( "rar" );
-        types.add( "maven-plugin" );
-        JAR_TYPES = Collections.unmodifiableSet( types );
+        types.add("jar");
+        types.add("test-jar");
+        types.add("war");
+        types.add("ear");
+        types.add("rar");
+        types.add("maven-plugin");
+        JAR_TYPES = Collections.unmodifiableSet(types);
     }
 
     private final Log log;
@@ -94,12 +91,15 @@ class ReferenceBuildinfoUtil
 
     private final RuntimeInformation rtInformation;
 
-    ReferenceBuildinfoUtil( Log log, File referenceDir, Map<Artifact, String> artifacts,
-                                      ArtifactFactory artifactFactory, RepositorySystem repoSystem,
-                                      RepositorySystemSession repoSession,
-                                      ArtifactHandlerManager artifactHandlerManager,
-                                      RuntimeInformation rtInformation )
-    {
+    ReferenceBuildinfoUtil(
+            Log log,
+            File referenceDir,
+            Map<Artifact, String> artifacts,
+            ArtifactFactory artifactFactory,
+            RepositorySystem repoSystem,
+            RepositorySystemSession repoSession,
+            ArtifactHandlerManager artifactHandlerManager,
+            RuntimeInformation rtInformation) {
         this.log = log;
         this.referenceDir = referenceDir;
         this.artifacts = artifacts;
@@ -110,298 +110,238 @@ class ReferenceBuildinfoUtil
         this.rtInformation = rtInformation;
     }
 
-    File downloadOrCreateReferenceBuildinfo( RemoteRepository repo, MavenProject project, File buildinfoFile,
-                                                    boolean mono )
-        throws MojoExecutionException
-    {
-        File referenceBuildinfo = downloadReferenceBuildinfo( repo, project );
+    File downloadOrCreateReferenceBuildinfo(
+            RemoteRepository repo, MavenProject project, File buildinfoFile, boolean mono)
+            throws MojoExecutionException {
+        File referenceBuildinfo = downloadReferenceBuildinfo(repo, project);
 
-        if ( referenceBuildinfo != null )
-        {
-            log.warn( "dropping downloaded reference buildinfo because it may be generated"
-                + " from different maven-artifact-plugin release..." );
+        if (referenceBuildinfo != null) {
+            log.warn("dropping downloaded reference buildinfo because it may be generated"
+                    + " from different maven-artifact-plugin release...");
             // TODO keep a save?
             referenceBuildinfo = null;
         }
 
-        if ( referenceBuildinfo == null )
-        {
+        if (referenceBuildinfo == null) {
             // download reference artifacts and guess Java version and OS
             String javaVersion = null;
             String osName = null;
             String currentJavaVersion = null;
             String currentOsName = null;
             Map<Artifact, File> referenceArtifacts = new HashMap<>();
-            for ( Artifact artifact : artifacts.keySet() )
-            {
-                try
-                {
+            for (Artifact artifact : artifacts.keySet()) {
+                try {
                     // download
-                    File file = downloadReference( repo, artifact );
-                    referenceArtifacts.put( artifact, file );
+                    File file = downloadReference(repo, artifact);
+                    referenceArtifacts.put(artifact, file);
 
                     // guess Java version and OS
-                    if ( ( javaVersion == null ) && JAR_TYPES.contains( artifact.getType() ) )
-                    {
-                        ReproducibleEnv env = extractEnv( file, artifact );
-                        if ( ( env != null ) && ( env.javaVersion != null ) )
-                        {
+                    if ((javaVersion == null) && JAR_TYPES.contains(artifact.getType())) {
+                        ReproducibleEnv env = extractEnv(file, artifact);
+                        if ((env != null) && (env.javaVersion != null)) {
                             javaVersion = env.javaVersion;
                             osName = env.osName;
 
-                            ReproducibleEnv currentEnv = extractEnv( artifact.getFile(), artifact );
+                            ReproducibleEnv currentEnv = extractEnv(artifact.getFile(), artifact);
                             currentJavaVersion = currentEnv.javaVersion;
                             currentOsName = currentEnv.osName;
                         }
                     }
-                }
-                catch ( ArtifactNotFoundException e )
-                {
-                    log.warn( "Reference artifact not found " + artifact );
+                } catch (ArtifactNotFoundException e) {
+                    log.warn("Reference artifact not found " + artifact);
                 }
             }
 
             // generate buildinfo from reference artifacts
-            referenceBuildinfo = getReference( buildinfoFile );
-            try ( PrintWriter p =
-                new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( referenceBuildinfo ),
-                                                                             StandardCharsets.UTF_8 ) ) ) )
-            {
-                BuildInfoWriter bi = new BuildInfoWriter( log, p, mono, artifactHandlerManager, rtInformation );
+            referenceBuildinfo = getReference(buildinfoFile);
+            try (PrintWriter p = new PrintWriter(new BufferedWriter(
+                    new OutputStreamWriter(new FileOutputStream(referenceBuildinfo), StandardCharsets.UTF_8)))) {
+                BuildInfoWriter bi = new BuildInfoWriter(log, p, mono, artifactHandlerManager, rtInformation);
 
-                if ( javaVersion != null || osName != null )
-                {
-                    p.println( "# effective build environment information" );
-                    if ( javaVersion != null )
-                    {
-                        p.println( "java.version=" + javaVersion );
-                        log.info( "Reference build java.version: " + javaVersion );
-                        if ( !javaVersion.equals( currentJavaVersion ) )
-                        {
-                            log.error( "Current build java.version: " + currentJavaVersion );
+                if (javaVersion != null || osName != null) {
+                    p.println("# effective build environment information");
+                    if (javaVersion != null) {
+                        p.println("java.version=" + javaVersion);
+                        log.info("Reference build java.version: " + javaVersion);
+                        if (!javaVersion.equals(currentJavaVersion)) {
+                            log.error("Current build java.version: " + currentJavaVersion);
                         }
                     }
-                    if ( osName != null )
-                    {
-                        p.println( "os.name=" + osName );
-                        log.info( "Reference build os.name: " + osName );
+                    if (osName != null) {
+                        p.println("os.name=" + osName);
+                        log.info("Reference build os.name: " + osName);
 
                         // check against current line separator
-                        if ( !osName.equals( currentOsName ) )
-                        {
-                            log.error( "Current build os.name: " + currentOsName );
+                        if (!osName.equals(currentOsName)) {
+                            log.error("Current build os.name: " + currentOsName);
                         }
-                        String expectedLs = osName.startsWith( "Windows" ) ? "\r\n" : "\n";
-                        if ( !expectedLs.equals( System.lineSeparator() ) )
-                        {
-                            log.warn( "Current System.lineSeparator() does not match reference build OS" );
+                        String expectedLs = osName.startsWith("Windows") ? "\r\n" : "\n";
+                        if (!expectedLs.equals(System.lineSeparator())) {
+                            log.warn("Current System.lineSeparator() does not match reference build OS");
 
-                            String ls = System.getProperty( "line.separator" );
-                            if ( !ls.equals( System.lineSeparator() ) )
-                            {
-                                log.warn( "System.lineSeparator() != System.getProperty( \"line.separator\" ): "
-                                    + "too late standard system property update..." );
+                            String ls = System.getProperty("line.separator");
+                            if (!ls.equals(System.lineSeparator())) {
+                                log.warn("System.lineSeparator() != System.getProperty( \"line.separator\" ): "
+                                        + "too late standard system property update...");
                             }
                         }
                     }
                 }
 
-                for ( Map.Entry<Artifact, String> entry : artifacts.entrySet() )
-                {
+                for (Map.Entry<Artifact, String> entry : artifacts.entrySet()) {
                     Artifact artifact = entry.getKey();
                     String prefix = entry.getValue();
-                    File referenceFile = referenceArtifacts.get( artifact );
-                    if ( referenceFile != null )
-                    {
-                        bi.printFile( prefix, referenceFile );
+                    File referenceFile = referenceArtifacts.get(artifact);
+                    if (referenceFile != null) {
+                        bi.printFile(prefix, referenceFile);
                     }
                 }
 
-                if ( p.checkError() )
-                {
-                    throw new MojoExecutionException( "Write error to " + referenceBuildinfo );
+                if (p.checkError()) {
+                    throw new MojoExecutionException("Write error to " + referenceBuildinfo);
                 }
 
-                log.info( "Minimal buildinfo generated from downloaded artifacts: " + referenceBuildinfo );
-            }
-            catch ( IOException e )
-            {
-                throw new MojoExecutionException( "Error creating file " + referenceBuildinfo, e );
+                log.info("Minimal buildinfo generated from downloaded artifacts: " + referenceBuildinfo);
+            } catch (IOException e) {
+                throw new MojoExecutionException("Error creating file " + referenceBuildinfo, e);
             }
         }
 
         return referenceBuildinfo;
     }
 
-    private ReproducibleEnv extractEnv( File file, Artifact artifact )
-    {
-        log.debug( "Guessing java.version and os.name from jar " + file );
-        try ( JarFile jar = new JarFile( file ) )
-        {
+    private ReproducibleEnv extractEnv(File file, Artifact artifact) {
+        log.debug("Guessing java.version and os.name from jar " + file);
+        try (JarFile jar = new JarFile(file)) {
             Manifest manifest = jar.getManifest();
-            if ( manifest != null )
-            {
-                String javaVersion = extractJavaVersion( manifest );
-                String osName = extractOsName( artifact, jar );
-                return new ReproducibleEnv( javaVersion, osName );
+            if (manifest != null) {
+                String javaVersion = extractJavaVersion(manifest);
+                String osName = extractOsName(artifact, jar);
+                return new ReproducibleEnv(javaVersion, osName);
+            } else {
+                log.warn("no MANIFEST.MF found in jar " + file);
             }
-            else
-            {
-                log.warn( "no MANIFEST.MF found in jar " + file );
-            }
-        }
-        catch ( IOException e )
-        {
-            log.warn( "unable to open jar file " + file, e );
+        } catch (IOException e) {
+            log.warn("unable to open jar file " + file, e);
         }
         return null;
     }
 
-    private String extractJavaVersion( Manifest manifest )
-    {
+    private String extractJavaVersion(Manifest manifest) {
         Attributes attr = manifest.getMainAttributes();
 
-        String value = attr.getValue( "Build-Jdk-Spec" ); // MSHARED-797
-        if ( value != null )
-        {
+        String value = attr.getValue("Build-Jdk-Spec"); // MSHARED-797
+        if (value != null) {
             return value + " (from MANIFEST.MF Build-Jdk-Spec)";
         }
 
-        value = attr.getValue( "Build-Jdk" );
-        if ( value != null )
-        {
-            return String.valueOf( value ) + " (from MANIFEST.MF Build-Jdk)";
+        value = attr.getValue("Build-Jdk");
+        if (value != null) {
+            return String.valueOf(value) + " (from MANIFEST.MF Build-Jdk)";
         }
 
         return null;
     }
 
-    private String extractOsName( Artifact a, JarFile jar )
-    {
+    private String extractOsName(Artifact a, JarFile jar) {
         String entryName = "META-INF/maven/" + a.getGroupId() + '/' + a.getArtifactId() + "/pom.properties";
-        ZipEntry zipEntry = jar.getEntry( entryName );
-        if ( zipEntry == null )
-        {
+        ZipEntry zipEntry = jar.getEntry(entryName);
+        if (zipEntry == null) {
             return null;
         }
-        try ( InputStream in = jar.getInputStream( zipEntry ) )
-        {
-            String content = IOUtil.toString( in, StandardCharsets.UTF_8.name() );
-            log.debug( "Manifest content: " + content );
-            if ( content.contains( "\r\n" ) )
-            {
+        try (InputStream in = jar.getInputStream(zipEntry)) {
+            String content = IOUtil.toString(in, StandardCharsets.UTF_8.name());
+            log.debug("Manifest content: " + content);
+            if (content.contains("\r\n")) {
                 return "Windows (from pom.properties newline)";
-            }
-            else if ( content.contains( "\n" ) )
-            {
+            } else if (content.contains("\n")) {
                 return "Unix (from pom.properties newline)";
             }
-        }
-        catch ( IOException e )
-        {
-            log.warn( "Unable to read " + entryName + " from " + jar, e );
+        } catch (IOException e) {
+            log.warn("Unable to read " + entryName + " from " + jar, e);
         }
         return null;
     }
 
-    private File downloadReferenceBuildinfo( RemoteRepository repo, MavenProject project )
-        throws MojoExecutionException
-    {
-        Artifact buildinfo =
-                        artifactFactory.createArtifactWithClassifier( project.getGroupId(), project.getArtifactId(),
-                                                                      project.getVersion(), "buildinfo", "" );
-        try
-        {
-            File file = downloadReference( repo, buildinfo );
+    private File downloadReferenceBuildinfo(RemoteRepository repo, MavenProject project) throws MojoExecutionException {
+        Artifact buildinfo = artifactFactory.createArtifactWithClassifier(
+                project.getGroupId(), project.getArtifactId(), project.getVersion(), "buildinfo", "");
+        try {
+            File file = downloadReference(repo, buildinfo);
 
-            log.info( "Reference buildinfo file found, copied to " + file );
+            log.info("Reference buildinfo file found, copied to " + file);
 
             return file;
-        }
-        catch ( ArtifactNotFoundException e )
-        {
-            log.info( "Reference buildinfo file not found: "
-                + "it will be generated from downloaded reference artifacts" );
+        } catch (ArtifactNotFoundException e) {
+            log.info("Reference buildinfo file not found: "
+                    + "it will be generated from downloaded reference artifacts");
         }
 
         return null;
     }
 
-    private File downloadReference( RemoteRepository repo, Artifact artifact )
-        throws MojoExecutionException, ArtifactNotFoundException
-    {
-        try
-        {
+    private File downloadReference(RemoteRepository repo, Artifact artifact)
+            throws MojoExecutionException, ArtifactNotFoundException {
+        try {
             ArtifactRequest request = new ArtifactRequest();
-            request.setArtifact( new DefaultArtifact( artifact.getGroupId(), artifact.getArtifactId(),
-                                                      artifact.getClassifier(),
-                                                      ( artifact.getArtifactHandler() != null )
-                                                                      ? artifact.getArtifactHandler().getExtension()
-                                                                      : artifact.getType(),
-                                                      artifact.getVersion() ) );
-            request.setRepositories( Collections.singletonList( repo ) );
+            request.setArtifact(new DefaultArtifact(
+                    artifact.getGroupId(),
+                    artifact.getArtifactId(),
+                    artifact.getClassifier(),
+                    (artifact.getArtifactHandler() != null)
+                            ? artifact.getArtifactHandler().getExtension()
+                            : artifact.getType(),
+                    artifact.getVersion()));
+            request.setRepositories(Collections.singletonList(repo));
 
             ArtifactResult result =
-                repoSystem.resolveArtifact( new NoWorkspaceRepositorySystemSession( repoSession ), request );
+                    repoSystem.resolveArtifact(new NoWorkspaceRepositorySystemSession(repoSession), request);
             File resultFile = result.getArtifact().getFile();
-            File destFile = getReference( resultFile );
+            File destFile = getReference(resultFile);
 
-            FileUtils.copyFile( resultFile, destFile );
+            FileUtils.copyFile(resultFile, destFile);
 
             return destFile;
-        }
-        catch ( org.eclipse.aether.resolution.ArtifactResolutionException are )
-        {
-            if ( are.getResult().isMissing() )
-            {
-                throw new ArtifactNotFoundException( "Artifact not found " + artifact, artifact );
+        } catch (org.eclipse.aether.resolution.ArtifactResolutionException are) {
+            if (are.getResult().isMissing()) {
+                throw new ArtifactNotFoundException("Artifact not found " + artifact, artifact);
             }
-            throw new MojoExecutionException( "Error resolving reference artifact " + artifact, are );
-        }
-        catch ( IOException ioe )
-        {
-            throw new MojoExecutionException( "Error copying reference artifact " + artifact, ioe );
+            throw new MojoExecutionException("Error resolving reference artifact " + artifact, are);
+        } catch (IOException ioe) {
+            throw new MojoExecutionException("Error copying reference artifact " + artifact, ioe);
         }
     }
 
-    private File getReference( File file )
-    {
-        return new File( referenceDir, file.getName() );
+    private File getReference(File file) {
+        return new File(referenceDir, file.getName());
     }
 
-    private static class NoWorkspaceRepositorySystemSession
-        extends AbstractForwardingRepositorySystemSession
-    {
+    private static class NoWorkspaceRepositorySystemSession extends AbstractForwardingRepositorySystemSession {
         private final RepositorySystemSession rss;
 
-        NoWorkspaceRepositorySystemSession( RepositorySystemSession rss )
-        {
+        NoWorkspaceRepositorySystemSession(RepositorySystemSession rss) {
             this.rss = rss;
         }
 
         @Override
-        protected RepositorySystemSession getSession()
-        {
+        protected RepositorySystemSession getSession() {
             return rss;
         }
 
         @Override
-        public WorkspaceReader getWorkspaceReader()
-        {
+        public WorkspaceReader getWorkspaceReader() {
             return null;
         }
     }
 
-    private static class ReproducibleEnv
-    {
-        @SuppressWarnings( "checkstyle:visibilitymodifier" )
+    private static class ReproducibleEnv {
+        @SuppressWarnings("checkstyle:visibilitymodifier")
         public final String javaVersion;
 
-        @SuppressWarnings( "checkstyle:visibilitymodifier" )
+        @SuppressWarnings("checkstyle:visibilitymodifier")
         public final String osName;
 
-        ReproducibleEnv( String javaVersion, String osName )
-        {
+        ReproducibleEnv(String javaVersion, String osName) {
             this.javaVersion = javaVersion;
             this.osName = osName;
         }

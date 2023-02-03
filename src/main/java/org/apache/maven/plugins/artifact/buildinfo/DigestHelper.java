@@ -1,5 +1,3 @@
-package org.apache.maven.plugins.artifact.buildinfo;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,9 +16,7 @@ package org.apache.maven.plugins.artifact.buildinfo;
  * specific language governing permissions and limitations
  * under the License.
  */
-
-import org.apache.commons.codec.binary.Hex;
-import org.apache.maven.plugin.MojoExecutionException;
+package org.apache.maven.plugins.artifact.buildinfo;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,35 +24,29 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import org.apache.commons.codec.binary.Hex;
+import org.apache.maven.plugin.MojoExecutionException;
+
 /**
  * Helper to calculate sha512.
  */
-class DigestHelper
-{
-    static String calculateSha512( File file )
-            throws MojoExecutionException
-    {
-        try ( FileInputStream fis = new FileInputStream( file ) )
-        {
-            MessageDigest messageDigest = MessageDigest.getInstance( "sha-512" );
+class DigestHelper {
+    static String calculateSha512(File file) throws MojoExecutionException {
+        try (FileInputStream fis = new FileInputStream(file)) {
+            MessageDigest messageDigest = MessageDigest.getInstance("sha-512");
 
             byte[] buffer = new byte[16 * 1024];
-            int size = fis.read( buffer, 0, buffer.length );
-            while ( size >= 0 )
-            {
-                messageDigest.update( buffer, 0, size );
-                size = fis.read( buffer, 0, buffer.length );
+            int size = fis.read(buffer, 0, buffer.length);
+            while (size >= 0) {
+                messageDigest.update(buffer, 0, size);
+                size = fis.read(buffer, 0, buffer.length);
             }
 
-            return Hex.encodeHexString( messageDigest.digest() );
-        }
-        catch ( IOException ioe )
-        {
-            throw new MojoExecutionException( "Error opening file " + file, ioe );
-        }
-        catch ( NoSuchAlgorithmException nsae )
-        {
-            throw new MojoExecutionException( "Could not get hash algorithm", nsae );
+            return Hex.encodeHexString(messageDigest.digest());
+        } catch (IOException ioe) {
+            throw new MojoExecutionException("Error opening file " + file, ioe);
+        } catch (NoSuchAlgorithmException nsae) {
+            throw new MojoExecutionException("Could not get hash algorithm", nsae);
         }
     }
 }

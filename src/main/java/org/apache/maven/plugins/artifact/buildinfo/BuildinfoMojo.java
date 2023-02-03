@@ -1,5 +1,3 @@
-package org.apache.maven.plugins.artifact.buildinfo;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,6 +16,7 @@ package org.apache.maven.plugins.artifact.buildinfo;
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.maven.plugins.artifact.buildinfo;
 
 import java.util.Map;
 
@@ -34,14 +33,12 @@ import org.apache.maven.project.MavenProjectHelper;
  * <a href="https://reproducible-builds.org/docs/jvm/">Reproducible Builds for the JVM</a>
  * for mono-module build, and extended for multi-module build.
  */
-@Mojo( name = "buildinfo", defaultPhase = LifecyclePhase.VERIFY, threadSafe = true )
-public class BuildinfoMojo
-    extends AbstractBuildinfoMojo
-{
+@Mojo(name = "buildinfo", defaultPhase = LifecyclePhase.VERIFY, threadSafe = true)
+public class BuildinfoMojo extends AbstractBuildinfoMojo {
     /**
      * Specifies whether to attach the generated buildinfo file to the project.
      */
-    @Parameter( property = "buildinfo.attach", defaultValue = "true" )
+    @Parameter(property = "buildinfo.attach", defaultValue = "true")
     private boolean attach;
 
     /**
@@ -51,18 +48,13 @@ public class BuildinfoMojo
     private MavenProjectHelper projectHelper;
 
     @Override
-    public void execute( Map<Artifact, String> artifacts )
-        throws MojoExecutionException
-    {
+    public void execute(Map<Artifact, String> artifacts) throws MojoExecutionException {
         // eventually attach
-        if ( attach )
-        {
-            getLog().info( "Attaching buildinfo" );
-            projectHelper.attachArtifact( project, "buildinfo", buildinfoFile );
-        }
-        else
-        {
-            getLog().info( "NOT adding buildinfo to the list of attached artifacts." );
+        if (attach) {
+            getLog().info("Attaching buildinfo");
+            projectHelper.attachArtifact(project, "buildinfo", buildinfoFile);
+        } else {
+            getLog().info("NOT adding buildinfo to the list of attached artifacts.");
         }
     }
 }

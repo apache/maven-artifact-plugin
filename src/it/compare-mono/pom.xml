@@ -1,5 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
-
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements. See the NOTICE file
@@ -18,15 +17,13 @@
   specific language governing permissions and limitations
   under the License.
 -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>org.apache.maven</groupId>
     <artifactId>maven-parent</artifactId>
-    <version>34</version>
+    <version>39</version>
   </parent>
 
   <groupId>org.apache.maven.plugins.it.compare</groupId>
@@ -35,10 +32,6 @@
 
   <description>A simple IT verifying the basic use case of artifact:compare for mono-module build.</description>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
-
   <prerequisites>
     <maven>3.0.5</maven>
   </prerequisites>
@@ -46,24 +39,29 @@
   <scm>
     <connection>scm:git:https://gitbox.apache.org/repos/asf/maven-studies.git</connection>
     <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/maven-studies.git</developerConnection>
-    <url>https://github.com/apache/maven-studies/tree/${project.scm.tag}</url>
     <tag>maven-buildinfo-plugin</tag>
+    <url>https://github.com/apache/maven-studies/tree/${project.scm.tag}</url>
   </scm>
 
   <distributionManagement>
     <snapshotRepository>
+      <uniqueVersion>false</uniqueVersion>
       <id>local-snapshots</id>
       <url>file://${basedir}/target/remote-repo</url>
-      <uniqueVersion>false</uniqueVersion>
     </snapshotRepository>
   </distributionManagement>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
 
   <build>
     <pluginManagement>
       <plugins>
         <plugin>
           <artifactId>maven-jar-plugin</artifactId>
-          <version>2.4</version><!-- intentionally non-reproducible -->
+          <!-- intentionally non-reproducible -->
+          <version>2.4</version>
         </plugin>
         <plugin>
           <groupId>@project.groupId@</groupId>
