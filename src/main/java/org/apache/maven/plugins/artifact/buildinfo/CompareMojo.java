@@ -53,7 +53,7 @@ import java.util.Properties;
  *
  * @since 3.2.0
  */
-@Mojo( name = "compare" )
+@Mojo( name = "compare", threadSafe = true )
 public class CompareMojo
     extends AbstractBuildinfoMojo
 {

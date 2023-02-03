@@ -34,7 +34,7 @@ import org.apache.maven.project.MavenProjectHelper;
  * <a href="https://reproducible-builds.org/docs/jvm/">Reproducible Builds for the JVM</a>
  * for mono-module build, and extended for multi-module build.
  */
-@Mojo( name = "buildinfo", defaultPhase = LifecyclePhase.VERIFY )
+@Mojo( name = "buildinfo", defaultPhase = LifecyclePhase.VERIFY, threadSafe = true )
 public class BuildinfoMojo
     extends AbstractBuildinfoMojo
 {

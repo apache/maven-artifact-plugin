@@ -173,7 +173,7 @@
           <version>1.11.0</version>
           <configuration>
             <keysMapLocation>${project.basedir}/pgp-keys-map.list</keysMapLocation>
-          </configuration>                        
+          </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>
