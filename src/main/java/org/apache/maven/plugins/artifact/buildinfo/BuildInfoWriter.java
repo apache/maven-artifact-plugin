@@ -19,12 +19,16 @@
 package org.apache.maven.plugins.artifact.buildinfo;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
 import org.apache.maven.artifact.handler.ArtifactHandler;
@@ -245,7 +249,13 @@ class BuildInfoWriter {
         p.println();
         p.println(prefix + ".filename=" + filename);
         p.println(prefix + ".length=" + file.length());
-        p.println(prefix + ".checksums.sha512=" + DigestHelper.calculateSha512(file));
+        try (InputStream is = Files.newInputStream(file.toPath())) {
+            p.println(prefix + ".checksums.sha512=" + DigestUtils.sha512Hex(is));
+        } catch (IOException ioe) {
+            throw new MojoExecutionException("Error processing file " + file, ioe);
+        } catch (IllegalArgumentException iae) {
+            throw new MojoExecutionException("Could not get hash algorithm", iae.getCause());
+        }
     }
 
     Map<Artifact, String> getArtifacts() {
