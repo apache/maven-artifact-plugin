@@ -150,7 +150,8 @@ public class CompareMojo
         RemoteRepository repo = createReferenceRepo();
 
         ReferenceBuildinfoUtil rmb = new ReferenceBuildinfoUtil( getLog(), referenceDir, artifacts, artifactFactory,
-                                                                 repoSystem, repoSession, artifactHandlerManager );
+                                                                 repoSystem, repoSession, artifactHandlerManager,
+                                                                 rtInformation );
 
         return rmb.downloadOrCreateReferenceBuildinfo( repo, project, buildinfoFile, mono );
     }

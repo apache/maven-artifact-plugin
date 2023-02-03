@@ -33,6 +33,7 @@ import org.apache.maven.artifact.handler.manager.ArtifactHandlerManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.shared.utils.PropertyUtils;
 import org.apache.maven.toolchain.Toolchain;
 
@@ -45,18 +46,21 @@ class BuildInfoWriter
     private final PrintWriter p;
     private final boolean mono;
     private final ArtifactHandlerManager artifactHandlerManager;
+    private final RuntimeInformation rtInformation;
     private final Map<Artifact, String> artifacts = new LinkedHashMap<>();
     private int projectCount = -1;
     private boolean ignoreJavadoc = true;
     private Set<String> ignore;
     private Toolchain toolchain;
 
-    BuildInfoWriter( Log log, PrintWriter p, boolean mono, ArtifactHandlerManager artifactHandlerManager )
+    BuildInfoWriter( Log log, PrintWriter p, boolean mono, ArtifactHandlerManager artifactHandlerManager,
+                     RuntimeInformation rtInformation )
     {
         this.log = log;
         this.p = p;
         this.mono = mono;
         this.artifactHandlerManager = artifactHandlerManager;
+        this.rtInformation = rtInformation;
     }
 
     void printHeader( MavenProject project, MavenProject aggregate, boolean reproducible )
@@ -93,7 +97,7 @@ class BuildInfoWriter
         p.println( "# Maven rebuild instructions and effective environment" );
         if ( !reproducible )
         {
-            p.println( "mvn.version=" + MavenVersion.createMavenVersionString() );
+            p.println( "mvn.version=" + rtInformation.getMavenVersion() );
         }
         if ( ( project.getPrerequisites() != null ) && ( project.getPrerequisites().getMaven() != null ) )
         {

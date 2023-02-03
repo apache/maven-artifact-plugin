@@ -26,6 +26,7 @@ import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.shared.utils.io.IOUtil;
 import org.apache.maven.shared.utils.io.FileUtils;
 import org.eclipse.aether.AbstractForwardingRepositorySystemSession;
@@ -91,10 +92,13 @@ class ReferenceBuildinfoUtil
 
     private final ArtifactHandlerManager artifactHandlerManager;
 
+    private final RuntimeInformation rtInformation;
+
     ReferenceBuildinfoUtil( Log log, File referenceDir, Map<Artifact, String> artifacts,
                                       ArtifactFactory artifactFactory, RepositorySystem repoSystem,
                                       RepositorySystemSession repoSession,
-                                      ArtifactHandlerManager artifactHandlerManager )
+                                      ArtifactHandlerManager artifactHandlerManager,
+                                      RuntimeInformation rtInformation )
     {
         this.log = log;
         this.referenceDir = referenceDir;
@@ -103,6 +107,7 @@ class ReferenceBuildinfoUtil
         this.repoSystem = repoSystem;
         this.repoSession = repoSession;
         this.artifactHandlerManager = artifactHandlerManager;
+        this.rtInformation = rtInformation;
     }
 
     File downloadOrCreateReferenceBuildinfo( RemoteRepository repo, MavenProject project, File buildinfoFile,
@@ -162,7 +167,7 @@ class ReferenceBuildinfoUtil
                 new PrintWriter( new BufferedWriter( new OutputStreamWriter( new FileOutputStream( referenceBuildinfo ),
                                                                              StandardCharsets.UTF_8 ) ) ) )
             {
-                BuildInfoWriter bi = new BuildInfoWriter( log, p, mono, artifactHandlerManager );
+                BuildInfoWriter bi = new BuildInfoWriter( log, p, mono, artifactHandlerManager, rtInformation );
 
                 if ( javaVersion != null || osName != null )
                 {

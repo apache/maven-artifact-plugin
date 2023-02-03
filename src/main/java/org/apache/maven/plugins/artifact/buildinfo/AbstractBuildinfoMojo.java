@@ -28,6 +28,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.shared.utils.io.FileUtils;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
@@ -123,6 +124,9 @@ public abstract class AbstractBuildinfoMojo
 
     @Component
     protected ArtifactHandlerManager artifactHandlerManager;
+
+    @Component
+    protected RuntimeInformation rtInformation;
 
     @Override
     public void execute()
@@ -246,7 +250,7 @@ public abstract class AbstractBuildinfoMojo
         try ( PrintWriter p = new PrintWriter( new BufferedWriter(
                 new OutputStreamWriter( new FileOutputStream( buildinfoFile ), StandardCharsets.UTF_8 ) ) ) )
         {
-            BuildInfoWriter bi = new BuildInfoWriter( getLog(), p, mono, artifactHandlerManager );
+            BuildInfoWriter bi = new BuildInfoWriter( getLog(), p, mono, artifactHandlerManager, rtInformation );
             bi.setIgnoreJavadoc( ignoreJavadoc );
             bi.setIgnore( ignore );
             bi.setToolchain( getToolchain() );
