@@ -185,6 +185,9 @@
               </goals>
               <debug>false</debug>
               <showErrors>true</showErrors>
+              <setupIncludes>
+                <setupInclude>setup/pom.xml</setupInclude>
+              </setupIncludes>
             </configuration>
           </plugin>
         </plugins>
