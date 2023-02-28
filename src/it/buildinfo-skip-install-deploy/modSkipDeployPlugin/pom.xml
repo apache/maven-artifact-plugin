@@ -23,54 +23,32 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.apache.maven.plugins.it</groupId>
-  <artifactId>multi</artifactId>
-  <version>1.0-SNAPSHOT</version>
-  <packaging>pom</packaging>
-
-  <description>An IT verifying the use case of buildinfo file for multi-modules build.</description>
-
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.build.outputTimestamp>2019-12-03T10:04:00Z</project.build.outputTimestamp>
-  </properties>
-
-  <prerequisites>
-    <maven>3.0.5</maven>
-  </prerequisites>
-
-  <distributionManagement>
-    <snapshotRepository>
-      <id>local-snapshots</id>
-      <url>file://${basedir}/target/remote-repo</url>
-      <uniqueVersion>false</uniqueVersion>
-    </snapshotRepository>
-  </distributionManagement>
-
-  <modules>
-    <module>modSkipInstall</module>
-    <module>modSkipInstallPlugin</module>
-    <module>modSkipDeploy</module>
-    <module>modSkipDeployPlugin</module>
-    <module>modB</module>
-    <module>modA</module>
-    <module>modSkipAtEnd</module>
-  </modules>
+  <parent>
+    <groupId>org.apache.maven.plugins.it</groupId>
+    <artifactId>multi</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>multi-mod-skip-deploy-plugin</artifactId>
+  <name>multi-module module that skips deploy via plugin</name>
+  <description>then should not be added to buildinfo</description>
 
   <build>
     <plugins>
       <plugin>
-        <groupId>@project.groupId@</groupId>
-        <artifactId>@project.artifactId@</artifactId>
-        <version>@project.version@</version>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>3.1.0</version>
         <executions>
           <execution>
-            <goals>
-              <goal>buildinfo</goal>
-            </goals>
+            <id>default-deploy</id>
+            <phase>deploy</phase>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
           </execution>
         </executions>
       </plugin>
     </plugins>
   </build>
+
 </project>
