@@ -82,7 +82,7 @@ Usage
 *--------+--------------------------------------------------------------------+-------+--------------+
 | org.jboss.jandex | jandex-maven-plugin | - | no fixed release available, see {{{https://github.com/wildfly/jandex-maven-plugin/pull/35}reference}}
 *--------+--------------------------------------------------------------------+-------+--------------+
-| org.springframework.boot | spring-boot-maven-plugin | - | no fixed release available, see {{{https://github.com/spring-projects/spring-boot/issues/21005}reference}}
+| org.springframework.boot | spring-boot-maven-plugin | 2.7.1 | 
 *--------+--------------------------------------------------------------------+-------+--------------+
 | org.vafer | jdeb | 1.10 | 
 *----------+------------------------------------------------------------------+-------+--------------+
