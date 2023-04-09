@@ -174,7 +174,11 @@ class BuildInfoWriter {
         pomArtifact.setFile(project.getFile());
 
         artifacts.put(pomArtifact, prefix + n);
-        printFile(prefix + n++, project.getFile(), project.getArtifactId() + '-' + project.getVersion() + ".pom");
+        printFile(
+                prefix + n++,
+                pomArtifact.getGroupId(),
+                project.getFile(),
+                project.getArtifactId() + '-' + project.getVersion() + ".pom");
 
         if (project.getArtifact() == null) {
             return;
@@ -218,7 +222,7 @@ class BuildInfoWriter {
             return;
         }
 
-        printFile(prefix, artifact.getFile(), getArtifactFilename(artifact));
+        printFile(prefix, artifact.getGroupId(), artifact.getFile(), getArtifactFilename(artifact));
         artifacts.put(artifact, prefix);
     }
 
@@ -241,12 +245,13 @@ class BuildInfoWriter {
         return path.toString();
     }
 
-    void printFile(String prefix, File file) throws MojoExecutionException {
-        printFile(prefix, file, file.getName());
+    void printFile(String prefix, String groupId, File file) throws MojoExecutionException {
+        printFile(prefix, groupId, file, file.getName());
     }
 
-    private void printFile(String prefix, File file, String filename) throws MojoExecutionException {
+    private void printFile(String prefix, String groupId, File file, String filename) throws MojoExecutionException {
         p.println();
+        p.println(prefix + ".groupId=" + groupId);
         p.println(prefix + ".filename=" + filename);
         p.println(prefix + ".length=" + file.length());
         try (InputStream is = Files.newInputStream(file.toPath())) {

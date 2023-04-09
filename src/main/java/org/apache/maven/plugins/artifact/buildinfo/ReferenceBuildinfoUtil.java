@@ -193,7 +193,7 @@ class ReferenceBuildinfoUtil {
                     String prefix = entry.getValue();
                     File referenceFile = referenceArtifacts.get(artifact);
                     if (referenceFile != null) {
-                        bi.printFile(prefix, referenceFile);
+                        bi.printFile(prefix, artifact.getGroupId(), referenceFile);
                     }
                 }
 

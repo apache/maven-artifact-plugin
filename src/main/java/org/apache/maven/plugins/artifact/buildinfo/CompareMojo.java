@@ -237,9 +237,10 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         String actualLength = (String) actual.remove(prefix + ".length");
         String actualSha512 = (String) actual.remove(prefix + ".checksums.sha512");
 
-        String referencePrefix = findPrefix(reference, actualFilename);
+        String referencePrefix = findPrefix(reference, artifact.getGroupId(), actualFilename);
         String referenceLength = (String) reference.remove(referencePrefix + ".length");
         String referenceSha512 = (String) reference.remove(referencePrefix + ".checksums.sha512");
+        reference.remove(referencePrefix + ".groupId");
 
         String issue = null;
         if (!actualLength.equals(referenceLength)) {
@@ -282,11 +283,14 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         return path.substring(length + 1);
     }
 
-    private static String findPrefix(Properties reference, String actualFilename) {
+    private static String findPrefix(Properties reference, String actualGroupId, String actualFilename) {
         for (String name : reference.stringPropertyNames()) {
             if (name.endsWith(".filename") && actualFilename.equals(reference.getProperty(name))) {
-                reference.remove(name);
-                return name.substring(0, name.length() - ".filename".length());
+                String prefix = name.substring(0, name.length() - ".filename".length());
+                if (actualGroupId.equals(reference.getProperty(prefix + ".groupId"))) {
+                    reference.remove(name);
+                    return prefix;
+                }
             }
         }
         return null;
