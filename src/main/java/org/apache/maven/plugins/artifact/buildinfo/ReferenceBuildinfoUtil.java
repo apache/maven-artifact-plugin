@@ -153,7 +153,7 @@ class ReferenceBuildinfoUtil {
             }
 
             // generate buildinfo from reference artifacts
-            referenceBuildinfo = getReference(buildinfoFile);
+            referenceBuildinfo = getReference(null, buildinfoFile);
             try (PrintWriter p = new PrintWriter(new BufferedWriter(
                     new OutputStreamWriter(new FileOutputStream(referenceBuildinfo), StandardCharsets.UTF_8)))) {
                 BuildInfoWriter bi = new BuildInfoWriter(log, p, mono, artifactHandlerManager, rtInformation);
@@ -297,7 +297,7 @@ class ReferenceBuildinfoUtil {
             ArtifactResult result =
                     repoSystem.resolveArtifact(new NoWorkspaceRepositorySystemSession(repoSession), request);
             File resultFile = result.getArtifact().getFile();
-            File destFile = getReference(resultFile);
+            File destFile = getReference(artifact.getGroupId(), resultFile);
 
             FileUtils.copyFile(resultFile, destFile);
 
@@ -312,8 +312,17 @@ class ReferenceBuildinfoUtil {
         }
     }
 
-    private File getReference(File file) {
-        return new File(referenceDir, file.getName());
+    private File getReference(String groupId, File file) {
+        File dir;
+        if (groupId == null) {
+            dir = referenceDir;
+        } else {
+            dir = new File(referenceDir, groupId);
+            if (!dir.isDirectory()) {
+                dir.mkdir();
+            }
+        }
+        return new File(dir, file.getName());
     }
 
     private static class NoWorkspaceRepositorySystemSession extends AbstractForwardingRepositorySystemSession {

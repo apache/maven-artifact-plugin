@@ -21,9 +21,9 @@
 String compare = new File( basedir, 'target/flatten-1.0-SNAPSHOT.buildcompare' ).text
 assert compare.contains( 'okFiles="flatten-1.0-SNAPSHOT.pom flatten-modB-1.0-SNAPSHOT.pom flatten-modA-1.0-SNAPSHOT.pom"' )
 
-assert new File( basedir, 'flattened-pom.xml' ).text == new File( basedir, 'target/reference/flatten-1.0-SNAPSHOT.pom' ).text
-assert new File( basedir, 'modA/flattened-pom.xml' ).text == new File( basedir, 'target/reference/flatten-modA-1.0-SNAPSHOT.pom' ).text
-assert new File( basedir, 'modB/pom.xml' ).text == new File( basedir, 'target/reference/flatten-modB-1.0-SNAPSHOT.pom' ).text
+assert new File( basedir, 'flattened-pom.xml' ).text == new File( basedir, 'target/reference/org.apache.maven.plugins.it/flatten-1.0-SNAPSHOT.pom' ).text
+assert new File( basedir, 'modA/flattened-pom.xml' ).text == new File( basedir, 'target/reference/org.apache.maven.plugins.it/flatten-modA-1.0-SNAPSHOT.pom' ).text
+assert new File( basedir, 'modB/pom.xml' ).text == new File( basedir, 'target/reference/org.apache.maven.plugins.it/flatten-modB-1.0-SNAPSHOT.pom' ).text
 
 String buildinfo = new File( basedir, 'target/flatten-1.0-SNAPSHOT.buildinfo' ).text
 assert buildinfo.contains( "outputs.0.0.length=" + new File( basedir, 'flattened-pom.xml' ).size() )
