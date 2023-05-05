@@ -46,7 +46,7 @@ Usage
 *--------+--------------------------------------------------------------------+-------+--------------+
 | org.apache.maven.plugins | {{{/plugins/maven-remote-resources-plugin/}maven-remote-resources-plugin}} | 1.7.0 | 
 *--------+--------------------------------------------------------------------+-------+--------------+
-| org.apache.maven.plugins | {{{/plugins/maven-shade-plugin/}maven-shade-plugin}} | - | no fixed release available, see {{{https://issues.apache.org/jira/browse/MSHADE-420}reference}}
+| org.apache.maven.plugins | {{{/plugins/maven-shade-plugin/}maven-shade-plugin}} | 3.2.3 | 
 *--------+--------------------------------------------------------------------+-------+--------------+
 | org.apache.maven.plugins | {{{/plugins/maven-source-plugin/}maven-source-plugin}} | 3.2.1 | 
 *--------+--------------------------------------------------------------------+-------+--------------+
@@ -81,6 +81,8 @@ Usage
 | org.eclipse.jetty | jetty-jspc-maven-plugin | - | no fixed release available, see {{{https://github.com/eclipse/jetty.project/}reference}}
 *--------+--------------------------------------------------------------------+-------+--------------+
 | org.jboss.jandex | jandex-maven-plugin | - | no fixed release available, see {{{https://github.com/wildfly/jandex-maven-plugin/pull/35}reference}}
+*--------+--------------------------------------------------------------------+-------+--------------+
+| org.moditect | moditect-maven-plugin | 1.0.0.Final | 
 *--------+--------------------------------------------------------------------+-------+--------------+
 | org.springframework.boot | spring-boot-maven-plugin | 2.7.1 | 
 *--------+--------------------------------------------------------------------+-------+--------------+
