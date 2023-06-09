@@ -23,6 +23,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -162,6 +165,11 @@ class BuildInfoWriter {
             p.println(prefix + "coordinates=" + project.getGroupId() + ':' + project.getArtifactId());
         }
 
+        Artifact consumerPom = project.getAttachedArtifacts().stream()
+                .filter(a -> "pom".equals(a.getType()) && "consumer".equals(a.getClassifier()))
+                .findAny()
+                .orElse(null);
+
         int n = 0;
         Artifact pomArtifact = new DefaultArtifact(
                 project.getGroupId(),
@@ -171,13 +179,23 @@ class BuildInfoWriter {
                 "pom",
                 "",
                 artifactHandlerManager.getArtifactHandler("pom"));
-        pomArtifact.setFile(project.getFile());
+        if (consumerPom != null) {
+            try {
+                Path pomFile = Files.createTempFile(Paths.get(project.getBuild().getDirectory()), "consumer-", ".pom");
+                Files.copy(consumerPom.getFile().toPath(), pomFile, StandardCopyOption.REPLACE_EXISTING);
+                pomArtifact.setFile(pomFile.toFile());
+            } catch (IOException e) {
+                p.println("Error processing consumer POM: " + e);
+            }
+        } else {
+            pomArtifact.setFile(project.getFile());
+        }
 
         artifacts.put(pomArtifact, prefix + n);
         printFile(
                 prefix + n++,
                 pomArtifact.getGroupId(),
-                project.getFile(),
+                pomArtifact.getFile(),
                 project.getArtifactId() + '-' + project.getVersion() + ".pom");
 
         if (project.getArtifact() == null) {
@@ -189,6 +207,10 @@ class BuildInfoWriter {
         }
 
         for (Artifact attached : project.getAttachedArtifacts()) {
+            if (attached == consumerPom) {
+                // ignore consumer pom
+                continue;
+            }
             if (attached.getType().endsWith(".asc")) {
                 // ignore pgp signatures
                 continue;
