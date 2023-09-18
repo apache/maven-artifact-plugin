@@ -95,6 +95,13 @@ public class CompareMojo extends AbstractBuildinfoMojo {
     @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true)
     private List<RemoteRepository> remoteRepos;
 
+    /**
+     * Fail the build if differences are found against reference build.
+     * @since 3.5.0
+     */
+    @Parameter(property = "compare.fail", defaultValue = "true")
+    private boolean fail;
+
     @Component
     private ArtifactRepositoryLayout artifactRepositoryLayout;
 
@@ -225,7 +232,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
 
         copyAggregateToRoot(buildcompare);
 
-        if (ko + missing > 0) {
+        if (fail && (ko + missing > 0)) {
             throw new MojoExecutionException("Build artifacts are different from reference");
         }
     }
