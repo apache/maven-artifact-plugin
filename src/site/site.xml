@@ -24,7 +24,11 @@ under the License.
   <body>
     <menu name="Overview">
       <item name="Introduction" href="index.html"/>
-      <item name="Goals" href="plugin-info.html"/>
+      <item name="Goals" href="plugin-info.html">
+        <item name="artifact:buildinfo" href="buildinfo-mojo.html"/>
+        <item name="artifact:compare" href="compare-mojo.html"/>
+        <item name="artifact:check-buildplan" href="check-buildplan-mojo.html"/>
+      </item>
       <item name="Usage" href="usage.html"/>
       <item name="FAQ" href="faq.html"/>
       <!-- According to https://issues.apache.org/jira/browse/MNGSITE-152 -->
