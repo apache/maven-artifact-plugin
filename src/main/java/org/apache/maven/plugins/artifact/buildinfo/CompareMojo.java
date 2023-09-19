@@ -46,8 +46,8 @@ import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
 
 /**
- * Compare current build output with reference either previously installed or downloaded from a remote repository:
- * results go to {@code .buildcompare} file.
+ * Compare current build output (from {@code package}) against reference either previously {@code install}-ed or downloaded from a remote
+ * repository: comparison results go to {@code .buildcompare} file.
  *
  * @since 3.2.0
  */
@@ -68,7 +68,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
     private String referenceRepo;
 
     /**
-     * Compare aggregate only (ie wait for the last module) or do buildcompare on each module.
+     * Compare aggregate only (ie wait for the last module) or also compare on each module.
      * @since 3.2.0
      */
     @Parameter(property = "compare.aggregate.only", defaultValue = "false")
@@ -124,7 +124,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
     /**
      * Check current build result with reference.
      *
-     * @artifacts a Map of artifacts added to the build info with their associated property key prefix
+     * @param artifacts a Map of artifacts added to the build info with their associated property key prefix
      *            (<code>outputs.[#module.].#artifact</code>)
      * @throws MojoExecutionException
      */
