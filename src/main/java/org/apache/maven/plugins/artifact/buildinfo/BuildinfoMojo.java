@@ -29,7 +29,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProjectHelper;
 
 /**
- * Creates a buildinfo file recording build environment and output, as specified in
+ * Creates a buildinfo file recording build environment and output (from {@code package}), as specified in
  * <a href="https://reproducible-builds.org/docs/jvm/">Reproducible Builds for the JVM</a>
  * for mono-module build, and extended for multi-module build.
  */
