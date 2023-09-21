@@ -54,7 +54,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     /**
      * The Maven project.
      */
-    @Parameter(defaultValue = "${project}", readonly = true)
+    @Component
     protected MavenProject project;
 
     /**
@@ -102,7 +102,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     /**
      * The current build session instance. This is used for toolchain manager API calls.
      */
-    @Parameter(defaultValue = "${session}", readonly = true, required = true)
+    @Component
     private MavenSession session;
 
     /**
