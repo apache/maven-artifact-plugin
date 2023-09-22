@@ -45,6 +45,8 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
 
+import static org.apache.maven.plugins.artifact.buildinfo.BuildInfoWriter.getArtifactFilename;
+
 /**
  * Compare current build output (from {@code package}) against reference either previously {@code install}-ed or downloaded from a remote
  * repository: comparison results go to {@code .buildcompare} file.
@@ -166,10 +168,16 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         List<String> okFilenames = new ArrayList<>();
         List<String> koFilenames = new ArrayList<>();
         List<String> diffoscopes = new ArrayList<>();
+        List<String> ignored = new ArrayList<>();
         File referenceDir = referenceBuildinfo.getParentFile();
         for (Map.Entry<Artifact, String> entry : artifacts.entrySet()) {
             Artifact artifact = entry.getKey();
             String prefix = entry.getValue();
+            if (prefix == null) {
+                // ignored file
+                ignored.add(getArtifactFilename(artifact));
+                continue;
+            }
 
             String[] checkResult = checkArtifact(artifact, prefix, reference, actual, referenceDir);
             String filename = checkResult[0];
@@ -184,14 +192,15 @@ public class CompareMojo extends AbstractBuildinfoMojo {
             }
         }
 
-        int ko = artifacts.size() - ok;
+        int ko = artifacts.size() - ok - ignored.size();
         int missing = reference.size() / 3 /* 3 property keys par file: filename, length and checksums.sha512 */;
 
         if (ko + missing > 0) {
             getLog().error("Reproducible Build output summary: "
                     + MessageUtils.buffer().success(ok + " files ok")
                     + ", " + MessageUtils.buffer().failure(ko + " different")
-                    + ((missing == 0) ? "" : (", " + MessageUtils.buffer().failure(missing + " missing"))));
+                    + ((missing == 0) ? "" : (", " + MessageUtils.buffer().failure(missing + " missing")))
+                    + ((ignored.isEmpty()) ? "" : (", " + MessageUtils.buffer().warning(ignored.size() + " ignored"))));
             getLog().error("see "
                     + MessageUtils.buffer()
                             .project("diff " + relative(referenceBuildinfo) + " " + relative(buildinfoFile))
@@ -199,7 +208,8 @@ public class CompareMojo extends AbstractBuildinfoMojo {
             getLog().error("see also https://maven.apache.org/guides/mini/guide-reproducible-builds.html");
         } else {
             getLog().info("Reproducible Build output summary: "
-                    + MessageUtils.buffer().success(ok + " files ok"));
+                    + MessageUtils.buffer().success(ok + " files ok")
+                    + ((ignored.isEmpty()) ? "" : (", " + MessageUtils.buffer().warning(ignored.size() + " ignored"))));
         }
 
         // save .compare file
@@ -210,8 +220,10 @@ public class CompareMojo extends AbstractBuildinfoMojo {
             p.println("version=" + project.getVersion());
             p.println("ok=" + ok);
             p.println("ko=" + ko);
+            p.println("ignored=" + ignored.size());
             p.println("okFiles=\"" + StringUtils.join(okFilenames.iterator(), " ") + '"');
             p.println("koFiles=\"" + StringUtils.join(koFilenames.iterator(), " ") + '"');
+            p.println("ignoredFiles=\"" + StringUtils.join(ignored.iterator(), " ") + '"');
             Properties ref = PropertyUtils.loadOptionalProperties(referenceBuildinfo);
             String v = ref.getProperty("java.version");
             if (v != null) {

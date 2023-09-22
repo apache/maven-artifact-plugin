@@ -29,7 +29,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.maven.archiver.MavenArchiver;
 import org.apache.maven.artifact.Artifact;
@@ -79,10 +78,11 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     private boolean ignoreJavadoc;
 
     /**
-     * Artifacts to ignore, specified as <code>extension</code> or <code>classifier.extension</code>.
+     * Artifacts to ignore, specified as a glob matching against <code>${groupId}/${filename}</code>, for example
+     * <code>*</>/*.xml</code>.
      */
     @Parameter(property = "buildinfo.ignore", defaultValue = "")
-    private Set<String> ignore;
+    private List<String> ignore;
 
     /**
      * Detect projects/modules with install or deploy skipped: avoid taking fingerprints.
@@ -216,7 +216,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
      * @param mono is it a mono-module build?
      * @return a Map of artifacts added to the build info with their associated property key prefix
      *         (<code>outputs.[#module.].#artifact</code>)
-     * @throws MojoExecutionException
+     * @throws MojoExecutionException if anything goes wrong
      */
     protected Map<Artifact, String> generateBuildinfo(boolean mono) throws MojoExecutionException {
         MavenProject root = mono ? project : getExecutionRoot();

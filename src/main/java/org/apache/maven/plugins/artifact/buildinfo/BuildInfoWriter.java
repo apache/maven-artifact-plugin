@@ -22,14 +22,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.nio.file.*;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.artifact.Artifact;
@@ -41,6 +36,7 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.shared.utils.PropertyUtils;
+import org.apache.maven.shared.utils.StringUtils;
 import org.apache.maven.toolchain.Toolchain;
 
 /**
@@ -55,7 +51,7 @@ class BuildInfoWriter {
     private final Map<Artifact, String> artifacts = new LinkedHashMap<>();
     private int projectCount = -1;
     private boolean ignoreJavadoc = true;
-    private Set<String> ignore;
+    private List<PathMatcher> ignore;
     private Toolchain toolchain;
 
     BuildInfoWriter(
@@ -223,6 +219,8 @@ class BuildInfoWriter {
                 continue;
             }
             if (isIgnore(attached)) {
+                p.println("# ignored " + getArtifactFilename(attached));
+                artifacts.put(attached, null);
                 continue;
             }
             printArtifact(prefix, n++, attached);
@@ -251,7 +249,7 @@ class BuildInfoWriter {
         artifacts.put(artifact, prefix);
     }
 
-    private String getArtifactFilename(Artifact artifact) {
+    static String getArtifactFilename(Artifact artifact) {
         StringBuilder path = new StringBuilder(128);
 
         path.append(artifact.getArtifactId()).append('-').append(artifact.getBaseVersion());
@@ -262,8 +260,7 @@ class BuildInfoWriter {
 
         ArtifactHandler artifactHandler = artifact.getArtifactHandler();
 
-        if (artifactHandler.getExtension() != null
-                && artifactHandler.getExtension().length() > 0) {
+        if (StringUtils.isNotEmpty(artifactHandler.getExtension())) {
             path.append('.').append(artifactHandler.getExtension());
         }
 
@@ -317,15 +314,14 @@ class BuildInfoWriter {
         this.ignoreJavadoc = ignoreJavadoc;
     }
 
-    void setIgnore(Set<String> ignore) {
-        this.ignore = ignore;
+    void setIgnore(List<String> ignore) {
+        FileSystem fs = FileSystems.getDefault();
+        this.ignore = ignore.stream().map(i -> fs.getPathMatcher("glob:" + i)).collect(Collectors.toList());
     }
 
     private boolean isIgnore(Artifact attached) {
-        String classifier = attached.getClassifier();
-        String extension = attached.getType();
-        String search = (classifier == null) ? "" : (classifier + '.') + extension;
-        return ignore.contains(search);
+        Path path = Paths.get(attached.getGroupId() + '/' + getArtifactFilename(attached));
+        return ignore.stream().anyMatch(m -> m.matches(path));
     }
 
     public void setToolchain(Toolchain toolchain) {
