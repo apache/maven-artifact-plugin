@@ -46,7 +46,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
 /**
- * Check from buildplan that plugins used don't have known reproducible builds issues.
+ * Check from buildplan that plugins used don't have known Reproducible Builds issues.
  *
  * @since 3.3.0
  */
