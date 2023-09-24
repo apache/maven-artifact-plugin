@@ -38,7 +38,7 @@ class PluginUtil {
         if (skip == null) {
             skip = project.getProperties().getProperty("maven." + id + ".skip");
         }
-        return Boolean.valueOf(skip);
+        return Boolean.parseBoolean(skip);
     }
 
     private static Plugin getPlugin(MavenProject project, String plugin) {

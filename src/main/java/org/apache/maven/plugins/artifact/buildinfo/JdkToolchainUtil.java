@@ -43,7 +43,7 @@ class JdkToolchainUtil {
                 LineConsumer err = new LineConsumer();
                 CommandLineUtils.executeCommandLine(cl, out, err);
                 version = StringUtils.join(err.getLines().iterator(), ":");
-                if (version == null) {
+                if (StringUtils.isEmpty(version)) {
                     version = "unable to detect...";
                 }
             } catch (CommandLineException cle) {
@@ -54,7 +54,7 @@ class JdkToolchainUtil {
     }
 
     private static class LineConsumer implements StreamConsumer {
-        private List<String> lines = new ArrayList<>();
+        private final List<String> lines = new ArrayList<>();
 
         @Override
         public void consumeLine(String line) throws IOException {

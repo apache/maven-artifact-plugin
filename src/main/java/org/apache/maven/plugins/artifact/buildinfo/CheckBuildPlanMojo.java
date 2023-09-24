@@ -19,9 +19,9 @@
 package org.apache.maven.plugins.artifact.buildinfo;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
@@ -194,7 +194,7 @@ public class CheckBuildPlanMojo extends AbstractMojo {
     private Properties loadIssues() throws MojoExecutionException {
         try (InputStream in = (pluginIssues == null)
                 ? getClass().getResourceAsStream("not-reproducible-plugins.properties")
-                : new FileInputStream(pluginIssues)) {
+                : Files.newInputStream(pluginIssues.toPath())) {
             Properties prop = new Properties();
             prop.load(in);
 

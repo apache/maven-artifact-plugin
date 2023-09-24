@@ -20,12 +20,12 @@ package org.apache.maven.plugins.artifact.buildinfo;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -122,89 +122,87 @@ class ReferenceBuildinfoUtil {
             referenceBuildinfo = null;
         }
 
-        if (referenceBuildinfo == null) {
-            // download reference artifacts and guess Java version and OS
-            String javaVersion = null;
-            String osName = null;
-            String currentJavaVersion = null;
-            String currentOsName = null;
-            Map<Artifact, File> referenceArtifacts = new HashMap<>();
-            for (Artifact artifact : artifacts.keySet()) {
-                try {
-                    // download
-                    File file = downloadReference(repo, artifact);
-                    referenceArtifacts.put(artifact, file);
+        // download reference artifacts and guess Java version and OS
+        String javaVersion = null;
+        String osName = null;
+        String currentJavaVersion = null;
+        String currentOsName = null;
+        Map<Artifact, File> referenceArtifacts = new HashMap<>();
+        for (Artifact artifact : artifacts.keySet()) {
+            try {
+                // download
+                File file = downloadReference(repo, artifact);
+                referenceArtifacts.put(artifact, file);
 
-                    // guess Java version and OS
-                    if ((javaVersion == null) && JAR_TYPES.contains(artifact.getType())) {
-                        ReproducibleEnv env = extractEnv(file, artifact);
-                        if ((env != null) && (env.javaVersion != null)) {
-                            javaVersion = env.javaVersion;
-                            osName = env.osName;
+                // guess Java version and OS
+                if ((javaVersion == null) && JAR_TYPES.contains(artifact.getType())) {
+                    ReproducibleEnv env = extractEnv(file, artifact);
+                    if ((env != null) && (env.javaVersion != null)) {
+                        javaVersion = env.javaVersion;
+                        osName = env.osName;
 
-                            ReproducibleEnv currentEnv = extractEnv(artifact.getFile(), artifact);
-                            currentJavaVersion = currentEnv.javaVersion;
-                            currentOsName = currentEnv.osName;
+                        ReproducibleEnv currentEnv = extractEnv(artifact.getFile(), artifact);
+                        currentJavaVersion = currentEnv.javaVersion;
+                        currentOsName = currentEnv.osName;
+                    }
+                }
+            } catch (ArtifactNotFoundException e) {
+                log.warn("Reference artifact not found " + artifact);
+            }
+        }
+
+        // generate buildinfo from reference artifacts
+        referenceBuildinfo = getReference(null, buildinfoFile);
+        try (PrintWriter p = new PrintWriter(new BufferedWriter(
+                new OutputStreamWriter(Files.newOutputStream(referenceBuildinfo.toPath()), StandardCharsets.UTF_8)))) {
+            BuildInfoWriter bi = new BuildInfoWriter(log, p, mono, artifactHandlerManager, rtInformation);
+
+            if (javaVersion != null || osName != null) {
+                p.println("# effective build environment information");
+                if (javaVersion != null) {
+                    p.println("java.version=" + javaVersion);
+                    log.info("Reference build java.version: " + javaVersion);
+                    if (!javaVersion.equals(currentJavaVersion)) {
+                        log.error("Current build java.version: " + currentJavaVersion);
+                    }
+                }
+                if (osName != null) {
+                    p.println("os.name=" + osName);
+                    log.info("Reference build os.name: " + osName);
+
+                    // check against current line separator
+                    if (!osName.equals(currentOsName)) {
+                        log.error("Current build os.name: " + currentOsName);
+                    }
+                    String expectedLs = osName.startsWith("Windows") ? "\r\n" : "\n";
+                    if (!expectedLs.equals(System.lineSeparator())) {
+                        log.warn("Current System.lineSeparator() does not match reference build OS");
+
+                        String ls = System.getProperty("line.separator");
+                        if (!ls.equals(System.lineSeparator())) {
+                            log.warn("System.lineSeparator() != System.getProperty( \"line.separator\" ): "
+                                    + "too late standard system property update...");
                         }
                     }
-                } catch (ArtifactNotFoundException e) {
-                    log.warn("Reference artifact not found " + artifact);
                 }
             }
 
-            // generate buildinfo from reference artifacts
-            referenceBuildinfo = getReference(null, buildinfoFile);
-            try (PrintWriter p = new PrintWriter(new BufferedWriter(
-                    new OutputStreamWriter(new FileOutputStream(referenceBuildinfo), StandardCharsets.UTF_8)))) {
-                BuildInfoWriter bi = new BuildInfoWriter(log, p, mono, artifactHandlerManager, rtInformation);
-
-                if (javaVersion != null || osName != null) {
-                    p.println("# effective build environment information");
-                    if (javaVersion != null) {
-                        p.println("java.version=" + javaVersion);
-                        log.info("Reference build java.version: " + javaVersion);
-                        if (!javaVersion.equals(currentJavaVersion)) {
-                            log.error("Current build java.version: " + currentJavaVersion);
-                        }
-                    }
-                    if (osName != null) {
-                        p.println("os.name=" + osName);
-                        log.info("Reference build os.name: " + osName);
-
-                        // check against current line separator
-                        if (!osName.equals(currentOsName)) {
-                            log.error("Current build os.name: " + currentOsName);
-                        }
-                        String expectedLs = osName.startsWith("Windows") ? "\r\n" : "\n";
-                        if (!expectedLs.equals(System.lineSeparator())) {
-                            log.warn("Current System.lineSeparator() does not match reference build OS");
-
-                            String ls = System.getProperty("line.separator");
-                            if (!ls.equals(System.lineSeparator())) {
-                                log.warn("System.lineSeparator() != System.getProperty( \"line.separator\" ): "
-                                        + "too late standard system property update...");
-                            }
-                        }
-                    }
+            for (Map.Entry<Artifact, String> entry : artifacts.entrySet()) {
+                Artifact artifact = entry.getKey();
+                String prefix = entry.getValue();
+                File referenceFile = referenceArtifacts.get(artifact);
+                if (referenceFile != null) {
+                    bi.printFile(prefix, artifact.getGroupId(), referenceFile);
                 }
-
-                for (Map.Entry<Artifact, String> entry : artifacts.entrySet()) {
-                    Artifact artifact = entry.getKey();
-                    String prefix = entry.getValue();
-                    File referenceFile = referenceArtifacts.get(artifact);
-                    if (referenceFile != null) {
-                        bi.printFile(prefix, artifact.getGroupId(), referenceFile);
-                    }
-                }
-
-                if (p.checkError()) {
-                    throw new MojoExecutionException("Write error to " + referenceBuildinfo);
-                }
-
-                log.info("Minimal buildinfo generated from downloaded artifacts: " + referenceBuildinfo);
-            } catch (IOException e) {
-                throw new MojoExecutionException("Error creating file " + referenceBuildinfo, e);
             }
+
+            if (p.checkError()) {
+                throw new MojoExecutionException("Write error to " + referenceBuildinfo);
+            }
+
+            log.info("Minimal buildinfo generated from downloaded artifacts: " + referenceBuildinfo);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Error creating file " + referenceBuildinfo, e);
         }
 
         return referenceBuildinfo;

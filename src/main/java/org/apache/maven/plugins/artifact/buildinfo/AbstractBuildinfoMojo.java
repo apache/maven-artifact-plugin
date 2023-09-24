@@ -20,11 +20,11 @@ package org.apache.maven.plugins.artifact.buildinfo;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -224,7 +224,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         buildinfoFile.getParentFile().mkdirs();
 
         try (PrintWriter p = new PrintWriter(new BufferedWriter(
-                new OutputStreamWriter(new FileOutputStream(buildinfoFile), StandardCharsets.UTF_8)))) {
+                new OutputStreamWriter(Files.newOutputStream(buildinfoFile.toPath()), StandardCharsets.UTF_8)))) {
             BuildInfoWriter bi = new BuildInfoWriter(getLog(), p, mono, artifactHandlerManager, rtInformation);
             bi.setIgnoreJavadoc(ignoreJavadoc);
             bi.setIgnore(ignore);

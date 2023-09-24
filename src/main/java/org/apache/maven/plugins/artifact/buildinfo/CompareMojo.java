@@ -20,11 +20,11 @@ package org.apache.maven.plugins.artifact.buildinfo;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -128,7 +128,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
      *
      * @param artifacts a Map of artifacts added to the build info with their associated property key prefix
      *            (<code>outputs.[#module.].#artifact</code>)
-     * @throws MojoExecutionException
+     * @throws MojoExecutionException if anything goes wrong
      */
     private void checkAgainstReference(Map<Artifact, String> artifacts, boolean mono) throws MojoExecutionException {
         MavenProject root = mono ? project : getExecutionRoot();
@@ -216,7 +216,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         File buildcompare = new File(
                 buildinfoFile.getParentFile(), buildinfoFile.getName().replaceFirst(".buildinfo$", ".buildcompare"));
         try (PrintWriter p = new PrintWriter(new BufferedWriter(
-                new OutputStreamWriter(new FileOutputStream(buildcompare), StandardCharsets.UTF_8)))) {
+                new OutputStreamWriter(Files.newOutputStream(buildcompare.toPath()), StandardCharsets.UTF_8)))) {
             p.println("version=" + project.getVersion());
             p.println("ok=" + ok);
             p.println("ko=" + ko);
@@ -282,10 +282,8 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         // notice: actual file name may have been defined in pom
         // reference file name is taken from repository format
         File reference = new File(new File(referenceDir, a.getGroupId()), getRepositoryFilename(a));
-        if ((actual == null) || (reference == null)) {
-            return "missing file for " + a.getId() + " reference = "
-                    + (reference == null ? "null" : relative(reference)) + " actual = "
-                    + (actual == null ? "null" : relative(actual));
+        if (actual == null) {
+            return "missing file for " + a.getId() + " reference = " + relative(reference) + " actual = null";
         }
         return "diffoscope " + relative(reference) + " " + relative(actual);
     }
