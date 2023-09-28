@@ -24,11 +24,12 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+import java.nio.file.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.maven.archiver.MavenArchiver;
 import org.apache.maven.artifact.Artifact;
@@ -89,6 +90,15 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
      */
     @Parameter(property = "buildinfo.detect.skip", defaultValue = "true")
     private boolean detectSkip;
+
+    /**
+     * Avoid taking fingerprints for modules specified as glob matching against <code>${groupId}/${artifactId}</code>.
+     * @since 3.5.0
+     */
+    @Parameter
+    private List<String> skipModules;
+
+    private List<PathMatcher> skipModulesMatcher = null;
 
     /**
      * Makes the generated {@code .buildinfo} file reproducible, by dropping detailed environment recording: OS will be
@@ -274,7 +284,20 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     }
 
     private boolean isSkip(MavenProject project) {
-        return detectSkip && PluginUtil.isSkip(project);
+        // manual/configured module skip
+        boolean skipModule = false;
+        if (skipModules != null && !skipModules.isEmpty()) {
+            if (skipModulesMatcher == null) {
+                FileSystem fs = FileSystems.getDefault();
+                skipModulesMatcher = skipModules.stream()
+                        .map(i -> fs.getPathMatcher("glob:" + i))
+                        .collect(Collectors.toList());
+            }
+            Path path = Paths.get(project.getGroupId() + '/' + project.getArtifactId());
+            skipModule = skipModulesMatcher.stream().anyMatch(m -> m.matches(path));
+        }
+        // detected skip
+        return skipModule || (detectSkip && PluginUtil.isSkip(project));
     }
 
     private Toolchain getToolchain() {

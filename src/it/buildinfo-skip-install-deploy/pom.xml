@@ -50,6 +50,7 @@
   <modules>
     <module>modSkipInstall</module>
     <module>modSkipDeploy</module>
+    <module>modSkipModule</module>
     <module>modB</module>
     <module>modA</module>
     <module>modSkipAtEnd</module>
@@ -66,6 +67,11 @@
             <goals>
               <goal>buildinfo</goal>
             </goals>
+            <configuration>
+              <skipModules>
+                <skipModule>*/*-module</skipModule>
+              </skipModules>
+            </configuration>
           </execution>
         </executions>
       </plugin>
