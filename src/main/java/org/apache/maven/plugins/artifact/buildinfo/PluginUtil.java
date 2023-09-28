@@ -25,18 +25,35 @@ import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 
 /**
- * Plugin utility to detect if install or deploy is skipped in a build.
+ * Plugin utility to detect if install or deploy is skipped in a build, or even nexus-staging.
+ * It supports both disabling by parameter configuration or property.
+ * Known limitation: it does not look at configuration done more precisely at plugin execution level.
  */
 class PluginUtil {
+    private static final String NEXUS_STAGING = "nexus-staging";
+
     static boolean isSkip(MavenProject project) {
-        return isSkip(project, "install") || isSkip(project, "deploy");
+        return isSkip(project, "install") || isSkip(project, "deploy") || isSkip(project, NEXUS_STAGING);
     }
 
     private static boolean isSkip(MavenProject project, String id) {
-        Plugin plugin = getPlugin(project, "org.apache.maven.plugins:maven-" + id + "-plugin");
-        String skip = getPluginParameter(plugin, "skip");
+        String pluginGa;
+        String pluginParameter;
+        String pluginProperty;
+        if (id.equals(NEXUS_STAGING)) {
+            pluginGa = "org.sonatype.plugins:" + id + "-maven-plugin";
+            pluginParameter = "skipNexusStagingDeployMojo";
+            pluginProperty = "skipNexusStagingDeployMojo";
+        } else {
+            pluginGa = "org.apache.maven.plugins:maven-" + id + "-plugin";
+            pluginParameter = "skip";
+            pluginProperty = "maven." + id + ".skip";
+        }
+
+        Plugin plugin = getPlugin(project, pluginGa);
+        String skip = getPluginParameter(plugin, pluginParameter);
         if (skip == null) {
-            skip = project.getProperties().getProperty("maven." + id + ".skip");
+            skip = project.getProperties().getProperty(pluginProperty);
         }
         return Boolean.parseBoolean(skip);
     }
