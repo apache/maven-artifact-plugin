@@ -28,7 +28,7 @@
   </parent>
 
   <artifactId>maven-artifact-plugin</artifactId>
-  <version>3.5.0</version>
+  <version>3.5.1-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>Apache Maven Artifact Plugin</name>
@@ -41,7 +41,7 @@
   <scm>
     <connection>scm:git:https://gitbox.apache.org/repos/asf/maven-artifact-plugin.git</connection>
     <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/maven-artifact-plugin.git</developerConnection>
-    <tag>maven-artifact-plugin-3.5.0</tag>
+    <tag>master</tag>
     <url>https://github.com/apache/maven-artifact-plugin/tree/${project.scm.tag}</url>
   </scm>
   <issueManagement>
@@ -62,7 +62,7 @@
   <properties>
     <mavenVersion>3.2.5</mavenVersion>
     <javaVersion>8</javaVersion>
-    <project.build.outputTimestamp>2023-09-29T05:51:29Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2023-09-29T05:51:46Z</project.build.outputTimestamp>
   </properties>
 
   <dependencies>
