@@ -80,7 +80,7 @@ Usage
 *--------+--------------------------------------------------------------------+-------+--------------+
 | org.jboss.jandex | jandex-maven-plugin | - | no fixed release available, see {{{https://github.com/wildfly/jandex-maven-plugin/pull/35}reference}}
 *--------+--------------------------------------------------------------------+-------+--------------+
-| org.moditect | moditect-maven-plugin | 1.0.0.Final | 
+| org.moditect | moditect-maven-plugin | - | no fixed release available, see {{{https://github.com/moditect/moditect/pull/211}reference}}
 *--------+--------------------------------------------------------------------+-------+--------------+
 | org.springframework.boot | spring-boot-maven-plugin | 2.7.1 | 
 *--------+--------------------------------------------------------------------+-------+--------------+
