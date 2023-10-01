@@ -21,7 +21,7 @@ package org.apache.maven.plugins.artifact.buildinfo;
 import java.io.File;
 import java.io.IOException;
 
-import org.codehaus.plexus.util.FileUtils;
+import org.apache.maven.shared.utils.io.FileUtils;
 
 /**
  * Test class to update src/site/apt/plugin-issues.apt with content extracted from
