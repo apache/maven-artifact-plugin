@@ -95,7 +95,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
      * Avoid taking fingerprints for modules specified as glob matching against <code>${groupId}/${artifactId}</code>.
      * @since 3.5.0
      */
-    @Parameter
+    @Parameter(property = "buildinfo.skipModules")
     private List<String> skipModules;
 
     private List<PathMatcher> skipModulesMatcher = null;
