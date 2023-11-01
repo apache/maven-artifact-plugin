@@ -52,7 +52,7 @@ import org.apache.maven.project.MavenProject;
  */
 @Mojo(name = "check-buildplan", threadSafe = true, requiresProject = true)
 public class CheckBuildPlanMojo extends AbstractMojo {
-    @Component
+    @Parameter(defaultValue = "${reactorProjects}", required = true, readonly = true)
     private List<MavenProject> reactorProjects;
 
     @Component
