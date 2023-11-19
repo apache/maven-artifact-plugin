@@ -183,8 +183,11 @@ public class CheckBuildPlanMojo extends AbstractMojo {
             }
             String prop = reactorParent.getOriginalModel().getProperties().getProperty("project.build.outputTimestamp");
             if (prop == null) {
-                getLog().error("project.build.outputTimestamp property should not be inherited but defined in "
-                        + (parentInReactor ? "parent POM from reactor " : "POM ") + reactorParent.getFile());
+                getLog().warn(
+                                "The project.build.outputTimestamp property should not be inherited from outside this project. "
+                                        + "It should be defined in the "
+                                        + (parentInReactor ? "local parent POM " : "POM ")
+                                        + reactorParent.getFile());
                 return true;
             }
         }
