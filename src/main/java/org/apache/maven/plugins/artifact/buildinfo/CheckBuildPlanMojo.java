@@ -188,7 +188,7 @@ public class CheckBuildPlanMojo extends AbstractMojo {
                                         + "It should be defined in the "
                                         + (parentInReactor ? "local parent POM " : "POM ")
                                         + reactorParent.getFile());
-                return true;
+                return false;
             }
         }
         return false;
