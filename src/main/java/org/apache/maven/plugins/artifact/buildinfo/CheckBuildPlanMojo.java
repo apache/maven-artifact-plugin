@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -49,9 +48,6 @@ import org.apache.maven.project.MavenProject;
  */
 @Mojo(name = "check-buildplan", threadSafe = true, requiresProject = true)
 public class CheckBuildPlanMojo extends AbstractMojo {
-    @Parameter(defaultValue = "${reactorProjects}", required = true, readonly = true)
-    private List<MavenProject> reactorProjects;
-
     @Component
     private MavenProject project;
 
@@ -95,7 +91,8 @@ public class CheckBuildPlanMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        boolean fail = AbstractBuildinfoMojo.hasBadOutputTimestamp(outputTimestamp, getLog(), project, reactorProjects);
+        boolean fail =
+                AbstractBuildinfoMojo.hasBadOutputTimestamp(outputTimestamp, getLog(), project, session.getProjects());
 
         // TODO check maven-jar-plugin module-info.class?
 
@@ -145,7 +142,7 @@ public class CheckBuildPlanMojo extends AbstractMojo {
             MavenProject parent = project;
             while (true) {
                 parent = parent.getParent();
-                if ((parent == null) || !reactorProjects.contains(parent)) {
+                if ((parent == null) || !session.getProjects().contains(parent)) {
                     break;
                 }
                 getLog().info("        parent pom.xml is " + parent.getBasedir() + "/pom.xml");

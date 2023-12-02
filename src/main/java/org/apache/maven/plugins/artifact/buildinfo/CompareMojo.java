@@ -110,7 +110,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
     @Override
     public void execute(Map<Artifact, String> artifacts) throws MojoExecutionException {
         getLog().info("Checking against reference build from " + referenceRepo + "...");
-        checkAgainstReference(artifacts, reactorProjects.size() == 1);
+        checkAgainstReference(artifacts, session.getProjects().size() == 1);
     }
 
     @Override

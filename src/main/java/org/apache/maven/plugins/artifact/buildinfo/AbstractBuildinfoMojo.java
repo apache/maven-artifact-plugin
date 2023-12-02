@@ -59,12 +59,6 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     protected MavenProject project;
 
     /**
-     * The reactor projects.
-     */
-    @Parameter(defaultValue = "${reactorProjects}", required = true, readonly = true)
-    protected List<MavenProject> reactorProjects;
-
-    /**
      * Location of the generated buildinfo file.
      */
     @Parameter(
@@ -114,7 +108,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
      * The current build session instance. This is used for toolchain manager API calls.
      */
     @Component
-    private MavenSession session;
+    protected MavenSession session;
 
     /**
      * Timestamp for reproducible output archive entries, either formatted as ISO 8601
@@ -140,9 +134,9 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        boolean mono = reactorProjects.size() == 1;
+        boolean mono = session.getProjects().size() == 1;
 
-        hasBadOutputTimestamp(outputTimestamp, getLog(), project, reactorProjects);
+        hasBadOutputTimestamp(outputTimestamp, getLog(), project, session.getProjects());
 
         if (!mono) {
             // if module skips install and/or deploy
@@ -213,7 +207,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     }
 
     protected void copyAggregateToRoot(File aggregate) throws MojoExecutionException {
-        if (reactorProjects.size() == 1) {
+        if (session.getProjects().size() == 1) {
             // mono-module, no aggregate file to deal with
             return;
         }
@@ -257,7 +251,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
             if (mono) {
                 bi.printArtifacts(project);
             } else {
-                for (MavenProject project : reactorProjects) {
+                for (MavenProject project : session.getProjects()) {
                     if (!isSkip(project)) {
                         bi.printArtifacts(project);
                     }
@@ -275,7 +269,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     }
 
     protected MavenProject getExecutionRoot() {
-        for (MavenProject p : reactorProjects) {
+        for (MavenProject p : session.getProjects()) {
             if (p.isExecutionRoot()) {
                 return p;
             }
@@ -284,9 +278,9 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     }
 
     private MavenProject getLastProject() {
-        int i = reactorProjects.size();
+        int i = session.getProjects().size();
         while (i > 0) {
-            MavenProject project = reactorProjects.get(--i);
+            MavenProject project = session.getProjects().get(--i);
             if (!isSkip(project)) {
                 return project;
             }
