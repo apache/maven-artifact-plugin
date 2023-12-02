@@ -78,9 +78,11 @@ Usage
 *--------+--------------------------------------------------------------------+-------+--------------+
 | org.eclipse.jetty | jetty-jspc-maven-plugin | - | no fixed release available, see {{{https://github.com/eclipse/jetty.project/}reference}}
 *--------+--------------------------------------------------------------------+-------+--------------+
+| org.glassfish.hk2 | hk2-inhabitant-generator | 3.0.5 | 
+*--------+--------------------------------------------------------------------+-------+--------------+
 | org.jboss.jandex | jandex-maven-plugin | - | no fixed release available, see {{{https://github.com/wildfly/jandex-maven-plugin/pull/35}reference}}
 *--------+--------------------------------------------------------------------+-------+--------------+
-| org.moditect | moditect-maven-plugin | - | no fixed release available, see {{{https://github.com/moditect/moditect/pull/211}reference}}
+| org.moditect | moditect-maven-plugin | 1.1.0 | 
 *--------+--------------------------------------------------------------------+-------+--------------+
 | org.springframework.boot | spring-boot-maven-plugin | 2.7.1 | 
 *--------+--------------------------------------------------------------------+-------+--------------+

@@ -28,7 +28,7 @@
   <groupId>org.apache.maven.plugins.it</groupId>
   <artifactId>check-fail</artifactId>
   <version>1.0-SNAPSHOT</version>
-  <description>check-buildplan expected to fail because outputTimestamp is inherited form a POM outside the reactor</description>
+  <description>check-buildplan expected to pass with WARNING because outputTimestamp is inherited form a POM outside the reactor</description>
 
   <build>
     <pluginManagement>

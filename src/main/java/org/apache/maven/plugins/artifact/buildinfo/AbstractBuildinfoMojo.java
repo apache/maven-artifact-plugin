@@ -37,6 +37,7 @@ import org.apache.maven.artifact.handler.manager.ArtifactHandlerManager;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -141,30 +142,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException {
         boolean mono = reactorProjects.size() == 1;
 
-        MavenArchiver archiver = new MavenArchiver();
-        Date timestamp = archiver.parseOutputTimestamp(outputTimestamp);
-        if (timestamp == null) {
-            getLog().warn("Reproducible Build not activated by project.build.outputTimestamp property: "
-                    + "see https://maven.apache.org/guides/mini/guide-reproducible-builds.html");
-        } else {
-            if (getLog().isDebugEnabled()) {
-                getLog().debug("project.build.outputTimestamp = \"" + outputTimestamp + "\" => "
-                        + new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(timestamp));
-            }
-
-            // check if timestamp well defined in a project from reactor
-            boolean parentInReactor = false;
-            MavenProject reactorParent = project;
-            while (reactorProjects.contains(reactorParent.getParent())) {
-                parentInReactor = true;
-                reactorParent = reactorParent.getParent();
-            }
-            String prop = reactorParent.getOriginalModel().getProperties().getProperty("project.build.outputTimestamp");
-            if (prop == null) {
-                getLog().error("project.build.outputTimestamp property should not be inherited but defined in "
-                        + (parentInReactor ? "parent POM from reactor " : "POM ") + reactorParent.getFile());
-            }
-        }
+        hasBadOutputTimestamp(outputTimestamp, getLog(), project, reactorProjects);
 
         if (!mono) {
             // if module skips install and/or deploy
@@ -187,6 +165,39 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         copyAggregateToRoot(buildinfoFile);
 
         execute(artifacts);
+    }
+
+    static boolean hasBadOutputTimestamp(
+            String outputTimestamp, Log log, MavenProject project, List<MavenProject> reactorProjects) {
+        MavenArchiver archiver = new MavenArchiver();
+        Date timestamp = archiver.parseOutputTimestamp(outputTimestamp);
+        if (timestamp == null) {
+            log.error("Reproducible Build not activated by project.build.outputTimestamp property: "
+                    + "see https://maven.apache.org/guides/mini/guide-reproducible-builds.html");
+            return true;
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("project.build.outputTimestamp = \"" + outputTimestamp + "\" => "
+                    + new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(timestamp));
+        }
+
+        // check if timestamp defined in a project from reactor: warn if it is not the case
+        boolean parentInReactor = false;
+        MavenProject reactorParent = project;
+        while (reactorProjects.contains(reactorParent.getParent())) {
+            parentInReactor = true;
+            reactorParent = reactorParent.getParent();
+        }
+        String prop = reactorParent.getOriginalModel().getProperties().getProperty("project.build.outputTimestamp");
+        if (prop == null) {
+            log.warn("<project.build.outputTimestamp> property is inherited"
+                    + (parentInReactor ? " from outside the reactor" : "") + ", it should be defined in "
+                    + (parentInReactor ? "parent POM from reactor " + reactorParent.getFile() : "pom.xml"));
+            return false;
+        }
+
+        return false;
     }
 
     /**
