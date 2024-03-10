@@ -221,7 +221,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
             FileUtils.copyFile(aggregate, rootCopy);
             getLog().info("Aggregate " + extension.substring(1) + " copied to " + rootCopy);
         } catch (IOException ioe) {
-            throw new MojoExecutionException("Could not copy " + aggregate + "to " + rootCopy);
+            throw new MojoExecutionException("Could not copy " + aggregate + " to " + rootCopy, ioe);
         }
     }
 
