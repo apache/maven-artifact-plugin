@@ -22,12 +22,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.maven.shared.utils.StringUtils;
-import org.apache.maven.shared.utils.cli.CommandLineException;
-import org.apache.maven.shared.utils.cli.CommandLineUtils;
-import org.apache.maven.shared.utils.cli.Commandline;
-import org.apache.maven.shared.utils.cli.StreamConsumer;
 import org.apache.maven.toolchain.Toolchain;
+import org.codehaus.plexus.util.cli.CommandLineException;
+import org.codehaus.plexus.util.cli.CommandLineUtils;
+import org.codehaus.plexus.util.cli.Commandline;
+import org.codehaus.plexus.util.cli.StreamConsumer;
 
 /**
  * A helper to get JDK version from a JDK toolchain.
@@ -42,8 +41,8 @@ class JdkToolchainUtil {
                 LineConsumer out = new LineConsumer();
                 LineConsumer err = new LineConsumer();
                 CommandLineUtils.executeCommandLine(cl, out, err);
-                version = StringUtils.join(err.getLines().iterator(), ":");
-                if (StringUtils.isEmpty(version)) {
+                version = String.join(":", err.getLines());
+                if (version == null || version.trim().isEmpty()) {
                     version = "unable to detect...";
                 }
             } catch (CommandLineException cle) {
