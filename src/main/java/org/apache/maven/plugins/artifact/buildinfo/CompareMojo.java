@@ -21,6 +21,7 @@ package org.apache.maven.plugins.artifact.buildinfo;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
@@ -30,20 +31,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.shared.utils.PropertyUtils;
-import org.apache.maven.shared.utils.StringUtils;
 import org.apache.maven.shared.utils.logging.MessageUtils;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.util.artifact.ArtifactIdUtils;
 
 import static org.apache.maven.plugins.artifact.buildinfo.BuildInfoWriter.getArtifactFilename;
 
@@ -76,9 +74,6 @@ public class CompareMojo extends AbstractBuildinfoMojo {
     @Parameter(property = "compare.aggregate.only", defaultValue = "false")
     private boolean aggregateOnly;
 
-    @Component
-    private ArtifactFactory artifactFactory;
-
     /**
      * The entry point to Maven Artifact Resolver, i.e. the component doing all the work.
      */
@@ -103,9 +98,6 @@ public class CompareMojo extends AbstractBuildinfoMojo {
      */
     @Parameter(property = "compare.fail", defaultValue = "true")
     private boolean fail;
-
-    @Component
-    private ArtifactRepositoryLayout artifactRepositoryLayout;
 
     @Override
     public void execute(Map<Artifact, String> artifacts) throws MojoExecutionException {
@@ -146,15 +138,8 @@ public class CompareMojo extends AbstractBuildinfoMojo {
             throws MojoExecutionException {
         RemoteRepository repo = createReferenceRepo();
 
-        ReferenceBuildinfoUtil rmb = new ReferenceBuildinfoUtil(
-                getLog(),
-                referenceDir,
-                artifacts,
-                artifactFactory,
-                repoSystem,
-                repoSession,
-                artifactHandlerManager,
-                rtInformation);
+        ReferenceBuildinfoUtil rmb =
+                new ReferenceBuildinfoUtil(getLog(), referenceDir, artifacts, repoSystem, repoSession, rtInformation);
 
         return rmb.downloadOrCreateReferenceBuildinfo(repo, project, buildinfoFile, mono);
     }
@@ -221,10 +206,17 @@ public class CompareMojo extends AbstractBuildinfoMojo {
             p.println("ok=" + ok);
             p.println("ko=" + ko);
             p.println("ignored=" + ignored.size());
-            p.println("okFiles=\"" + StringUtils.join(okFilenames.iterator(), " ") + '"');
-            p.println("koFiles=\"" + StringUtils.join(koFilenames.iterator(), " ") + '"');
-            p.println("ignoredFiles=\"" + StringUtils.join(ignored.iterator(), " ") + '"');
-            Properties ref = PropertyUtils.loadOptionalProperties(referenceBuildinfo);
+            p.println("okFiles=\"" + String.join(" ", okFilenames) + '"');
+            p.println("koFiles=\"" + String.join(" ", koFilenames) + '"');
+            p.println("ignoredFiles=\"" + String.join(" ", ignored) + '"');
+            Properties ref = new Properties();
+            if (referenceBuildinfo != null) {
+                try (InputStream in = Files.newInputStream(referenceBuildinfo.toPath())) {
+                    ref.load(in);
+                } catch (IOException e) {
+                    // nothing
+                }
+            }
             String v = ref.getProperty("java.version");
             if (v != null) {
                 p.println("reference_java_version=\"" + v + '"');
@@ -283,13 +275,14 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         // reference file name is taken from repository format
         File reference = new File(new File(referenceDir, a.getGroupId()), getRepositoryFilename(a));
         if (actual == null) {
-            return "missing file for " + a.getId() + " reference = " + relative(reference) + " actual = null";
+            return "missing file for " + ArtifactIdUtils.toId(a) + " reference = " + relative(reference)
+                    + " actual = null";
         }
         return "diffoscope " + relative(reference) + " " + relative(actual);
     }
 
     private String getRepositoryFilename(Artifact a) {
-        String path = artifactRepositoryLayout.pathOf(a);
+        String path = session.getRepositorySession().getLocalRepositoryManager().getPathForLocalArtifact(a);
         return path.substring(path.lastIndexOf('/'));
     }
 

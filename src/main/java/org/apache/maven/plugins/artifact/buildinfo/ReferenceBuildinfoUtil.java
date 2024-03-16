@@ -26,6 +26,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,23 +38,21 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.handler.manager.ArtifactHandlerManager;
-import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
+import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
-import org.apache.maven.shared.utils.io.FileUtils;
-import org.apache.maven.shared.utils.io.IOUtil;
 import org.eclipse.aether.AbstractForwardingRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.ArtifactProperties;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.repository.WorkspaceReader;
 import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
 
 /**
@@ -81,13 +81,9 @@ class ReferenceBuildinfoUtil {
 
     private final Map<Artifact, String> artifacts;
 
-    private final ArtifactFactory artifactFactory;
-
     private final RepositorySystem repoSystem;
 
     private final RepositorySystemSession repoSession;
-
-    private final ArtifactHandlerManager artifactHandlerManager;
 
     private final RuntimeInformation rtInformation;
 
@@ -95,18 +91,14 @@ class ReferenceBuildinfoUtil {
             Log log,
             File referenceDir,
             Map<Artifact, String> artifacts,
-            ArtifactFactory artifactFactory,
             RepositorySystem repoSystem,
             RepositorySystemSession repoSession,
-            ArtifactHandlerManager artifactHandlerManager,
             RuntimeInformation rtInformation) {
         this.log = log;
         this.referenceDir = referenceDir;
         this.artifacts = artifacts;
-        this.artifactFactory = artifactFactory;
         this.repoSystem = repoSystem;
         this.repoSession = repoSession;
-        this.artifactHandlerManager = artifactHandlerManager;
         this.rtInformation = rtInformation;
     }
 
@@ -135,7 +127,7 @@ class ReferenceBuildinfoUtil {
                 referenceArtifacts.put(artifact, file);
 
                 // guess Java version and OS
-                if ((javaVersion == null) && JAR_TYPES.contains(artifact.getType())) {
+                if ((javaVersion == null) && JAR_TYPES.contains(artifact.getProperty(ArtifactProperties.TYPE, "jar"))) {
                     ReproducibleEnv env = extractEnv(file, artifact);
                     if ((env != null) && (env.javaVersion != null)) {
                         javaVersion = env.javaVersion;
@@ -146,61 +138,63 @@ class ReferenceBuildinfoUtil {
                         currentOsName = currentEnv.osName;
                     }
                 }
-            } catch (ArtifactNotFoundException e) {
+            } catch (ArtifactResolutionException e) {
                 log.warn("Reference artifact not found " + artifact);
             }
         }
 
-        // generate buildinfo from reference artifacts
-        referenceBuildinfo = getReference(null, buildinfoFile);
-        try (PrintWriter p = new PrintWriter(new BufferedWriter(
-                new OutputStreamWriter(Files.newOutputStream(referenceBuildinfo.toPath()), StandardCharsets.UTF_8)))) {
-            BuildInfoWriter bi = new BuildInfoWriter(log, p, mono, artifactHandlerManager, rtInformation);
+        try {
+            // generate buildinfo from reference artifacts
+            referenceBuildinfo = getReference(null, buildinfoFile);
+            try (PrintWriter p = new PrintWriter(new BufferedWriter(new OutputStreamWriter(
+                    Files.newOutputStream(referenceBuildinfo.toPath()), StandardCharsets.UTF_8)))) {
+                BuildInfoWriter bi = new BuildInfoWriter(log, p, mono, rtInformation);
 
-            if (javaVersion != null || osName != null) {
-                p.println("# effective build environment information");
-                if (javaVersion != null) {
-                    p.println("java.version=" + javaVersion);
-                    log.info("Reference build java.version: " + javaVersion);
-                    if (!javaVersion.equals(currentJavaVersion)) {
-                        log.error("Current build java.version: " + currentJavaVersion);
+                if (javaVersion != null || osName != null) {
+                    p.println("# effective build environment information");
+                    if (javaVersion != null) {
+                        p.println("java.version=" + javaVersion);
+                        log.info("Reference build java.version: " + javaVersion);
+                        if (!javaVersion.equals(currentJavaVersion)) {
+                            log.error("Current build java.version: " + currentJavaVersion);
+                        }
                     }
-                }
-                if (osName != null) {
-                    p.println("os.name=" + osName);
-                    log.info("Reference build os.name: " + osName);
+                    if (osName != null) {
+                        p.println("os.name=" + osName);
+                        log.info("Reference build os.name: " + osName);
 
-                    // check against current line separator
-                    if (!osName.equals(currentOsName)) {
-                        log.error("Current build os.name: " + currentOsName);
-                    }
-                    String expectedLs = osName.startsWith("Windows") ? "\r\n" : "\n";
-                    if (!expectedLs.equals(System.lineSeparator())) {
-                        log.warn("Current System.lineSeparator() does not match reference build OS");
+                        // check against current line separator
+                        if (!osName.equals(currentOsName)) {
+                            log.error("Current build os.name: " + currentOsName);
+                        }
+                        String expectedLs = osName.startsWith("Windows") ? "\r\n" : "\n";
+                        if (!expectedLs.equals(System.lineSeparator())) {
+                            log.warn("Current System.lineSeparator() does not match reference build OS");
 
-                        String ls = System.getProperty("line.separator");
-                        if (!ls.equals(System.lineSeparator())) {
-                            log.warn("System.lineSeparator() != System.getProperty( \"line.separator\" ): "
-                                    + "too late standard system property update...");
+                            String ls = System.getProperty("line.separator");
+                            if (!ls.equals(System.lineSeparator())) {
+                                log.warn("System.lineSeparator() != System.getProperty( \"line.separator\" ): "
+                                        + "too late standard system property update...");
+                            }
                         }
                     }
                 }
-            }
 
-            for (Map.Entry<Artifact, String> entry : artifacts.entrySet()) {
-                Artifact artifact = entry.getKey();
-                String prefix = entry.getValue();
-                File referenceFile = referenceArtifacts.get(artifact);
-                if (referenceFile != null) {
-                    bi.printFile(prefix, artifact.getGroupId(), referenceFile);
+                for (Map.Entry<Artifact, String> entry : artifacts.entrySet()) {
+                    Artifact artifact = entry.getKey();
+                    String prefix = entry.getValue();
+                    File referenceFile = referenceArtifacts.get(artifact);
+                    if (referenceFile != null) {
+                        bi.printFile(prefix, artifact.getGroupId(), referenceFile);
+                    }
                 }
-            }
 
-            if (p.checkError()) {
-                throw new MojoExecutionException("Write error to " + referenceBuildinfo);
-            }
+                if (p.checkError()) {
+                    throw new MojoExecutionException("Write error to " + referenceBuildinfo);
+                }
 
-            log.info("Minimal buildinfo generated from downloaded artifacts: " + referenceBuildinfo);
+                log.info("Minimal buildinfo generated from downloaded artifacts: " + referenceBuildinfo);
+            }
         } catch (IOException e) {
             throw new MojoExecutionException("Error creating file " + referenceBuildinfo, e);
         }
@@ -248,7 +242,7 @@ class ReferenceBuildinfoUtil {
             return null;
         }
         try (InputStream in = jar.getInputStream(zipEntry)) {
-            String content = IOUtil.toString(in, StandardCharsets.UTF_8.name());
+            String content = IOUtils.toString(in, StandardCharsets.UTF_8);
             log.debug("Manifest content: " + content);
             if (content.contains("\r\n")) {
                 return "Windows (from pom.properties newline)";
@@ -262,15 +256,15 @@ class ReferenceBuildinfoUtil {
     }
 
     private File downloadReferenceBuildinfo(RemoteRepository repo, MavenProject project) throws MojoExecutionException {
-        Artifact buildinfo = artifactFactory.createArtifactWithClassifier(
-                project.getGroupId(), project.getArtifactId(), project.getVersion(), "buildinfo", "");
+        Artifact buildinfo = new DefaultArtifact(
+                project.getGroupId(), project.getArtifactId(), null, "buildinfo", project.getVersion());
         try {
             File file = downloadReference(repo, buildinfo);
 
             log.info("Reference buildinfo file found, copied to " + file);
 
             return file;
-        } catch (ArtifactNotFoundException e) {
+        } catch (ArtifactResolutionException e) {
             log.info("Reference buildinfo file not found: "
                     + "it will be generated from downloaded reference artifacts");
         }
@@ -279,17 +273,10 @@ class ReferenceBuildinfoUtil {
     }
 
     private File downloadReference(RemoteRepository repo, Artifact artifact)
-            throws MojoExecutionException, ArtifactNotFoundException {
+            throws MojoExecutionException, ArtifactResolutionException {
         try {
             ArtifactRequest request = new ArtifactRequest();
-            request.setArtifact(new DefaultArtifact(
-                    artifact.getGroupId(),
-                    artifact.getArtifactId(),
-                    artifact.getClassifier(),
-                    (artifact.getArtifactHandler() != null)
-                            ? artifact.getArtifactHandler().getExtension()
-                            : artifact.getType(),
-                    artifact.getVersion()));
+            request.setArtifact(artifact);
             request.setRepositories(Collections.singletonList(repo));
 
             ArtifactResult result =
@@ -297,12 +284,16 @@ class ReferenceBuildinfoUtil {
             File resultFile = result.getArtifact().getFile();
             File destFile = getReference(artifact.getGroupId(), resultFile);
 
-            FileUtils.copyFile(resultFile, destFile);
+            Files.copy(
+                    resultFile.toPath(),
+                    destFile.toPath(),
+                    LinkOption.NOFOLLOW_LINKS,
+                    StandardCopyOption.REPLACE_EXISTING);
 
             return destFile;
-        } catch (org.eclipse.aether.resolution.ArtifactResolutionException are) {
+        } catch (ArtifactResolutionException are) {
             if (are.getResult().isMissing()) {
-                throw new ArtifactNotFoundException("Artifact not found " + artifact, artifact);
+                throw are;
             }
             throw new MojoExecutionException("Error resolving reference artifact " + artifact, are);
         } catch (IOException ioe) {
@@ -310,14 +301,14 @@ class ReferenceBuildinfoUtil {
         }
     }
 
-    private File getReference(String groupId, File file) {
+    private File getReference(String groupId, File file) throws IOException {
         File dir;
         if (groupId == null) {
             dir = referenceDir;
         } else {
             dir = new File(referenceDir, groupId);
             if (!dir.isDirectory()) {
-                dir.mkdir();
+                Files.createDirectories(dir.toPath());
             }
         }
         return new File(dir, file.getName());
