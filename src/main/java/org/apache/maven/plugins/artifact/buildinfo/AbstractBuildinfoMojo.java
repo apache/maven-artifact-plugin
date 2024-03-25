@@ -166,9 +166,18 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         MavenArchiver archiver = new MavenArchiver();
         Date timestamp = archiver.parseOutputTimestamp(outputTimestamp);
         if (timestamp == null) {
-            log.error("Reproducible Build not activated by project.build.outputTimestamp property: "
-                    + "see https://maven.apache.org/guides/mini/guide-reproducible-builds.html");
-            return true;
+            // try to resolve it at runtime - injected from a property
+            String injected = project.getProperties().getProperty("project.build.outputTimestamp");
+            if (injected != null) {
+                log.info("project.build.outputTimestamp is injected by the build");
+            } else {
+                log.error("Reproducible Build not activated by project.build.outputTimestamp property: "
+                        + "see https://maven.apache.org/guides/mini/guide-reproducible-builds.html, "
+                        + "ex: <project.build.outputTimestamp>"
+                        + new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(new Date())
+                        + "</project.build.outputTimestamp>");
+                return true;
+            }
         }
 
         if (log.isDebugEnabled()) {
