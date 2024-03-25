@@ -26,14 +26,12 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.maven.archiver.MavenArchiver;
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.handler.manager.ArtifactHandlerManager;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -42,9 +40,9 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
-import org.apache.maven.shared.utils.io.FileUtils;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
+import org.eclipse.aether.artifact.Artifact;
 
 /**
  * Base buildinfo-generating class, for goals related to Reproducible Builds {@code .buildinfo} files.
@@ -127,9 +125,6 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     private ToolchainManager toolchainManager;
 
     @Component
-    protected ArtifactHandlerManager artifactHandlerManager;
-
-    @Component
     protected RuntimeInformation rtInformation;
 
     @Override
@@ -163,8 +158,8 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
     static boolean hasBadOutputTimestamp(
             String outputTimestamp, Log log, MavenProject project, List<MavenProject> reactorProjects) {
-        MavenArchiver archiver = new MavenArchiver();
-        Date timestamp = archiver.parseOutputTimestamp(outputTimestamp);
+        Instant timestamp =
+                MavenArchiver.parseBuildOutputTimestamp(outputTimestamp).orElse(null);
         if (timestamp == null) {
             log.error("Reproducible Build not activated by project.build.outputTimestamp property: "
                     + "see https://maven.apache.org/guides/mini/guide-reproducible-builds.html");
@@ -218,7 +213,11 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         File rootCopy =
                 new File(root.getBuild().getDirectory(), root.getArtifactId() + '-' + root.getVersion() + extension);
         try {
-            FileUtils.copyFile(aggregate, rootCopy);
+            Files.copy(
+                    aggregate.toPath(),
+                    rootCopy.toPath(),
+                    LinkOption.NOFOLLOW_LINKS,
+                    StandardCopyOption.REPLACE_EXISTING);
             getLog().info("Aggregate " + extension.substring(1) + " copied to " + rootCopy);
         } catch (IOException ioe) {
             throw new MojoExecutionException("Could not copy " + aggregate + " to " + rootCopy, ioe);
@@ -240,7 +239,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
         try (PrintWriter p = new PrintWriter(new BufferedWriter(
                 new OutputStreamWriter(Files.newOutputStream(buildinfoFile.toPath()), StandardCharsets.UTF_8)))) {
-            BuildInfoWriter bi = new BuildInfoWriter(getLog(), p, mono, artifactHandlerManager, rtInformation);
+            BuildInfoWriter bi = new BuildInfoWriter(getLog(), p, mono, rtInformation);
             bi.setIgnoreJavadoc(ignoreJavadoc);
             bi.setIgnore(ignore);
             bi.setToolchain(getToolchain());
