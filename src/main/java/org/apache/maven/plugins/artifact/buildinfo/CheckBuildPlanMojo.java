@@ -101,6 +101,7 @@ public class CheckBuildPlanMojo extends AbstractMojo {
         MavenExecutionPlan plan = calculateExecutionPlan();
 
         Set<String> plugins = new HashSet<>();
+        int okCount = 0;
         for (MojoExecution exec : plan.getMojoExecutions()) {
             Plugin plugin = exec.getPlugin();
             String id = plugin.getId();
@@ -109,7 +110,8 @@ public class CheckBuildPlanMojo extends AbstractMojo {
                 // check reproducibility status
                 String issue = issues.getProperty(plugin.getKey());
                 if (issue == null) {
-                    getLog().info("no known issue with " + id);
+                    okCount++;
+                    getLog().debug("No known issue with " + id);
                 } else if (issue.startsWith("fail:")) {
                     String logMessage = "plugin without solution " + id + ", see " + issue.substring(5);
                     if (failOnNonReproducible) {
@@ -131,10 +133,14 @@ public class CheckBuildPlanMojo extends AbstractMojo {
                         }
                         fail = true;
                     } else {
-                        getLog().info("no known issue with " + id + " (>= " + issue + ")");
+                        okCount++;
+                        getLog().debug("No known issue with " + id + " (>= " + issue + ")");
                     }
                 }
             }
+        }
+        if (okCount > 0) {
+            getLog().info("No known issue in " + okCount + " plugins");
         }
 
         if (fail) {
