@@ -97,6 +97,13 @@
       <version>${resolverVersion}</version>
       <scope>provided</scope>
     </dependency>
+    <!-- Scope: compile to support pre-3.9 -->
+    <dependency>
+      <groupId>org.apache.maven.resolver</groupId>
+      <artifactId>maven-resolver-util</artifactId>
+      <version>${resolverVersion}</version>
+      <scope>compile</scope>
+    </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-xml</artifactId>
