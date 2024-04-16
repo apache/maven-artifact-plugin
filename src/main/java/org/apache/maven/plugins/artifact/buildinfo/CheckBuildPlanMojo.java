@@ -141,7 +141,6 @@ public class CheckBuildPlanMojo extends AbstractMojo {
                             okCount++;
                             getLog().debug("No known issue with " + id + " (>= " + issue + ")");
                         }
-                        fail = true;
                     } catch (InvalidVersionSpecificationException e) {
                         throw new MojoExecutionException(e);
                     }
