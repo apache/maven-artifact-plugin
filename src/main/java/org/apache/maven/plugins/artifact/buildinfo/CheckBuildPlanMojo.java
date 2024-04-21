@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.maven.artifact.versioning.ArtifactVersion;
-import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.lifecycle.LifecycleExecutor;
 import org.apache.maven.lifecycle.MavenExecutionPlan;
@@ -40,6 +38,10 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.aether.util.version.GenericVersionScheme;
+import org.eclipse.aether.version.InvalidVersionSpecificationException;
+import org.eclipse.aether.version.Version;
+import org.eclipse.aether.version.VersionScheme;
 
 /**
  * Check from buildplan that plugins used don't have known Reproducible Builds issues.
@@ -81,6 +83,8 @@ public class CheckBuildPlanMojo extends AbstractMojo {
     @Parameter(property = "check.failOnNonReproducible", defaultValue = "true")
     private boolean failOnNonReproducible;
 
+    private final VersionScheme versionScheme = new GenericVersionScheme();
+
     protected MavenExecutionPlan calculateExecutionPlan() throws MojoExecutionException {
         try {
             return lifecycleExecutor.calculateExecutionPlan(session, tasks);
@@ -120,21 +124,25 @@ public class CheckBuildPlanMojo extends AbstractMojo {
                         getLog().warn(logMessage);
                     }
                     fail = true;
-
                 } else {
-                    ArtifactVersion minimum = new DefaultArtifactVersion(issue);
-                    ArtifactVersion version = new DefaultArtifactVersion(plugin.getVersion());
-                    if (version.compareTo(minimum) < 0) {
-                        String logMessage = "plugin with non-reproducible output: " + id + ", require minimum " + issue;
-                        if (failOnNonReproducible) {
-                            getLog().error(logMessage);
+                    try {
+                        Version minimum = versionScheme.parseVersion(issue);
+                        Version version = versionScheme.parseVersion(plugin.getVersion());
+                        if (version.compareTo(minimum) < 0) {
+                            String logMessage =
+                                    "plugin with non-reproducible output: " + id + ", require minimum " + issue;
+                            if (failOnNonReproducible) {
+                                getLog().error(logMessage);
+                            } else {
+                                getLog().warn(logMessage);
+                            }
+                            fail = true;
                         } else {
-                            getLog().warn(logMessage);
+                            okCount++;
+                            getLog().debug("No known issue with " + id + " (>= " + issue + ")");
                         }
-                        fail = true;
-                    } else {
-                        okCount++;
-                        getLog().debug("No known issue with " + id + " (>= " + issue + ")");
+                    } catch (InvalidVersionSpecificationException e) {
+                        throw new MojoExecutionException(e);
                     }
                 }
             }

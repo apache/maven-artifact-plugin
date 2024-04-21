@@ -20,13 +20,13 @@ package org.apache.maven.plugins.artifact.buildinfo;
 
 import java.util.Map;
 
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProjectHelper;
+import org.eclipse.aether.artifact.Artifact;
 
 /**
  * Creates a buildinfo file recording build environment and output (from {@code package}), as specified in

@@ -27,17 +27,15 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.DefaultArtifact;
-import org.apache.maven.artifact.handler.ArtifactHandler;
-import org.apache.maven.artifact.handler.manager.ArtifactHandlerManager;
+import org.apache.maven.RepositoryUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
-import org.apache.maven.shared.utils.PropertyUtils;
-import org.apache.maven.shared.utils.StringUtils;
 import org.apache.maven.toolchain.Toolchain;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.util.artifact.ArtifactIdUtils;
 
 /**
  * Buildinfo content writer.
@@ -46,7 +44,6 @@ class BuildInfoWriter {
     private final Log log;
     private final PrintWriter p;
     private final boolean mono;
-    private final ArtifactHandlerManager artifactHandlerManager;
     private final RuntimeInformation rtInformation;
     private final Map<Artifact, String> artifacts = new LinkedHashMap<>();
     private int projectCount = -1;
@@ -54,16 +51,10 @@ class BuildInfoWriter {
     private List<PathMatcher> ignore;
     private Toolchain toolchain;
 
-    BuildInfoWriter(
-            Log log,
-            PrintWriter p,
-            boolean mono,
-            ArtifactHandlerManager artifactHandlerManager,
-            RuntimeInformation rtInformation) {
+    BuildInfoWriter(Log log, PrintWriter p, boolean mono, RuntimeInformation rtInformation) {
         this.log = log;
         this.p = p;
         this.mono = mono;
-        this.artifactHandlerManager = artifactHandlerManager;
         this.rtInformation = rtInformation;
     }
 
@@ -162,32 +153,26 @@ class BuildInfoWriter {
         }
 
         // detect Maven 4 consumer POM transient attachment
-        Artifact consumerPom = project.getAttachedArtifacts().stream()
-                .filter(a -> "pom".equals(a.getType()) && "consumer".equals(a.getClassifier()))
+        Artifact consumerPom = RepositoryUtils.toArtifacts(project.getAttachedArtifacts()).stream()
+                .filter(a -> "pom".equals(a.getExtension()) && "consumer".equals(a.getClassifier()))
                 .findAny()
                 .orElse(null);
 
         int n = 0;
-        Artifact pomArtifact = new DefaultArtifact(
-                project.getGroupId(),
-                project.getArtifactId(),
-                project.getVersion(),
-                null,
-                "pom",
-                "",
-                artifactHandlerManager.getArtifactHandler("pom"));
+        Artifact pomArtifact =
+                new DefaultArtifact(project.getGroupId(), project.getArtifactId(), null, "pom", project.getVersion());
         if (consumerPom != null) {
             // Maven 4 transient consumer POM attachment is published as the POM, overrides build POM, see
             // https://github.com/apache/maven/blob/c79a7a02721f0f9fd7e202e99f60b593461ba8cc/maven-core/src/main/java/org/apache/maven/internal/transformation/ConsumerPomArtifactTransformer.java#L130-L155
             try {
                 Path pomFile = Files.createTempFile(Paths.get(project.getBuild().getDirectory()), "consumer-", ".pom");
                 Files.copy(consumerPom.getFile().toPath(), pomFile, StandardCopyOption.REPLACE_EXISTING);
-                pomArtifact.setFile(pomFile.toFile());
+                pomArtifact = pomArtifact.setFile(pomFile.toFile());
             } catch (IOException e) {
                 p.println("Error processing consumer POM: " + e);
             }
         } else {
-            pomArtifact.setFile(project.getFile());
+            pomArtifact = pomArtifact.setFile(project.getFile());
         }
 
         artifacts.put(pomArtifact, prefix + n);
@@ -202,15 +187,15 @@ class BuildInfoWriter {
         }
 
         if (project.getArtifact().getFile() != null) {
-            printArtifact(prefix, n++, project.getArtifact());
+            printArtifact(prefix, n++, RepositoryUtils.toArtifact(project.getArtifact()));
         }
 
-        for (Artifact attached : project.getAttachedArtifacts()) {
+        for (Artifact attached : RepositoryUtils.toArtifacts(project.getAttachedArtifacts())) {
             if (attached == consumerPom) {
                 // ignore consumer pom
                 continue;
             }
-            if (attached.getType().endsWith(".asc")) {
+            if (attached.getExtension().endsWith(".asc")) {
                 // ignore pgp signatures
                 continue;
             }
@@ -231,17 +216,18 @@ class BuildInfoWriter {
         prefix = prefix + i;
         File artifactFile = artifact.getFile();
         if (artifactFile.isDirectory()) {
-            if ("pom".equals(artifact.getType())) {
+            if ("pom".equals(artifact.getExtension())) {
                 // ignore .pom files: they should not be treated as Artifacts
                 return;
             }
             // edge case found in a distribution module with default packaging and skip set for
             // m-jar-p: should use pom packaging instead
-            throw new MojoExecutionException("Artifact " + artifact.getId() + " points to a directory: " + artifactFile
-                    + ". Packaging should be 'pom'?");
+            throw new MojoExecutionException("Artifact " + ArtifactIdUtils.toId(artifact) + " points to a directory: "
+                    + artifactFile + ". Packaging should be 'pom'?");
         }
         if (!artifactFile.isFile()) {
-            log.warn("Ignoring artifact " + artifact.getId() + " because it points to inexistent " + artifactFile);
+            log.warn("Ignoring artifact " + ArtifactIdUtils.toId(artifact) + " because it points to inexistent "
+                    + artifactFile);
             return;
         }
 
@@ -254,14 +240,12 @@ class BuildInfoWriter {
 
         path.append(artifact.getArtifactId()).append('-').append(artifact.getBaseVersion());
 
-        if (artifact.hasClassifier()) {
+        if (!artifact.getClassifier().isEmpty()) {
             path.append('-').append(artifact.getClassifier());
         }
 
-        ArtifactHandler artifactHandler = artifact.getArtifactHandler();
-
-        if (StringUtils.isNotEmpty(artifactHandler.getExtension())) {
-            path.append('.').append(artifactHandler.getExtension());
+        if (!artifact.getExtension().isEmpty()) {
+            path.append('.').append(artifact.getExtension());
         }
 
         return path.toString();
@@ -297,7 +281,14 @@ class BuildInfoWriter {
      * @throws MojoExecutionException
      */
     static Properties loadOutputProperties(File buildinfo) throws MojoExecutionException {
-        Properties prop = PropertyUtils.loadOptionalProperties(buildinfo);
+        Properties prop = new Properties();
+        if (buildinfo != null) {
+            try (InputStream is = Files.newInputStream(buildinfo.toPath())) {
+                prop.load(is);
+            } catch (IOException e) {
+                // silent
+            }
+        }
         for (String name : prop.stringPropertyNames()) {
             if (!name.startsWith("outputs.") || name.endsWith(".coordinates")) {
                 prop.remove(name);
