@@ -72,6 +72,14 @@ public class CheckBuildPlanMojo extends AbstractMojo {
     private String outputTimestamp;
 
     /**
+     * Diagnose {@code outputTimestamp} effective value based on execution context.
+     *
+     * @since 3.5.2
+     */
+    @Parameter(property = "diagnose", defaultValue = "false")
+    private boolean diagnose;
+
+    /**
      * Provide a plugin issues property file to override plugin's <code>not-reproducible-plugins.properties</code>.
      */
     @Parameter(property = "check.plugin-issues")
@@ -95,8 +103,8 @@ public class CheckBuildPlanMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        boolean fail =
-                AbstractBuildinfoMojo.hasBadOutputTimestamp(outputTimestamp, getLog(), project, session.getProjects());
+        boolean fail = AbstractBuildinfoMojo.hasBadOutputTimestamp(
+                outputTimestamp, getLog(), project, session.getProjects(), diagnose);
 
         // TODO check maven-jar-plugin module-info.class?
 
