@@ -25,8 +25,8 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -119,6 +119,14 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     private String outputTimestamp;
 
     /**
+     * Diagnose {@code outputTimestamp} effective value based on execution context.
+     *
+     * @since 3.5.2
+     */
+    @Parameter(property = "diagnose", defaultValue = "false")
+    private boolean diagnose;
+
+    /**
      * To obtain a toolchain if possible.
      */
     @Component
@@ -131,7 +139,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException {
         boolean mono = session.getProjects().size() == 1;
 
-        hasBadOutputTimestamp(outputTimestamp, getLog(), project, session.getProjects());
+        hasBadOutputTimestamp(outputTimestamp, getLog(), project, session.getProjects(), diagnose);
 
         if (!mono) {
             // if module skips install and/or deploy
@@ -157,18 +165,51 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     }
 
     static boolean hasBadOutputTimestamp(
-            String outputTimestamp, Log log, MavenProject project, List<MavenProject> reactorProjects) {
+            String outputTimestamp,
+            Log log,
+            MavenProject project,
+            List<MavenProject> reactorProjects,
+            boolean diagnose) {
         Instant timestamp =
                 MavenArchiver.parseBuildOutputTimestamp(outputTimestamp).orElse(null);
+
+        if (diagnose) {
+            log.info("outputTimestamp = " + outputTimestamp + " => "
+                    + ((timestamp == null) ? "disabled" : DateTimeFormatter.ISO_INSTANT.format(timestamp)));
+
+            String projectProperty = project.getProperties().getProperty("project.build.outputTimestamp");
+            String modelProperty = project.getModel().getProperties().getProperty("project.build.outputTimestamp");
+            String originalModelProperty =
+                    project.getOriginalModel().getProperties().getProperty("project.build.outputTimestamp");
+
+            log.info("plugin outputTimestamp parameter diagnostics:" + System.lineSeparator()
+                    + "        - plugin outputTimestamp parameter (defaultValue=\"${project.build.outputTimestamp}\") = "
+                    + outputTimestamp + System.lineSeparator()
+                    + "        - project project.build.outputTimestamp property = " + projectProperty
+                    + System.lineSeparator()
+                    + "        - model project.build.outputTimestamp property = " + modelProperty
+                    + System.lineSeparator()
+                    + "        - original model project.build.outputTimestamp property = " + originalModelProperty);
+        }
+
         if (timestamp == null) {
             log.error("Reproducible Build not activated by project.build.outputTimestamp property: "
                     + "see https://maven.apache.org/guides/mini/guide-reproducible-builds.html");
+
+            String projectProperty = project.getProperties().getProperty("project.build.outputTimestamp");
+            if (projectProperty != null && projectProperty.startsWith("${git.")) {
+                log.error("project.build.outputTimestamp = \"" + projectProperty + "\": isn't Git value set?");
+                log.error("Did validate phase run and Git plugin set the value?");
+                if (project.getPackaging().equals("pom")) {
+                    log.error("if using git-commit-id-plugin, <skipPoms>false</skipPoms> may solve the issue.");
+                }
+            }
             return true;
         }
 
         if (log.isDebugEnabled()) {
             log.debug("project.build.outputTimestamp = \"" + outputTimestamp + "\" => "
-                    + new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(timestamp));
+                    + DateTimeFormatter.ISO_INSTANT.format(timestamp));
         }
 
         // check if timestamp defined in a project from reactor: warn if it is not the case
@@ -213,6 +254,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         File rootCopy =
                 new File(root.getBuild().getDirectory(), root.getArtifactId() + '-' + root.getVersion() + extension);
         try {
+            rootCopy.getParentFile().mkdirs();
             Files.copy(
                     aggregate.toPath(),
                     rootCopy.toPath(),
