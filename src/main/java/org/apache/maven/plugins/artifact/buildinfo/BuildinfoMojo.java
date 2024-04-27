@@ -33,7 +33,7 @@ import org.eclipse.aether.artifact.Artifact;
  * <a href="https://reproducible-builds.org/docs/jvm/">Reproducible Builds for the JVM</a>
  * for mono-module build, and extended for multi-module build.
  */
-@Mojo(name = "buildinfo", defaultPhase = LifecyclePhase.VERIFY, threadSafe = true)
+@Mojo(name = "buildinfo", defaultPhase = LifecyclePhase.VERIFY, threadSafe = false)
 public class BuildinfoMojo extends AbstractBuildinfoMojo {
     /**
      * Specifies whether to attach the generated buildinfo file to the project.

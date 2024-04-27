@@ -51,7 +51,7 @@ import static org.apache.maven.plugins.artifact.buildinfo.BuildInfoWriter.getArt
  *
  * @since 3.2.0
  */
-@Mojo(name = "compare", threadSafe = true)
+@Mojo(name = "compare", threadSafe = false)
 public class CompareMojo extends AbstractBuildinfoMojo {
     /**
      * Repository for reference build, containing either reference buildinfo file or reference artifacts.<br/>
