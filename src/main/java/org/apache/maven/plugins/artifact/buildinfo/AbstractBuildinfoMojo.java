@@ -212,7 +212,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
                     + DateTimeFormatter.ISO_INSTANT.format(timestamp));
         }
 
-        // check if timestamp defined in a project from reactor: warn if it is not the case
+        // check if timestamp defined in a project from reactor: info if it is not the case
         boolean parentInReactor = false;
         MavenProject reactorParent = project;
         while (reactorProjects.contains(reactorParent.getParent())) {
@@ -221,8 +221,8 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         }
         String prop = reactorParent.getOriginalModel().getProperties().getProperty("project.build.outputTimestamp");
         if (prop == null) {
-            log.warn("<project.build.outputTimestamp> property is inherited"
-                    + (parentInReactor ? " from outside the reactor" : "") + ", it should be defined in "
+            log.info("<project.build.outputTimestamp> property (= " + outputTimestamp + ") is inherited"
+                    + (parentInReactor ? " from outside the reactor" : "") + ", you can override in "
                     + (parentInReactor ? "parent POM from reactor " + reactorParent.getFile() : "pom.xml"));
             return false;
         }

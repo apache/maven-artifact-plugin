@@ -20,5 +20,5 @@
 
 def buildLog = new File(basedir, 'build.log').text
 
-// https://issues.apache.org/jira/browse/MARTIFACT-24 & MARTIFACT-53
-assert buildLog.contains('[WARNING] <project.build.outputTimestamp> property is inherited, it should be defined in pom.xml')
+// https://issues.apache.org/jira/browse/MARTIFACT-24 & MARTIFACT-53 & MARTIFACT-71
+assert buildLog.contains('[INFO] <project.build.outputTimestamp> property (= 2022-12-11T20:07:23Z) is inherited, you can override in pom.xml')
