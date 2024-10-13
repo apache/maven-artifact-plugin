@@ -172,10 +172,11 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
             boolean diagnose) {
         Instant timestamp =
                 MavenArchiver.parseBuildOutputTimestamp(outputTimestamp).orElse(null);
+        String effective = ((timestamp == null) ? "disabled" : DateTimeFormatter.ISO_INSTANT.format(timestamp));
 
         if (diagnose) {
-            log.info("outputTimestamp = " + outputTimestamp + " => "
-                    + ((timestamp == null) ? "disabled" : DateTimeFormatter.ISO_INSTANT.format(timestamp)));
+            log.info("outputTimestamp = " + outputTimestamp
+                    + (effective.equals(outputTimestamp) ? "" : (" => " + effective)));
 
             String projectProperty = project.getProperties().getProperty("project.build.outputTimestamp");
             String modelProperty = project.getModel().getProperties().getProperty("project.build.outputTimestamp");
@@ -185,11 +186,29 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
             log.info("plugin outputTimestamp parameter diagnostics:" + System.lineSeparator()
                     + "        - plugin outputTimestamp parameter (defaultValue=\"${project.build.outputTimestamp}\") = "
                     + outputTimestamp + System.lineSeparator()
-                    + "        - project project.build.outputTimestamp property = " + projectProperty
+                    + "        - project.build.outputTimestamp property from project = " + projectProperty
                     + System.lineSeparator()
-                    + "        - model project.build.outputTimestamp property = " + modelProperty
+                    + "        - project.build.outputTimestamp property from project model = " + modelProperty
                     + System.lineSeparator()
-                    + "        - original model project.build.outputTimestamp property = " + originalModelProperty);
+                    + "        - project.build.outputTimestamp property from project original model = "
+                    + originalModelProperty);
+
+            MavenProject parent = project.getParent();
+            if (parent != null) {
+                StringBuilder sb = new StringBuilder("Inheritance analysis property:" + System.lineSeparator()
+                        + "        - current " + project.getId() + " property = " + projectProperty);
+                while (parent != null) {
+                    String parentProperty = parent.getProperties().getProperty("project.build.outputTimestamp");
+                    sb.append(System.lineSeparator());
+                    sb.append("        - " + (reactorProjects.contains(parent) ? "reactor" : "external") + " parent "
+                            + parent.getId() + " property = " + parentProperty);
+                    if (!projectProperty.equals(parentProperty)) {
+                        break;
+                    }
+                    parent = parent.getParent();
+                }
+                log.info(sb.toString());
+            }
         }
 
         if (timestamp == null) {
@@ -209,7 +228,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
         if (log.isDebugEnabled()) {
             log.debug("project.build.outputTimestamp = \"" + outputTimestamp + "\" => "
-                    + DateTimeFormatter.ISO_INSTANT.format(timestamp));
+                    + (effective.equals(outputTimestamp) ? "" : (" => " + effective)));
         }
 
         // check if timestamp defined in a project from reactor: warn if it is not the case
