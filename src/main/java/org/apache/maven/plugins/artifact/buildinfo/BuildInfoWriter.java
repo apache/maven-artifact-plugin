@@ -319,7 +319,7 @@ class BuildInfoWriter {
         this.ignore = ignore.stream().map(i -> fs.getPathMatcher("glob:" + i)).collect(Collectors.toList());
     }
 
-    private boolean isIgnore(Artifact attached) {
+    boolean isIgnore(Artifact attached) {
         Path path = Paths.get(attached.getGroupId() + '/' + getArtifactFilename(attached));
         return ignore.stream().anyMatch(m -> m.matches(path));
     }

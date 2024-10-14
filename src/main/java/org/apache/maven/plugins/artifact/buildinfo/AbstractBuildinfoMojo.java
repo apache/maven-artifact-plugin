@@ -292,6 +292,14 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         }
     }
 
+    protected BuildInfoWriter newBuildInfoWriter(PrintWriter p, boolean mono) {
+        BuildInfoWriter bi = new BuildInfoWriter(getLog(), p, mono, rtInformation);
+        bi.setIgnoreJavadoc(ignoreJavadoc);
+        bi.setIgnore(ignore);
+        bi.setToolchain(getToolchain());
+
+        return bi;
+    }
     /**
      * Generate buildinfo file.
      *
@@ -307,11 +315,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
         try (PrintWriter p = new PrintWriter(new BufferedWriter(
                 new OutputStreamWriter(Files.newOutputStream(buildinfoFile.toPath()), StandardCharsets.UTF_8)))) {
-            BuildInfoWriter bi = new BuildInfoWriter(getLog(), p, mono, rtInformation);
-            bi.setIgnoreJavadoc(ignoreJavadoc);
-            bi.setIgnore(ignore);
-            bi.setToolchain(getToolchain());
-
+            BuildInfoWriter bi = newBuildInfoWriter(p, mono);
             bi.printHeader(root, mono ? null : project, reproducible);
 
             // artifact(s) fingerprints
@@ -355,7 +359,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         return null;
     }
 
-    private boolean isSkip(MavenProject project) {
+    protected boolean isSkip(MavenProject project) {
         // manual/configured module skip
         boolean skipModule = false;
         if (skipModules != null && !skipModules.isEmpty()) {
