@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-plugins</artifactId>
-    <version>42</version>
+    <version>43</version>
     <relativePath />
   </parent>
 
@@ -35,7 +35,7 @@
   <description>Plugin to manage artifacts tasks</description>
 
   <prerequisites>
-    <maven>3.2.5</maven>
+    <maven>3.6.3</maven>
   </prerequisites>
 
   <scm>
@@ -50,7 +50,7 @@
   </issueManagement>
   <ciManagement>
     <system>Jenkins</system>
-    <url>https://ci-builds.apache.org/job/Maven/job/maven-box/job/maven-artifact-plugin/</url>
+    <url>https://ci-maven.apache.org/job/Maven/job/maven-box/job/maven-artifact-plugin/</url>
   </ciManagement>
   <distributionManagement>
     <site>
@@ -107,7 +107,6 @@
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-xml</artifactId>
-      <version>3.0.0</version>
     </dependency>
     <!-- ONLY: MessageUtil -->
     <dependency>
@@ -166,14 +165,6 @@
   <build>
     <pluginManagement>
       <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <configuration>
-            <proc>none</proc>
-            <showDeprecation>true</showDeprecation>
-          </configuration>
-        </plugin>
         <plugin>
           <groupId>org.simplify4u.plugins</groupId>
           <artifactId>pgpverify-maven-plugin</artifactId>
