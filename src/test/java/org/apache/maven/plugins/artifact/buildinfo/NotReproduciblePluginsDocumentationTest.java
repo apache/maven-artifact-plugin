@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test class to generate {@code target/generated-site/apt/plugin-issues.apt} with content extracted from
