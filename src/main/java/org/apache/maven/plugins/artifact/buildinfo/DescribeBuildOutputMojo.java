@@ -25,7 +25,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Comparator;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.RepositoryUtils;
@@ -57,6 +60,21 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
     private void describeBuildOutput() throws MojoExecutionException {
         rootPath = getExecutionRoot().getBasedir().toPath();
         bi = newBuildInfoWriter(null, false);
+
+        Map<String, Long> groupIds = session.getProjects().stream()
+                .collect(Collectors.groupingBy(MavenProject::getGroupId, Collectors.counting()));
+        groupIds.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .forEach(e -> getLog().info("groupId: " + e.getKey() + " (" + e.getValue() + ")"));
+
+        Map<String, Set<String>> artifactIds = session.getProjects().stream()
+                .collect(Collectors.groupingBy(
+                        MavenProject::getArtifactId, Collectors.mapping(MavenProject::getGroupId, Collectors.toSet())));
+        artifactIds.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .filter(e -> e.getValue().size() > 1)
+                .forEach(e ->
+                        getLog().info("artifactId: " + e.getKey() + " defined for multiple groupIds: " + e.getValue()));
 
         getLog().info(MessageUtils.buffer()
                 .a("skip/ignore artifactId")
