@@ -32,13 +32,15 @@ ${project.name}
 
 * Goals Overview
 
-  The Artifact Plugin has 3 goals currently:
+  The Artifact Plugin has 4 goals currently:
 
   * {{{./buildinfo-mojo.html}artifact:buildinfo}} records current build results (from <<<package>>>) in {{{https://reproducible-builds.org/docs/jvm/}Reproducible Builds buildinfo}} file,
 
   * {{{./compare-mojo.html}artifact:compare}} compares current build output (from <<<package>>>) against reference build previously published,
 
   * {{{./check-buildplan-mojo.html}artifact:check-buildplan}} checks the project's buildplan to find if any used {{{./plugin-issues.html}plugin has a known Reproducible Builds issue}}.
+
+  * {{{./describe-build-output-mojo.html}artifact:describe-build-output}} (experimental) describes the miscellaneous output files of a build.
 
 * Usage
 
