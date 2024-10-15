@@ -191,6 +191,20 @@ class BuildInfoWriter {
                 pomArtifact.getFile(),
                 project.getArtifactId() + '-' + project.getVersion() + ".pom");
 
+        if (consumerPom != null) {
+            // build pom
+            Artifact buildPomArtifact = new DefaultArtifact(
+                    project.getGroupId(), project.getArtifactId(), "build", "pom", project.getVersion());
+            buildPomArtifact = buildPomArtifact.setFile(project.getFile());
+
+            artifacts.put(buildPomArtifact, prefix + n);
+            printFile(
+                    prefix + n++,
+                    buildPomArtifact.getGroupId(),
+                    buildPomArtifact.getFile(),
+                    project.getArtifactId() + '-' + project.getVersion() + "-build.pom");
+        }
+
         if (project.getArtifact() == null) {
             return;
         }
