@@ -37,7 +37,7 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 
 /**
- * Describe build output.
+ * Describe build output (experimental).
  * It is expected to be used aggregator used from CLI, ie run at root after everything has run, but not bound to any build
  * phase, where it would be run at root before modules.
  * @since 3.5.2
