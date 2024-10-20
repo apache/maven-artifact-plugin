@@ -37,6 +37,7 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -213,8 +214,10 @@ class ReferenceBuildinfoUtil {
             } else {
                 log.warn("no MANIFEST.MF found in jar " + file);
             }
-        } catch (IOException e) {
-            log.warn("unable to open jar file " + file, e);
+        } catch (ZipException e) {
+            log.warn("Corrupt jar file " + file + "\n" + e.getMessage());
+        }  catch (IOException e) {
+            log.warn("unable to read jar file " + file + "\n" + e.getMessage());
         }
         return null;
     }
