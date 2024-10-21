@@ -46,6 +46,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.outputTimestamp>1234567890</project.build.outputTimestamp>
     <spotless.check.skip>true</spotless.check.skip>
   </properties>
 
