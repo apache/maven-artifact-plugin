@@ -25,10 +25,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.RepositoryUtils;
+import org.apache.maven.archiver.MavenArchiver;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.project.MavenProject;
@@ -48,6 +54,12 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
     @Override
     public void execute() throws MojoExecutionException {
         // super.execute(); // do not generate buildinfo, just reuse logic from abstract class
+        Instant timestamp =
+                MavenArchiver.parseBuildOutputTimestamp(outputTimestamp).orElse(null);
+        String effective = ((timestamp == null) ? "disabled" : DateTimeFormatter.ISO_INSTANT.format(timestamp));
+
+        diagnose(outputTimestamp, getLog(), project, session.getProjects(), effective);
+        getLog().info("");
         describeBuildOutput();
     }
 
@@ -58,8 +70,25 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
         rootPath = getExecutionRoot().getBasedir().toPath();
         bi = newBuildInfoWriter(null, false);
 
+        Map<String, Long> groupIds = session.getProjects().stream()
+                .collect(Collectors.groupingBy(MavenProject::getGroupId, Collectors.counting()));
+        groupIds.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .forEach(e -> getLog().info("groupId: " + e.getKey() + " (" + e.getValue() + " artifactId"
+                        + ((e.getValue() > 1) ? "s" : "") + ")"));
+
+        Map<String, Set<String>> artifactIds = session.getProjects().stream()
+                .collect(Collectors.groupingBy(
+                        MavenProject::getArtifactId, Collectors.mapping(MavenProject::getGroupId, Collectors.toSet())));
+        artifactIds.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .filter(e -> e.getValue().size() > 1)
+                .forEach(e ->
+                        getLog().info("artifactId: " + e.getKey() + " defined for multiple groupIds: " + e.getValue()));
+
+        getLog().info("");
         getLog().info(MessageUtils.buffer()
-                .a("skip/ignore artifactId")
+                .a("skip/ignore? artifactId")
                 .strong("[:classifier][:extension]")
                 .a(" = build-path repository-filename size [sha256]")
                 .build());
@@ -92,11 +121,11 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
                 }
             }
             pomArtifact = pomArtifact.setFile(p.getFile());
-            getLog().info(s + describeArtifact(pomArtifact));
+            getLog().info(s + describeArtifact(pomArtifact, skipped));
 
             // main artifact (when available: pom packaging does not provide main artifact)
             if (p.getArtifact().getFile() != null) {
-                getLog().info(s + describeArtifact(RepositoryUtils.toArtifact(p.getArtifact())));
+                getLog().info(s + describeArtifact(RepositoryUtils.toArtifact(p.getArtifact()), skipped));
             }
 
             // attached artifacts (when available)
@@ -107,7 +136,7 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
                 }
                 boolean ignored = skipped ? false : isIgnore(a);
                 String i = skipped ? s : (ignored ? "RB-ignored   " : "             ");
-                getLog().info(i + describeArtifact(a, ignored));
+                getLog().info(i + describeArtifact(a, skipped || ignored));
             }
         }
     }
