@@ -189,7 +189,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
             getLog().error("see "
                     + MessageUtils.buffer()
                             .project("diff " + relative(referenceBuildinfo) + " " + relative(buildinfoFile))
-                            .toString());
+                            .build());
             getLog().error("see also https://maven.apache.org/guides/mini/guide-reproducible-builds.html");
         } else {
             getLog().info("Reproducible Build output summary: "
