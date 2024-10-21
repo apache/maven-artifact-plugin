@@ -61,12 +61,12 @@ class ReferenceBuildinfoUtil {
     private static final Set<String> JAR_EXTENSIONS;
 
     static {
-        Set<String> types = new HashSet<>();
-        types.add("jar");
-        types.add("war");
-        types.add("ear");
-        types.add("rar");
-        JAR_EXTENSIONS = Collections.unmodifiableSet(types);
+        Set<String> extensions = new HashSet<>();
+        extensions.add("jar");
+        extensions.add("war");
+        extensions.add("ear");
+        extensions.add("rar");
+        JAR_EXTENSIONS = Collections.unmodifiableSet(extensions);
     }
 
     private final Log log;
