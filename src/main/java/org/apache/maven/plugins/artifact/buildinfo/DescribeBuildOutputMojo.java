@@ -25,6 +25,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
@@ -32,6 +34,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.RepositoryUtils;
+import org.apache.maven.archiver.MavenArchiver;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.project.MavenProject;
@@ -51,6 +54,12 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
     @Override
     public void execute() throws MojoExecutionException {
         // super.execute(); // do not generate buildinfo, just reuse logic from abstract class
+        Instant timestamp =
+                MavenArchiver.parseBuildOutputTimestamp(outputTimestamp).orElse(null);
+        String effective = ((timestamp == null) ? "disabled" : DateTimeFormatter.ISO_INSTANT.format(timestamp));
+
+        diagnose(outputTimestamp, getLog(), project, session.getProjects(), effective);
+        getLog().info("");
         describeBuildOutput();
     }
 
