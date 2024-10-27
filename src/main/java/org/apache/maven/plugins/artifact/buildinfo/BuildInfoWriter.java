@@ -214,7 +214,7 @@ class BuildInfoWriter {
         }
 
         for (Artifact attached : RepositoryUtils.toArtifacts(project.getAttachedArtifacts())) {
-            if (attached == consumerPom) {
+            if ("pom".equals(attached.getExtension()) && "consumer".equals(attached.getClassifier())) {
                 // ignore consumer pom
                 continue;
             }
