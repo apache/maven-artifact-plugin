@@ -210,7 +210,13 @@ class BuildInfoWriter {
         }
 
         if (project.getArtifact().getFile() != null) {
-            printArtifact(prefix, n++, RepositoryUtils.toArtifact(project.getArtifact()));
+            Artifact artifact = RepositoryUtils.toArtifact(project.getArtifact());
+            if (isIgnore(artifact)) {
+                p.println("# ignored " + getArtifactFilename(artifact));
+                artifacts.put(artifact, null);
+            } else {
+                printArtifact(prefix, n++, RepositoryUtils.toArtifact(project.getArtifact()));
+            }
         }
 
         for (Artifact attached : RepositoryUtils.toArtifacts(project.getAttachedArtifacts())) {
