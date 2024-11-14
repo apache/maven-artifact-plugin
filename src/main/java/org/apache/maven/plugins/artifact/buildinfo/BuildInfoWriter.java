@@ -37,7 +37,9 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.RepositoryUtils;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
@@ -46,19 +48,26 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.util.artifact.ArtifactIdUtils;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Buildinfo content writer.
  */
 class BuildInfoWriter {
+
+    private static final String MODULE_BUILD_INFO_KEY = "moduleBuildInfo";
+
     private final Log log;
     private final PrintWriter p;
     private final boolean mono;
     private final RuntimeInformation rtInformation;
     private final Map<Artifact, String> artifacts = new LinkedHashMap<>();
     private int projectCount = -1;
-    private boolean ignoreJavadoc = true;
-    private List<PathMatcher> ignore;
     private Toolchain toolchain;
+    private MavenSession session;
+
+    @SuppressWarnings("rawtypes")
+    private Map pluginContext;
 
     BuildInfoWriter(Log log, PrintWriter p, boolean mono, RuntimeInformation rtInformation) {
         this.log = log;
@@ -151,7 +160,7 @@ class BuildInfoWriter {
         }
     }
 
-    void printArtifacts(MavenProject project) throws MojoExecutionException {
+    void printArtifacts(MavenProject project, MavenProject aggregator) throws MojoExecutionException {
         String prefix = "outputs.";
         if (!mono) {
             // aggregated buildinfo output
@@ -209,8 +218,15 @@ class BuildInfoWriter {
             return;
         }
 
+        final ModuleBuildInfo moduleBuildInfo = getModuleBuildInfo(project, aggregator);
         if (project.getArtifact().getFile() != null) {
-            printArtifact(prefix, n++, RepositoryUtils.toArtifact(project.getArtifact()));
+            Artifact artifact = RepositoryUtils.toArtifact(project.getArtifact());
+            if (moduleBuildInfo.isIgnore(artifact)) {
+                p.println("# ignored " + getArtifactFilename(artifact));
+                artifacts.put(artifact, null);
+            } else {
+                printArtifact(prefix, n++, RepositoryUtils.toArtifact(project.getArtifact()));
+            }
         }
 
         for (Artifact attached : RepositoryUtils.toArtifacts(project.getAttachedArtifacts())) {
@@ -222,11 +238,11 @@ class BuildInfoWriter {
                 // ignore pgp signatures
                 continue;
             }
-            if (ignoreJavadoc && "javadoc".equals(attached.getClassifier())) {
+            if (moduleBuildInfo.ignoreJavadoc && "javadoc".equals(attached.getClassifier())) {
                 // TEMPORARY ignore javadoc, waiting for MJAVADOC-627 in m-javadoc-p 3.2.0
                 continue;
             }
-            if (isIgnore(attached)) {
+            if (moduleBuildInfo.isIgnore(attached)) {
                 p.println("# ignored " + getArtifactFilename(attached));
                 artifacts.put(attached, null);
                 continue;
@@ -320,25 +336,108 @@ class BuildInfoWriter {
         return prop;
     }
 
-    boolean getIgnoreJavadoc() {
-        return ignoreJavadoc;
+    boolean getIgnoreJavadoc(MavenProject project) {
+        // atm this is only called by DescribeBuildOutputMojo, where aggregator is always the same as project
+        return getModuleBuildInfo(project, project).ignoreJavadoc;
     }
 
-    void setIgnoreJavadoc(boolean ignoreJavadoc) {
-        this.ignoreJavadoc = ignoreJavadoc;
-    }
-
-    void setIgnore(List<String> ignore) {
-        FileSystem fs = FileSystems.getDefault();
-        this.ignore = ignore.stream().map(i -> fs.getPathMatcher("glob:" + i)).collect(Collectors.toList());
-    }
-
-    boolean isIgnore(Artifact attached) {
-        Path path = Paths.get(attached.getGroupId() + '/' + getArtifactFilename(attached));
-        return ignore.stream().anyMatch(m -> m.matches(path));
+    boolean isIgnore(MavenProject project, Artifact attached) {
+        // atm this is only called by DescribeBuildOutputMojo, where aggregator is always the same as project
+        return getModuleBuildInfo(project, project).isIgnore(attached);
     }
 
     public void setToolchain(Toolchain toolchain) {
         this.toolchain = toolchain;
+    }
+
+    public void setSession(MavenSession session) {
+        this.session = session;
+    }
+
+    public void setPluginContext(Map pluginContext) {
+        this.pluginContext = pluginContext;
+    }
+
+    private ModuleBuildInfo getModuleBuildInfo(MavenProject project, MavenProject aggregator) {
+        // pluginContext is project-specific
+        PluginDescriptor pluginDescriptor = requireNonNull(
+                (PluginDescriptor) pluginContext.get("pluginDescriptor"),
+                "pluginDescriptor not found in pluginContext");
+        ModuleBuildInfo moduleBuildInfo = tryGetModuleBuildInfo(project, pluginDescriptor);
+        if (moduleBuildInfo == null) {
+            // fallback to aggregator if not found for module - this can happen e.g. if the plugin
+            // did not run for the module (e.g. we're resuming the reactor build). the aggregator
+            // should be the project we're actually running in, it should always be available).
+            moduleBuildInfo = requireNonNull(
+                    tryGetModuleBuildInfo(aggregator, pluginDescriptor),
+                    "moduleBuildInfo not found for project: " + aggregator);
+        }
+        return moduleBuildInfo;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private ModuleBuildInfo tryGetModuleBuildInfo(MavenProject project, PluginDescriptor pluginDescriptor) {
+        Map projectPluginContext = session.getPluginContext(pluginDescriptor, project);
+        return ModuleBuildInfo.tryLoad(projectPluginContext);
+    }
+
+    /**
+     * {@code static} because we invoke it at times when no {@code BuildInfoWriter} is available.
+     */
+    @SuppressWarnings("rawtypes")
+    static void addModuleBuildInfo(Map pluginContext, List<String> ignore, boolean ignoreJavadoc) {
+        new ModuleBuildInfo(ignore, ignoreJavadoc).store(pluginContext);
+    }
+
+    /**
+     * Stores module-specific buildInfo configuration - this is used in the aggregator to ensure that
+     * the aggregator respects each module's configuration. For clarify the modules of a
+     * multi-module are exposed in the code as {@link MavenProject MavenProjects}.
+     */
+    static class ModuleBuildInfo {
+
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        public static ModuleBuildInfo tryLoad(Map pluginContext) {
+            Object[] params;
+            synchronized (pluginContext) {
+                params = (Object[]) pluginContext.get(MODULE_BUILD_INFO_KEY);
+            }
+            if (params == null) {
+                return null;
+            }
+            return new ModuleBuildInfo((List<PathMatcher>) params[0], (Boolean) params[1]);
+        }
+
+        private final List<PathMatcher> ignore;
+        final boolean ignoreJavadoc;
+
+        ModuleBuildInfo(List<String> ignore, boolean ignoreJavadoc) {
+            FileSystem fs = FileSystems.getDefault();
+            this.ignore =
+                    ignore.stream().map(i -> fs.getPathMatcher("glob:" + i)).collect(Collectors.toList());
+            this.ignoreJavadoc = ignoreJavadoc;
+        }
+
+        private ModuleBuildInfo(List<PathMatcher> ignore, Boolean ignoreJavadoc) {
+            this.ignore = ignore;
+            this.ignoreJavadoc = ignoreJavadoc;
+        }
+
+        public boolean isIgnore(Artifact attached) {
+            Path path = Paths.get(attached.getGroupId() + '/' + getArtifactFilename(attached));
+            return ignore.stream().anyMatch(m -> m.matches(path));
+        }
+
+        /**
+         * It's possible for the plugin to be executed in different classloaders for different modules, so because
+         * we're storing data in the session for use by different modules (i.e. the individual modules, and at the end
+         * the aggregator module), we can't store a class specific to this plugin. Use primitives/jdk classes.
+         */
+        @SuppressWarnings("rawtypes")
+        public void store(Map pluginContext) {
+            synchronized (pluginContext) {
+                pluginContext.put(MODULE_BUILD_INFO_KEY, new Object[] {ignore, ignoreJavadoc});
+            }
+        }
     }
 }
