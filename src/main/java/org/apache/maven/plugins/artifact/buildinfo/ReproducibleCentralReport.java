@@ -105,7 +105,7 @@ public class ReproducibleCentralReport extends AbstractMavenReport {
         sink.link(url);
         sink.figureGraphics(badge);
         sink.link_();
-        sink.text(groupId + ':' + artifactId + ':' + version);
+        sink.text(' ' + groupId + ':' + artifactId + ':' + version);
     }
 
     @Override
