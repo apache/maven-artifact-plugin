@@ -28,6 +28,7 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.MavenProject;
 import org.apache.maven.reporting.AbstractMavenReport;
 import org.apache.maven.reporting.MavenReportException;
 
@@ -64,7 +65,7 @@ public class ReproducibleCentralReport extends AbstractMavenReport {
         sink.text("this project:");
         sink.paragraph_();
         sink.paragraph();
-        renderReproducibleCentralArtifact(sink, project.getGroupId(), project.getArtifactId(), project.getVersion());
+        renderReproducibleCentralArtifact(sink, project);
         sink.paragraph_();
 
         sink.paragraph();
@@ -74,7 +75,7 @@ public class ReproducibleCentralReport extends AbstractMavenReport {
         sink.list();
         new TreeMap<String, Artifact>(project.getArtifactMap()).forEach((key, a) -> {
             sink.listItem();
-            renderReproducibleCentralArtifact(sink, a.getGroupId(), a.getArtifactId(), a.getVersion());
+            renderReproducibleCentralArtifact(sink, a);
             sink.listItem_();
         });
         sink.list_();
@@ -95,7 +96,17 @@ public class ReproducibleCentralReport extends AbstractMavenReport {
         sink.body_();
     }
 
-    private void renderReproducibleCentralArtifact(Sink sink, String groupId, String artifactId, String version) {
+    private void renderReproducibleCentralArtifact(Sink sink, MavenProject project) {
+        renderReproducibleCentralArtifact(
+                sink, project.getGroupId(), project.getArtifactId(), project.getVersion(), null);
+    }
+
+    private void renderReproducibleCentralArtifact(Sink sink, Artifact a) {
+        renderReproducibleCentralArtifact(sink, a.getGroupId(), a.getArtifactId(), a.getVersion(), a.getScope());
+    }
+
+    private void renderReproducibleCentralArtifact(
+            Sink sink, String groupId, String artifactId, String version, String scope) {
         String url = "https://jvm-repo-rebuild.github.io/reproducible-central/badge/artifact/"
                 + groupId.replace('.', '/') + '/' + artifactId + "/index.html";
         String badge =
@@ -106,6 +117,9 @@ public class ReproducibleCentralReport extends AbstractMavenReport {
         sink.figureGraphics(badge);
         sink.link_();
         sink.text(' ' + groupId + ':' + artifactId + ':' + version);
+        if (scope != null) {
+            sink.text(" (" + scope + ")");
+        }
     }
 
     @Override
