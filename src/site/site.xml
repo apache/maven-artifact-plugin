@@ -31,6 +31,7 @@ under the License.
           <item name="plugins issues" href="plugin-issues.html"/>
         </item>
         <item name="artifact:describe-build-output" href="describe-build-output-mojo.html"/>
+        <item name="artifact:reproducible-central" href="reproducible-central-mojo.html"/>
       </item>
       <item name="Usage" href="usage.html"/>
       <item name="FAQ" href="faq.html"/>
