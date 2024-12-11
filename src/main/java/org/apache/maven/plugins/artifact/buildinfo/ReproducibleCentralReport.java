@@ -108,11 +108,9 @@ public class ReproducibleCentralReport extends AbstractMavenReport {
     private void renderReproducibleCentralArtifact(
             Sink sink, String groupId, String artifactId, String version, String scope) {
         String url = "https://jvm-repo-rebuild.github.io/reproducible-central/badge/artifact/"
-                + groupId.replace('.', '/') + '/' + artifactId + "/index.html";
-        String badge =
-                "https://img.shields.io/endpoint?url=https://jvm-repo-rebuild.github.io/reproducible-central/badge/artifact/"
-                        + groupId.replace('.', '/') + '/' + artifactId + '/'
-                        + version + ".json";
+                + groupId.replace('.', '/') + '/' + artifactId + ".html";
+        String badge = "https://img.shields.io/reproducible-central/artifact/" + groupId + '/' + artifactId + '/'
+                + version + "?labelColor=1e5b96";
         sink.link(url);
         sink.figureGraphics(badge);
         sink.link_();
