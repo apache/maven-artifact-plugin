@@ -18,6 +18,8 @@
  */
 package org.apache.maven.plugins.artifact.buildinfo;
 
+import javax.inject.Inject;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
@@ -100,7 +102,8 @@ public class CompareMojo extends AbstractBuildinfoMojo {
      */
     private final RepositorySystem repoSystem;
 
-    protected CompareMojo(
+    @Inject
+    public CompareMojo(
             ToolchainManager toolchainManager,
             RuntimeInformation rtInformation,
             MavenProject project,
