@@ -18,14 +18,19 @@
  */
 package org.apache.maven.plugins.artifact.buildinfo;
 
+import javax.inject.Inject;
+
 import java.util.Map;
 
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
+import org.apache.maven.rtinfo.RuntimeInformation;
+import org.apache.maven.toolchain.ToolchainManager;
 import org.eclipse.aether.artifact.Artifact;
 
 /**
@@ -44,8 +49,18 @@ public class BuildinfoMojo extends AbstractBuildinfoMojo {
     /**
      * Used for attaching the buildinfo file in the project.
      */
-    @Component
-    private MavenProjectHelper projectHelper;
+    private final MavenProjectHelper projectHelper;
+
+    @Inject
+    public BuildinfoMojo(
+            ToolchainManager toolchainManager,
+            RuntimeInformation runtimeInformation,
+            MavenProject project,
+            MavenSession session,
+            MavenProjectHelper projectHelper) {
+        super(toolchainManager, runtimeInformation, project, session);
+        this.projectHelper = projectHelper;
+    }
 
     @Override
     public void execute(Map<Artifact, String> artifacts) throws MojoExecutionException {

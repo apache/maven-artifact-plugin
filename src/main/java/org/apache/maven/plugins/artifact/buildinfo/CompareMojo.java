@@ -31,12 +31,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.shared.utils.logging.MessageUtils;
+import org.apache.maven.toolchain.ToolchainManager;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
@@ -75,12 +77,6 @@ public class CompareMojo extends AbstractBuildinfoMojo {
     private boolean aggregateOnly;
 
     /**
-     * The entry point to Maven Artifact Resolver, i.e. the component doing all the work.
-     */
-    @Component
-    private RepositorySystem repoSystem;
-
-    /**
      * The current repository/network configuration of Maven.
      */
     @Parameter(defaultValue = "${repositorySystemSession}", readonly = true)
@@ -98,6 +94,21 @@ public class CompareMojo extends AbstractBuildinfoMojo {
      */
     @Parameter(property = "compare.fail", defaultValue = "true")
     private boolean fail;
+
+    /**
+     * The entry point to Maven Artifact Resolver, i.e. the component doing all the work.
+     */
+    private final RepositorySystem repoSystem;
+
+    protected CompareMojo(
+            ToolchainManager toolchainManager,
+            RuntimeInformation rtInformation,
+            MavenProject project,
+            MavenSession session,
+            RepositorySystem repoSystem) {
+        super(toolchainManager, rtInformation, project, session);
+        this.repoSystem = repoSystem;
+    }
 
     @Override
     public void execute(Map<Artifact, String> artifacts) throws MojoExecutionException {

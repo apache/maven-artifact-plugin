@@ -18,6 +18,8 @@
  */
 package org.apache.maven.plugins.artifact.buildinfo;
 
+import javax.inject.Inject;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,21 +37,33 @@ import java.util.stream.Collectors;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.RepositoryUtils;
 import org.apache.maven.archiver.MavenArchiver;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.shared.utils.logging.MessageUtils;
+import org.apache.maven.toolchain.ToolchainManager;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 
 /**
  * Describe build output (experimental).
- * It is expected to be used aggregator used from CLI, ie run at root after everything has run, but not bound to any build
+ * It is expected to be used aggregator used from CLI; that is, run at root after everything has run, but not bound to any build
  * phase, where it would be run at root before modules.
  * @since 3.5.2
  */
 @Mojo(name = "describe-build-output", aggregator = true, threadSafe = true)
 public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
+
+    @Inject
+    public DescribeBuildOutputMojo(
+            ToolchainManager toolchainManager,
+            RuntimeInformation rtInformation,
+            MavenProject project,
+            MavenSession session) {
+        super(toolchainManager, rtInformation, project, session);
+    }
 
     @Override
     public void execute() throws MojoExecutionException {
