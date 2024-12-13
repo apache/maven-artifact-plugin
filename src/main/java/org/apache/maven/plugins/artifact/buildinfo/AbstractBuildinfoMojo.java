@@ -356,7 +356,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     }
 
     protected MavenProject getExecutionRoot() {
-        for (MavenProject p : session.getProjects()) {
+        for (MavenProject p : session.getAllProjects()) {
             if (p.isExecutionRoot()) {
                 return p;
             }
