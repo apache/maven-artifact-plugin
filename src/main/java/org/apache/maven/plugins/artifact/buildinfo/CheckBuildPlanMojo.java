@@ -18,6 +18,8 @@
  */
 package org.apache.maven.plugins.artifact.buildinfo;
 
+import javax.inject.Inject;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,7 +36,6 @@ import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -50,14 +51,11 @@ import org.eclipse.aether.version.VersionScheme;
  */
 @Mojo(name = "check-buildplan", threadSafe = true, requiresProject = true)
 public class CheckBuildPlanMojo extends AbstractMojo {
-    @Component
-    private MavenProject project;
+    private final MavenProject project;
 
-    @Component
-    private MavenSession session;
+    private final MavenSession session;
 
-    @Component
-    private LifecycleExecutor lifecycleExecutor;
+    private final LifecycleExecutor lifecycleExecutor;
 
     /** Allow to specify which goals/phases will be used to calculate execution plan. */
     @Parameter(property = "check.buildplan.tasks", defaultValue = "deploy")
@@ -92,6 +90,13 @@ public class CheckBuildPlanMojo extends AbstractMojo {
     private boolean failOnNonReproducible;
 
     private final VersionScheme versionScheme = new GenericVersionScheme();
+
+    @Inject
+    public CheckBuildPlanMojo(MavenProject project, MavenSession session, LifecycleExecutor lifecycleExecutor) {
+        this.project = project;
+        this.session = session;
+        this.lifecycleExecutor = lifecycleExecutor;
+    }
 
     protected MavenExecutionPlan calculateExecutionPlan() throws MojoExecutionException {
         try {

@@ -43,7 +43,6 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
@@ -57,11 +56,6 @@ import org.eclipse.aether.artifact.Artifact;
  * @since 3.2.0
  */
 public abstract class AbstractBuildinfoMojo extends AbstractMojo {
-    /**
-     * The Maven project.
-     */
-    @Component
-    protected MavenProject project;
 
     /**
      * Location of the generated buildinfo file.
@@ -110,12 +104,6 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     private boolean reproducible;
 
     /**
-     * The current build session instance. This is used for toolchain manager API calls.
-     */
-    @Component
-    protected MavenSession session;
-
-    /**
      * Timestamp for reproducible output archive entries, either formatted as ISO 8601
      * <code>yyyy-MM-dd'T'HH:mm:ssXXX</code> or as an int representing seconds since the epoch (like
      * <a href="https://reproducible-builds.org/docs/source-date-epoch/">SOURCE_DATE_EPOCH</a>).
@@ -136,11 +124,30 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     /**
      * To obtain a toolchain if possible.
      */
-    @Component
-    private ToolchainManager toolchainManager;
+    private final ToolchainManager toolchainManager;
 
-    @Component
-    protected RuntimeInformation rtInformation;
+    protected final RuntimeInformation rtInformation;
+
+    /**
+     * The Maven project.
+     */
+    protected final MavenProject project;
+
+    /**
+     * The current build session instance. This is used for toolchain manager API calls.
+     */
+    protected final MavenSession session;
+
+    protected AbstractBuildinfoMojo(
+            ToolchainManager toolchainManager,
+            RuntimeInformation rtInformation,
+            MavenProject project,
+            MavenSession session) {
+        this.toolchainManager = toolchainManager;
+        this.rtInformation = rtInformation;
+        this.project = project;
+        this.session = session;
+    }
 
     @Override
     public void execute() throws MojoExecutionException {
