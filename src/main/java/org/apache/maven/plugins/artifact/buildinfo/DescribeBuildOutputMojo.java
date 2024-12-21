@@ -72,7 +72,7 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
                 MavenArchiver.parseBuildOutputTimestamp(outputTimestamp).orElse(null);
         String effective = ((timestamp == null) ? "disabled" : DateTimeFormatter.ISO_INSTANT.format(timestamp));
 
-        diagnose(outputTimestamp, getLog(), project, session.getProjects(), effective);
+        diagnose(outputTimestamp, getLog(), project, session, effective);
         getLog().info("");
         describeBuildOutput();
     }
@@ -81,7 +81,7 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
     private BuildInfoWriter bi;
 
     private void describeBuildOutput() throws MojoExecutionException {
-        rootPath = getExecutionRoot().getBasedir().toPath();
+        rootPath = session.getTopLevelProject().getBasedir().toPath();
         bi = newBuildInfoWriter(null, false);
 
         Map<String, Long> groupIds = session.getProjects().stream()

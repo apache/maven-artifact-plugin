@@ -137,7 +137,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
      * @throws MojoExecutionException if anything goes wrong
      */
     private void checkAgainstReference(Map<Artifact, String> artifacts, boolean mono) throws MojoExecutionException {
-        MavenProject root = mono ? project : getExecutionRoot();
+        MavenProject root = mono ? project : session.getTopLevelProject();
         File referenceDir = new File(root.getBuild().getDirectory(), "reference");
         referenceDir.mkdirs();
 
@@ -301,7 +301,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
     }
 
     private String relative(File file) {
-        File basedir = getExecutionRoot().getBasedir();
+        File basedir = session.getTopLevelProject().getBasedir();
         int length = basedir.getPath().length();
         String path = file.getPath();
         return path.substring(length + 1);
