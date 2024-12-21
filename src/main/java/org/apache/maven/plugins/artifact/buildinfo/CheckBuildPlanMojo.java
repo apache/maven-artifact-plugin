@@ -108,8 +108,8 @@ public class CheckBuildPlanMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        boolean fail = AbstractBuildinfoMojo.hasBadOutputTimestamp(
-                outputTimestamp, getLog(), project, session.getProjects(), diagnose);
+        boolean fail =
+                AbstractBuildinfoMojo.hasBadOutputTimestamp(outputTimestamp, getLog(), project, session, diagnose);
 
         // TODO check maven-jar-plugin module-info.class?
 
