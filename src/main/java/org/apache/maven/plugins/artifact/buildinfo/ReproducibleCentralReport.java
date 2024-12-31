@@ -33,8 +33,13 @@ import org.apache.maven.reporting.AbstractMavenReport;
 import org.apache.maven.reporting.MavenReportException;
 
 /**
- * Builds a Reproducible Builds report on the project and its dependencies based on data and badges provided
- * by Reproducible Central.
+ * Builds a Reproducible Builds report on the project and its dependencies,
+ * using <a href="https://shields.io/badges/reproducible-central-artifact">Reproducible Central Artifact</a> badges.
+ * These badges are based on
+ * <a href="https://jvm-repo-rebuild.github.io/reproducible-central/">artifact-level data</a> provided by
+ * <a href="https://github.com/jvm-repo-rebuild/reproducible-central">Reproducible Central</a>,
+ * <a href="https://github.com/jvm-repo-rebuild/reproducible-central/blob/master/bin/update_artifact_badge_data.java">reworked</a>
+ * from project-level rebuild results.
  * @since 3.6.0
  */
 @Mojo(
