@@ -40,9 +40,9 @@ ${project.name}
 
   * {{{./check-buildplan-mojo.html}artifact:check-buildplan}} checks the project's buildplan to find if any used {{{./plugin-issues.html}plugin has a known Reproducible Builds issue}},
 
-  * {{{./describe-build-output-mojo.html}artifact:describe-build-output}} (experimental) reports shows if dependencies are proven Reproducible Builds at Reproducible Central.
+  * {{{./describe-build-output-mojo.html}artifact:describe-build-output}} (experimental) describes build structure and output,
 
-  * {{{./reproducible-central-mojo.html}artifact:reproducible-central}} (experimental) .
+  * {{{./reproducible-central-mojo.html}artifact:reproducible-central}} (experimental) report shows if dependencies are proven Reproducible Builds at Reproducible Central.
 
 * Usage
 
