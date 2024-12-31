@@ -84,6 +84,19 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
         rootPath = session.getTopLevelProject().getBasedir().toPath();
         bi = newBuildInfoWriter(null, false);
 
+        Map<MavenProject, Long> reactorParents = session.getProjects().stream()
+                .collect(Collectors.groupingBy(
+                        p -> DescribeBuildOutputMojo.getReactorParent(session, p), Collectors.counting()));
+        reactorParents.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .forEach(e -> getLog().info("parent in reactor: " + e.getKey().getGroupId() + ":"
+                        + e.getKey().getArtifactId() + " @ "
+                        + rootPath.relativize(e.getKey().getFile().toPath()) + " (" + e.getValue() + " module"
+                        + ((e.getValue() > 1) ? "s" : "") + "), property = "
+                        + e.getKey().getProperties().get("project.build.outputTimestamp")));
+
+        getLog().info("");
+
         Map<String, Long> groupIds = session.getProjects().stream()
                 .collect(Collectors.groupingBy(MavenProject::getGroupId, Collectors.counting()));
         groupIds.entrySet().stream()
@@ -194,6 +207,14 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
         } catch (IOException ioe) {
             throw new MojoExecutionException("cannot read " + file, ioe);
         }
+    }
+
+    static MavenProject getReactorParent(MavenSession session, MavenProject project) {
+        MavenProject reactorParent = project;
+        while (session.getProjects().contains(reactorParent.getParent())) {
+            reactorParent = reactorParent.getParent();
+        }
+        return reactorParent;
     }
 
     @Override

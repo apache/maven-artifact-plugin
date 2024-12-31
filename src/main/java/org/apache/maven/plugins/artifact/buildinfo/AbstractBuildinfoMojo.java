@@ -229,13 +229,20 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     static void diagnose(
             String outputTimestamp, Log log, MavenProject project, MavenSession session, String effective) {
         if (session.getProjects().size() > 1) {
-            log.info("reactor executionRoot = " + session.getTopLevelProject().getId());
-            log.info("reactor first = " + session.getProjects().get(0).getId());
-            MavenProject parent = session.getProjects().get(0).getParent();
-            log.info("reactor first parent = " + ((parent == null) ? parent : parent.getId()));
-            if (parent != null && session.getProjects().contains(parent)) {
+            MavenProject root = session.getTopLevelProject();
+            MavenProject first = session.getProjects().get(0);
+            Path firstRelative =
+                    root.getBasedir().toPath().relativize(first.getFile().toPath());
+            MavenProject firstParent = first.getParent();
+            log.info("reactor executionRoot = " + root.getId() + (root.equals(project) ? " (current)" : "")
+                    + System.lineSeparator()
+                    + "       reactor first = "
+                    + (first.equals(root) ? "executionRoot" : (first.getId() + " @ " + firstRelative))
+                    + System.lineSeparator()
+                    + "               first.parent = " + ((firstParent == null) ? firstParent : firstParent.getId()));
+            if (firstParent != null && session.getProjects().contains(firstParent)) {
                 // should not happen...
-                log.warn("reactor first parent = " + parent.getId() + " is in reactor");
+                log.warn("reactor first parent = " + firstParent.getId() + " is in reactor");
             }
         }
 
@@ -263,7 +270,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
         MavenProject parent = project.getParent();
         if (parent != null) {
-            StringBuilder sb = new StringBuilder("Inheritance analysis property:" + System.lineSeparator()
+            StringBuilder sb = new StringBuilder("Inheritance analysis for property:" + System.lineSeparator()
                     + "        - current " + project.getId() + " property = " + projectProperty);
             while (parent != null) {
                 String parentProperty = parent.getProperties().getProperty("project.build.outputTimestamp");

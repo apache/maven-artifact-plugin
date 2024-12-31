@@ -21,22 +21,33 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.apache.maven.plugins.it</groupId>
-    <artifactId>parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <relativePath>parent/</relativePath>
+    <groupId>org.apache.maven</groupId>
+    <artifactId>maven-parent</artifactId>
+    <version>39</version>
+    <relativePath></relativePath>
   </parent>
 
-  <artifactId>multi</artifactId>
+  <groupId>org.apache.maven.plugins.it</groupId>
+  <artifactId>parent</artifactId>
+  <version>1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <description>An IT verifying the use case of buildinfo file for multi-modules build.</description>
+  <description>Parent POM.</description>
 
-  <modules>
-    <module>modB</module>
-    <module>modA</module>
-    <module>modA-other-groupId</module>
-    <module>modSkipDeploy</module>
-    <module>parent</module>
-  </modules>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.outputTimestamp>1234567890</project.build.outputTimestamp>
+    <spotless.check.skip>true</spotless.check.skip>
+    <checkstyle.skip>true</checkstyle.skip>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>@project.groupId@</groupId>
+        <artifactId>@project.artifactId@</artifactId>
+        <version>@project.version@</version>
+      </plugin>
+    </plugins>
+  </build>
 </project>
