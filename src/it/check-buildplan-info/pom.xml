@@ -38,6 +38,10 @@
           <artifactId>@project.artifactId@</artifactId>
           <version>@project.version@</version>
         </plugin>
+        <plugin>
+          <artifactId>maven-remote-resources-plugin</artifactId>
+          <version>3.3.0</version>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
