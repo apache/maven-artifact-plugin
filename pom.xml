@@ -62,7 +62,7 @@
   <properties>
     <mavenVersion>3.9.6</mavenVersion>
     <resolverVersion>1.9.20</resolverVersion>
-    <doxiaVersion>1.12.0</doxiaVersion>
+    <doxiaVersion>2.0.0</doxiaVersion>
     <javaVersion>8</javaVersion>
     <project.build.outputTimestamp>2024-10-27T16:23:14Z</project.build.outputTimestamp>
   </properties>
