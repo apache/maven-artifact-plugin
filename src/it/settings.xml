@@ -26,6 +26,9 @@
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
+      <properties>
+        <reference.repo>nexus</reference.repo>
+      </properties>
       <repositories>
         <repository>
           <id>local.central</id>
