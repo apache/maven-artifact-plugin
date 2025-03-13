@@ -62,6 +62,13 @@ ${project.name}
   {{{./scm.html}source repository}} and will find supplementary information in the
   {{{http://maven.apache.org/guides/development/guide-helping.html}guide to helping with Maven}}.
 
+* Limitations
+
+  This plugin is not able to detect <<all>> reproduciblity issues. For instance, timezone issues cannot be reliably detected
+  when reference builder machine and your build machine are in the same timezone. Change your JVM's timezone with the Java
+  system property <<<user.timezone>>> and retry. See {{{https://issues.apache.org/jira/browse/MARTIFACT-36}MARTIFACT-36}}
+  for details.
+
 * Examples
 
   To provide you with better understanding on some usages of the Artifact Plugin,
