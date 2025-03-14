@@ -70,14 +70,14 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
      * Ignore javadoc attached artifacts from buildinfo generation.
      */
     @Parameter(property = "buildinfo.ignoreJavadoc", defaultValue = "true")
-    private boolean ignoreJavadoc;
+    boolean ignoreJavadoc;
 
     /**
      * Artifacts to ignore, specified as a glob matching against <code>${groupId}/${filename}</code>, for example
      * <code>*</>/*.xml</code>.
      */
     @Parameter(property = "buildinfo.ignore", defaultValue = "")
-    private List<String> ignore;
+    List<String> ignore;
 
     /**
      * Detect projects/modules with install or deploy skipped: avoid taking fingerprints.
@@ -155,6 +155,8 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
         hasBadOutputTimestamp(outputTimestamp, getLog(), project, session, diagnose);
 
+        initModuleBuildInfo();
+
         if (!mono) {
             // if module skips install and/or deploy
             if (isSkip(project)) {
@@ -176,6 +178,10 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         copyAggregateToRoot(buildinfoFile);
 
         execute(artifacts);
+    }
+
+    protected void initModuleBuildInfo() {
+        BuildInfoWriter.addModuleBuildInfo(getPluginContext(), ignore, ignoreJavadoc);
     }
 
     static boolean hasBadOutputTimestamp(
@@ -324,9 +330,9 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
     protected BuildInfoWriter newBuildInfoWriter(PrintWriter p, boolean mono) {
         BuildInfoWriter bi = new BuildInfoWriter(getLog(), p, mono, rtInformation);
-        bi.setIgnoreJavadoc(ignoreJavadoc);
-        bi.setIgnore(ignore);
         bi.setToolchain(getToolchain());
+        bi.setSession(session);
+        bi.setPluginContext(getPluginContext());
 
         return bi;
     }
@@ -350,11 +356,11 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
             // artifact(s) fingerprints
             if (mono) {
-                bi.printArtifacts(project);
+                bi.printArtifacts(project, project);
             } else {
-                for (MavenProject project : session.getProjects()) {
-                    if (!isSkip(project)) {
-                        bi.printArtifacts(project);
+                for (MavenProject moduleProject : session.getProjects()) {
+                    if (!isSkip(moduleProject)) {
+                        bi.printArtifacts(moduleProject, project);
                     }
                 }
             }
