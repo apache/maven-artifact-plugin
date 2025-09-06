@@ -74,6 +74,7 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
 
         diagnose(outputTimestamp, getLog(), project, session, effective);
         getLog().info("");
+        initModuleBuildInfo();
         describeBuildOutput();
     }
 
@@ -169,13 +170,16 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
     }
 
     private boolean isIgnore(Artifact a) {
+        // because this is an aggregator mojo it only runs in the aggregator project so it's the only
+        // one that will have `ModuleBuildInfo` available (i.e. none of the other session.projects
+        // will have it).
         if (a.getExtension().endsWith(".asc")) {
             return true;
         }
-        if (bi.getIgnoreJavadoc() && "javadoc".equals(a.getClassifier())) {
+        if (bi.getIgnoreJavadoc(project) && "javadoc".equals(a.getClassifier())) {
             return true;
         }
-        return bi.isIgnore(a);
+        return bi.isIgnore(project, a);
     }
 
     private String describeArtifact(Artifact a) throws MojoExecutionException {
