@@ -141,11 +141,6 @@ class BuildInfoWriter {
             sourceAvailable = true;
             p.println("source.scm.uri=" + project.getScm().getConnection());
             p.println("source.scm.tag=" + project.getScm().getTag());
-            if (project.getArtifact().isSnapshot()) {
-                log.warn("SCM source tag in buildinfo source.scm.tag="
-                        + project.getScm().getTag() + " does not permit rebuilders reproducible source checkout");
-                // TODO is it possible to use Scm API to get SCM version?
-            }
         } else {
             p.println("# no scm configured in pom.xml");
         }
