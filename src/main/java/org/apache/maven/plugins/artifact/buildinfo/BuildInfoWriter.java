@@ -85,13 +85,17 @@ class BuildInfoWriter {
         if (reproducible) {
             p.println("# build environment information (simplified for reproducibility)");
             p.println("java.version=" + extractJavaMajorVersion(System.getProperty("java.version")));
-            String ls = System.getProperty("line.separator");
+            String ls = System.lineSeparator();
             p.println("os.name=" + ("\n".equals(ls) ? "Unix" : "Windows"));
         } else {
             p.println("# effective build environment information");
             p.println("java.version=" + System.getProperty("java.version"));
             p.println("java.vendor=" + System.getProperty("java.vendor"));
             p.println("os.name=" + System.getProperty("os.name"));
+            p.println("os.version=" + System.getProperty("os.version"));
+            p.println("os.arch=" + System.getProperty("os.arch"));
+            p.println("line.separator="
+                    + System.lineSeparator().replace("\r", "\\r").replace("\n", "\\n"));
         }
         p.println();
         p.println("# Maven rebuild instructions and effective environment");
