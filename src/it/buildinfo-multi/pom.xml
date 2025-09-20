@@ -40,6 +40,9 @@
   <modules>
     <module>modB</module>
     <module>modA</module>
+    <module>ignore-all</module>
+    <module>ignore-pom</module>
+    <module>ignore-jar</module>
   </modules>
 
   <distributionManagement>
@@ -80,6 +83,9 @@
             <configuration>
               <ignore>
                 <ignore>*/*.spdx.json</ignore>
+                <ignore>*/ignore-all-*</ignore>
+                <ignore>*/ignore-pom-*.pom</ignore>
+                <ignore>*/ignore-jar-*.jar</ignore>
               </ignore>
             </configuration>
           </execution>
