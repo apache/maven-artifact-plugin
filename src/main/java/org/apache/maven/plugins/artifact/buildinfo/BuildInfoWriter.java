@@ -185,11 +185,15 @@ class BuildInfoWriter {
         }
 
         artifacts.put(pomArtifact, prefix + n);
-        printFile(
-                prefix + n++,
-                pomArtifact.getGroupId(),
-                pomArtifact.getFile(),
-                project.getArtifactId() + '-' + project.getVersion() + ".pom");
+        if (isIgnore(pomArtifact)) {
+            p.println("# ignored " + getArtifactFilename(pomArtifact));
+        } else {
+            printFile(
+                    prefix + n++,
+                    pomArtifact.getGroupId(),
+                    pomArtifact.getFile(),
+                    project.getArtifactId() + '-' + project.getVersion() + ".pom");
+        }
 
         if (consumerPom != null) {
             // build pom
@@ -197,12 +201,16 @@ class BuildInfoWriter {
                     project.getGroupId(), project.getArtifactId(), "build", "pom", project.getVersion());
             buildPomArtifact = buildPomArtifact.setFile(project.getFile());
 
-            artifacts.put(buildPomArtifact, prefix + n);
-            printFile(
-                    prefix + n++,
-                    buildPomArtifact.getGroupId(),
-                    buildPomArtifact.getFile(),
-                    project.getArtifactId() + '-' + project.getVersion() + "-build.pom");
+            if (isIgnore(buildPomArtifact)) {
+                p.println("# ignored " + getArtifactFilename(buildPomArtifact));
+            } else {
+                artifacts.put(buildPomArtifact, prefix + n);
+                printFile(
+                        prefix + n++,
+                        buildPomArtifact.getGroupId(),
+                        buildPomArtifact.getFile(),
+                        project.getArtifactId() + '-' + project.getVersion() + "-build.pom");
+            }
         }
 
         if (project.getArtifact() == null) {
@@ -210,7 +218,12 @@ class BuildInfoWriter {
         }
 
         if (project.getArtifact().getFile() != null) {
-            printArtifact(prefix, n++, RepositoryUtils.toArtifact(project.getArtifact()));
+            Artifact main = RepositoryUtils.toArtifact(project.getArtifact());
+            if (isIgnore(main)) {
+                p.println("# ignored " + getArtifactFilename(main));
+            } else {
+                printArtifact(prefix, n++, RepositoryUtils.toArtifact(project.getArtifact()));
+            }
         }
 
         for (Artifact attached : RepositoryUtils.toArtifacts(project.getAttachedArtifacts())) {

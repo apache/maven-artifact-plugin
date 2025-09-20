@@ -74,19 +74,22 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
     /**
      * Artifacts to ignore, specified as a glob matching against <code>${groupId}/${filename}</code>, for example
-     * <code>*</>/*.xml</code>.
+     * <code>*</>/*.xml</code>. If all artifacts from a module are to be ignored, prefer {@code skipModules}.
      */
     @Parameter(property = "buildinfo.ignore", defaultValue = "")
     private List<String> ignore;
 
     /**
-     * Detect projects/modules with install or deploy skipped: avoid taking fingerprints.
+     * Auto-detect projects/modules with install or deploy skipped: avoid taking fingerprints.
+     * If auto-detection gives unexpected results, prefer handwritten {@code skipModules}.
      */
     @Parameter(property = "buildinfo.detect.skip", defaultValue = "true")
     private boolean detectSkip;
 
     /**
-     * Avoid taking fingerprints for modules specified as glob matching against <code>${groupId}/${artifactId}</code>.
+     * Avoid taking fingerprints for full modules, specified as glob matching against
+     * <code>${groupId}/${artifactId}</code>.
+     * For ignoring only a few files instead of full modules, see {@code ignore}.
      * @since 3.5.0
      */
     @Parameter(property = "buildinfo.skipModules")
