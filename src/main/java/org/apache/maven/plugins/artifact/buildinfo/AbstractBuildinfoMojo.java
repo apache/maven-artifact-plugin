@@ -160,8 +160,12 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
         if (!mono) {
             // if module skips install and/or deploy
-            if (isSkip(project)) {
-                getLog().info("Skipping goal because module skips install and/or deploy");
+            if (detectSkip && PluginUtil.isSkip(project)) {
+                getLog().info("Auto-skipping goal because module skips install and/or deploy");
+                return;
+            }
+            if (isSkipModule(project)) {
+                getLog().info("Skipping goal for module");
                 return;
             }
             // if multi-module build, generate (aggregate) buildinfo only in last module
@@ -384,20 +388,21 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     }
 
     protected boolean isSkip(MavenProject project) {
-        // manual/configured module skip
-        boolean skipModule = false;
-        if (skipModules != null && !skipModules.isEmpty()) {
-            if (skipModulesMatcher == null) {
-                FileSystem fs = FileSystems.getDefault();
-                skipModulesMatcher = skipModules.stream()
-                        .map(i -> fs.getPathMatcher("glob:" + i))
-                        .collect(Collectors.toList());
-            }
-            Path path = Paths.get(project.getGroupId() + '/' + project.getArtifactId());
-            skipModule = skipModulesMatcher.stream().anyMatch(m -> m.matches(path));
+        return isSkipModule(project) || (detectSkip && PluginUtil.isSkip(project));
+    }
+
+    protected boolean isSkipModule(MavenProject project) {
+        if (skipModules == null || skipModules.isEmpty()) {
+            return false;
         }
-        // detected skip
-        return skipModule || (detectSkip && PluginUtil.isSkip(project));
+        if (skipModulesMatcher == null) {
+            FileSystem fs = FileSystems.getDefault();
+            skipModulesMatcher = skipModules.stream()
+                    .map(i -> fs.getPathMatcher("glob:" + i))
+                    .collect(Collectors.toList());
+        }
+        Path path = Paths.get(project.getGroupId() + '/' + project.getArtifactId());
+        return skipModulesMatcher.stream().anyMatch(m -> m.matches(path));
     }
 
     private Toolchain getToolchain() {

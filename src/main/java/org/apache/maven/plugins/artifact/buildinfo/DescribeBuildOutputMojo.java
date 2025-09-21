@@ -122,7 +122,7 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
 
         for (MavenProject p : session.getProjects()) {
             boolean skipped = isSkip(p);
-            String s = skipped ? "not-deployed " : "             ";
+            String s = skipped ? (isSkipModule(p) ? "skipped      " : "not-deployed ") : "             ";
 
             // project = pom
             // detect Maven 4 consumer POM transient attachment
