@@ -195,19 +195,14 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         int missing = reference.size() / 3 /* 3 property keys par file: filename, length and checksums.sha512 */;
 
         if (ko + missing > 0) {
-            getLog().error("Reproducible Build output summary: "
-                    + MessageUtils.buffer().success(ok + " files ok")
-                    + ", " + MessageUtils.buffer().failure(ko + " different")
+            getLog().error("[Reproducible Builds] rebuild comparison result: "
+                    + MessageUtils.buffer().success(ok + " files match")
+                    + ", " + MessageUtils.buffer().failure(ko + " differ")
                     + ((missing == 0) ? "" : (", " + MessageUtils.buffer().failure(missing + " missing")))
                     + ((ignored.isEmpty()) ? "" : (", " + MessageUtils.buffer().warning(ignored.size() + " ignored"))));
-            getLog().error("see "
-                    + MessageUtils.buffer()
-                            .project("diff " + relative(referenceBuildinfo) + " " + relative(buildinfoFile))
-                            .build());
-            getLog().error("see also https://maven.apache.org/guides/mini/guide-reproducible-builds.html");
         } else {
-            getLog().info("Reproducible Build output summary: "
-                    + MessageUtils.buffer().success(ok + " files ok")
+            getLog().info("[Reproducible Builds] rebuild comparison result: "
+                    + MessageUtils.buffer().success(ok + " files match")
                     + ((ignored.isEmpty()) ? "" : (", " + MessageUtils.buffer().warning(ignored.size() + " ignored"))));
         }
 
@@ -243,15 +238,27 @@ public class CompareMojo extends AbstractBuildinfoMojo {
                 p.print("# ");
                 p.println(diffoscope);
             }
-            getLog().info("Reproducible Build output comparison saved to " + buildcompare);
         } catch (IOException e) {
             throw new MojoExecutionException("Error creating file " + buildcompare, e);
         }
 
-        copyAggregateToRoot(buildcompare);
+        String saved = "                                                 saved to " + relative(buildcompare);
+        if (ko + missing > 0) {
+            getLog().error(saved);
+        } else {
+            getLog().info(saved);
+        }
+        buildcompare = copyAggregateToRoot(buildcompare);
 
-        if (fail && (ko + missing > 0)) {
-            throw new MojoExecutionException("Build artifacts are different from reference");
+        if (ko + missing > 0) {
+            getLog().error("[Reproducible Builds] to analyze the differences, see diffoscope instructions in "
+                    + relative(buildcompare));
+            getLog().error(
+                            "                      see also https://maven.apache.org/guides/mini/guide-reproducible-builds.html");
+
+            if (fail) {
+                throw new MojoExecutionException("Rebuilt artifacts are different from reference");
+            }
         }
     }
 
@@ -298,13 +305,6 @@ public class CompareMojo extends AbstractBuildinfoMojo {
     private String getRepositoryFilename(Artifact a) {
         String path = session.getRepositorySession().getLocalRepositoryManager().getPathForLocalArtifact(a);
         return path.substring(path.lastIndexOf('/'));
-    }
-
-    private String relative(File file) {
-        File basedir = session.getTopLevelProject().getBasedir();
-        int length = basedir.getPath().length();
-        String path = file.getPath();
-        return path.substring(length + 1);
     }
 
     private static String findPrefix(Properties reference, String actualGroupId, String actualFilename) {
