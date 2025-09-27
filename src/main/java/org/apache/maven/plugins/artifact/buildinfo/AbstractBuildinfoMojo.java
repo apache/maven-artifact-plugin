@@ -305,10 +305,10 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         getLog().info("Skipping intermediate goal run, aggregate will be " + last.getArtifactId());
     }
 
-    protected void copyAggregateToRoot(File aggregate) throws MojoExecutionException {
+    protected File copyAggregateToRoot(File aggregate) throws MojoExecutionException {
         if (session.getProjects().size() == 1) {
             // mono-module, no aggregate file to deal with
-            return;
+            return aggregate;
         }
 
         // copy aggregate file to root target directory
@@ -323,10 +323,11 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
                     rootCopy.toPath(),
                     LinkOption.NOFOLLOW_LINKS,
                     StandardCopyOption.REPLACE_EXISTING);
-            getLog().info("Aggregate " + extension.substring(1) + " copied to " + rootCopy);
+            getLog().info("Aggregate " + extension.substring(1) + " copied to " + relative(rootCopy));
         } catch (IOException ioe) {
             throw new MojoExecutionException("Could not copy " + aggregate + " to " + rootCopy, ioe);
         }
+        return rootCopy;
     }
 
     protected BuildInfoWriter newBuildInfoWriter(PrintWriter p, boolean mono) {
@@ -412,5 +413,12 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         }
 
         return tc;
+    }
+
+    protected String relative(File file) {
+        File basedir = session.getTopLevelProject().getBasedir();
+        int length = basedir.getPath().length();
+        String path = file.getPath();
+        return path.substring(length + 1);
     }
 }
