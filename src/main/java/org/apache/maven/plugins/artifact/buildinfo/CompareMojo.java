@@ -248,7 +248,12 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         } else {
             getLog().info(saved);
         }
-        buildcompare = copyAggregateToRoot(buildcompare);
+        if (session.getProjects().size() > 1) {
+            MavenProject last = getLastProject();
+            if (project == last) {
+                buildcompare = copyAggregateToRoot(buildcompare);
+            }
+        }
 
         if (ko + missing > 0) {
             getLog().error("[Reproducible Builds] to analyze the differences, see diffoscope instructions in "

@@ -377,7 +377,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         }
     }
 
-    private MavenProject getLastProject() {
+    protected MavenProject getLastProject() {
         int i = session.getProjects().size();
         while (i > 0) {
             MavenProject project = session.getProjects().get(--i);
