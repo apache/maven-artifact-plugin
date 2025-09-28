@@ -64,6 +64,7 @@
     <resolverVersion>1.9.20</resolverVersion>
     <doxiaVersion>1.12.0</doxiaVersion>
     <javaVersion>8</javaVersion>
+    <version.maven-invoker-plugin>3.9.1</version.maven-invoker-plugin>
     <project.build.outputTimestamp>2025-01-08T16:48:55Z</project.build.outputTimestamp>
   </properties>
 
