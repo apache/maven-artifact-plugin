@@ -214,7 +214,8 @@ class ReferenceBuildinfoUtil {
         } catch (ZipException e) {
             log.warn("Corrupt jar file " + file + "\n" + e.getMessage());
         } catch (IOException e) {
-            log.warn("unable to read jar file " + file + "\n" + e.getMessage());
+            log.warn("unable to read jar file " + file + "\n due to "
+                    + e.getClass().getName() + "\n" + e.getMessage());
         }
         return null;
     }
