@@ -18,6 +18,8 @@
  */
 package org.apache.maven.plugins.artifact.buildinfo;
 
+import javax.inject.Inject;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
@@ -31,12 +33,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.shared.utils.logging.MessageUtils;
+import org.apache.maven.toolchain.ToolchainManager;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
@@ -75,12 +79,6 @@ public class CompareMojo extends AbstractBuildinfoMojo {
     private boolean aggregateOnly;
 
     /**
-     * The entry point to Maven Artifact Resolver, i.e. the component doing all the work.
-     */
-    @Component
-    private RepositorySystem repoSystem;
-
-    /**
      * The current repository/network configuration of Maven.
      */
     @Parameter(defaultValue = "${repositorySystemSession}", readonly = true)
@@ -98,6 +96,22 @@ public class CompareMojo extends AbstractBuildinfoMojo {
      */
     @Parameter(property = "compare.fail", defaultValue = "true")
     private boolean fail;
+
+    /**
+     * The entry point to Maven Artifact Resolver, i.e. the component doing all the work.
+     */
+    private final RepositorySystem repoSystem;
+
+    @Inject
+    public CompareMojo(
+            ToolchainManager toolchainManager,
+            RuntimeInformation rtInformation,
+            MavenProject project,
+            MavenSession session,
+            RepositorySystem repoSystem) {
+        super(toolchainManager, rtInformation, project, session);
+        this.repoSystem = repoSystem;
+    }
 
     @Override
     public void execute(Map<Artifact, String> artifacts) throws MojoExecutionException {
@@ -123,7 +137,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
      * @throws MojoExecutionException if anything goes wrong
      */
     private void checkAgainstReference(Map<Artifact, String> artifacts, boolean mono) throws MojoExecutionException {
-        MavenProject root = mono ? project : getExecutionRoot();
+        MavenProject root = mono ? project : session.getTopLevelProject();
         File referenceDir = new File(root.getBuild().getDirectory(), "reference");
         referenceDir.mkdirs();
 
@@ -152,6 +166,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         int ok = 0;
         List<String> okFilenames = new ArrayList<>();
         List<String> koFilenames = new ArrayList<>();
+        List<String> missingFilenames = new ArrayList<>();
         List<String> diffoscopes = new ArrayList<>();
         List<String> ignored = new ArrayList<>();
         File referenceDir = referenceBuildinfo.getParentFile();
@@ -166,34 +181,29 @@ public class CompareMojo extends AbstractBuildinfoMojo {
 
             String[] checkResult = checkArtifact(artifact, prefix, reference, actual, referenceDir);
             String filename = checkResult[0];
-            String diffoscope = checkResult[1];
+            String diffoscope = checkResult[1]; // diffoscope or wget
 
             if (diffoscope == null) {
                 ok++;
                 okFilenames.add(filename);
             } else {
-                koFilenames.add(filename);
+                (diffoscope.startsWith("wget") ? missingFilenames : koFilenames).add(filename);
                 diffoscopes.add(diffoscope);
             }
         }
 
         int ko = artifacts.size() - ok - ignored.size();
-        int missing = reference.size() / 3 /* 3 property keys par file: filename, length and checksums.sha512 */;
+        int missing = missingFilenames.size();
 
         if (ko + missing > 0) {
-            getLog().error("Reproducible Build output summary: "
-                    + MessageUtils.buffer().success(ok + " files ok")
-                    + ", " + MessageUtils.buffer().failure(ko + " different")
+            getLog().error("[Reproducible Builds] rebuild comparison result: "
+                    + MessageUtils.buffer().success(ok + " files match")
+                    + ", " + MessageUtils.buffer().failure(ko + " differ")
                     + ((missing == 0) ? "" : (", " + MessageUtils.buffer().failure(missing + " missing")))
                     + ((ignored.isEmpty()) ? "" : (", " + MessageUtils.buffer().warning(ignored.size() + " ignored"))));
-            getLog().error("see "
-                    + MessageUtils.buffer()
-                            .project("diff " + relative(referenceBuildinfo) + " " + relative(buildinfoFile))
-                            .toString());
-            getLog().error("see also https://maven.apache.org/guides/mini/guide-reproducible-builds.html");
         } else {
-            getLog().info("Reproducible Build output summary: "
-                    + MessageUtils.buffer().success(ok + " files ok")
+            getLog().info("[Reproducible Builds] rebuild comparison result: "
+                    + MessageUtils.buffer().success(ok + " files match")
                     + ((ignored.isEmpty()) ? "" : (", " + MessageUtils.buffer().warning(ignored.size() + " ignored"))));
         }
 
@@ -209,6 +219,10 @@ public class CompareMojo extends AbstractBuildinfoMojo {
             p.println("okFiles=\"" + String.join(" ", okFilenames) + '"');
             p.println("koFiles=\"" + String.join(" ", koFilenames) + '"');
             p.println("ignoredFiles=\"" + String.join(" ", ignored) + '"');
+            if (missing > 0) {
+                p.println("missing=" + missing);
+                p.println("missingFiles=\"" + String.join(" ", missingFilenames) + '"');
+            }
             Properties ref = new Properties();
             if (referenceBuildinfo != null) {
                 try (InputStream in = Files.newInputStream(referenceBuildinfo.toPath())) {
@@ -229,21 +243,39 @@ public class CompareMojo extends AbstractBuildinfoMojo {
                 p.print("# ");
                 p.println(diffoscope);
             }
-            getLog().info("Reproducible Build output comparison saved to " + buildcompare);
         } catch (IOException e) {
             throw new MojoExecutionException("Error creating file " + buildcompare, e);
         }
 
-        copyAggregateToRoot(buildcompare);
+        String saved = "                                                 saved to " + relative(buildcompare);
+        if (ko + missing > 0) {
+            getLog().error(saved);
+        } else {
+            getLog().info(saved);
+        }
+        if (session.getProjects().size() > 1) {
+            MavenProject last = getLastProject();
+            if (project == last) {
+                buildcompare = copyAggregateToRoot(buildcompare);
+            }
+        }
 
-        if (fail && (ko + missing > 0)) {
-            throw new MojoExecutionException("Build artifacts are different from reference");
+        if (ko + missing > 0) {
+            getLog().error("[Reproducible Builds] to analyze the differences, see diffoscope instructions in "
+                    + relative(buildcompare));
+            getLog().error(
+                            "                      see also https://maven.apache.org/guides/mini/guide-reproducible-builds.html");
+
+            if (fail) {
+                throw new MojoExecutionException("Rebuilt artifacts are different from reference");
+            }
         }
     }
 
-    // { filename, diffoscope }
+    // { filename, diffoscope or wget }
     private String[] checkArtifact(
-            Artifact artifact, String prefix, Properties reference, Properties actual, File referenceDir) {
+            Artifact artifact, String prefix, Properties reference, Properties actual, File referenceDir)
+            throws MojoExecutionException {
         String actualFilename = (String) actual.remove(prefix + ".filename");
         String actualLength = (String) actual.remove(prefix + ".length");
         String actualSha512 = (String) actual.remove(prefix + ".checksums.sha512");
@@ -254,7 +286,9 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         reference.remove(referencePrefix + ".groupId");
 
         String issue = null;
-        if (!actualLength.equals(referenceLength)) {
+        if (referenceLength == null) {
+            issue = "missing reference file";
+        } else if (!actualLength.equals(referenceLength)) {
             issue = "size";
         } else if (!actualSha512.equals(referenceSha512)) {
             issue = "sha512";
@@ -269,7 +303,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         return new String[] {actualFilename, null};
     }
 
-    private String diffoscope(Artifact a, File referenceDir) {
+    private String diffoscope(Artifact a, File referenceDir) throws MojoExecutionException {
         File actual = a.getFile();
         // notice: actual file name may have been defined in pom
         // reference file name is taken from repository format
@@ -278,19 +312,20 @@ public class CompareMojo extends AbstractBuildinfoMojo {
             return "missing file for " + ArtifactIdUtils.toId(a) + " reference = " + relative(reference)
                     + " actual = null";
         }
+        if (!reference.exists()) {
+            RemoteRepository repo = createReferenceRepo();
+            String url = repo.getUrl() + "/"
+                    + session.getRepositorySession()
+                            .getLocalRepositoryManager()
+                            .getPathForRemoteArtifact(a, repo, null);
+            return "wget " + url + "; ls -l " + relative(actual);
+        }
         return "diffoscope " + relative(reference) + " " + relative(actual);
     }
 
     private String getRepositoryFilename(Artifact a) {
         String path = session.getRepositorySession().getLocalRepositoryManager().getPathForLocalArtifact(a);
         return path.substring(path.lastIndexOf('/'));
-    }
-
-    private String relative(File file) {
-        File basedir = getExecutionRoot().getBasedir();
-        int length = basedir.getPath().length();
-        String path = file.getPath();
-        return path.substring(length + 1);
     }
 
     private static String findPrefix(Properties reference, String actualGroupId, String actualFilename) {

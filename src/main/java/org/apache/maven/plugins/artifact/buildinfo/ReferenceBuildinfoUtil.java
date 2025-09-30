@@ -48,7 +48,6 @@ import org.eclipse.aether.AbstractForwardingRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.ArtifactProperties;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.repository.WorkspaceReader;
@@ -60,17 +59,15 @@ import org.eclipse.aether.resolution.ArtifactResult;
  * Utility to download reference artifacts and download or generate reference buildinfo.
  */
 class ReferenceBuildinfoUtil {
-    private static final Set<String> JAR_TYPES;
+    private static final Set<String> JAR_EXTENSIONS;
 
     static {
-        Set<String> types = new HashSet<>();
-        types.add("jar");
-        types.add("test-jar");
-        types.add("war");
-        types.add("ear");
-        types.add("rar");
-        types.add("maven-plugin");
-        JAR_TYPES = Collections.unmodifiableSet(types);
+        Set<String> extensions = new HashSet<>();
+        extensions.add("jar");
+        extensions.add("war");
+        extensions.add("ear");
+        extensions.add("rar");
+        JAR_EXTENSIONS = Collections.unmodifiableSet(extensions);
     }
 
     private final Log log;
@@ -128,7 +125,7 @@ class ReferenceBuildinfoUtil {
                 referenceArtifacts.put(artifact, file);
 
                 // guess Java version and OS
-                if ((javaVersion == null) && JAR_TYPES.contains(artifact.getProperty(ArtifactProperties.TYPE, "jar"))) {
+                if ((javaVersion == null) && JAR_EXTENSIONS.contains(artifact.getExtension())) {
                     ReproducibleEnv env = extractEnv(file, artifact);
                     if ((env != null) && (env.javaVersion != null)) {
                         javaVersion = env.javaVersion;

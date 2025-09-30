@@ -85,13 +85,17 @@ class BuildInfoWriter {
         if (reproducible) {
             p.println("# build environment information (simplified for reproducibility)");
             p.println("java.version=" + extractJavaMajorVersion(System.getProperty("java.version")));
-            String ls = System.getProperty("line.separator");
+            String ls = System.lineSeparator();
             p.println("os.name=" + ("\n".equals(ls) ? "Unix" : "Windows"));
         } else {
             p.println("# effective build environment information");
             p.println("java.version=" + System.getProperty("java.version"));
             p.println("java.vendor=" + System.getProperty("java.vendor"));
             p.println("os.name=" + System.getProperty("os.name"));
+            p.println("os.version=" + System.getProperty("os.version"));
+            p.println("os.arch=" + System.getProperty("os.arch"));
+            p.println("line.separator="
+                    + System.lineSeparator().replace("\r", "\\r").replace("\n", "\\n"));
         }
         p.println();
         p.println("# Maven rebuild instructions and effective environment");
@@ -137,11 +141,6 @@ class BuildInfoWriter {
             sourceAvailable = true;
             p.println("source.scm.uri=" + project.getScm().getConnection());
             p.println("source.scm.tag=" + project.getScm().getTag());
-            if (project.getArtifact().isSnapshot()) {
-                log.warn("SCM source tag in buildinfo source.scm.tag="
-                        + project.getScm().getTag() + " does not permit rebuilders reproducible source checkout");
-                // TODO is it possible to use Scm API to get SCM version?
-            }
         } else {
             p.println("# no scm configured in pom.xml");
         }
@@ -185,11 +184,15 @@ class BuildInfoWriter {
         }
 
         artifacts.put(pomArtifact, prefix + n);
-        printFile(
-                prefix + n++,
-                pomArtifact.getGroupId(),
-                pomArtifact.getFile(),
-                project.getArtifactId() + '-' + project.getVersion() + ".pom");
+        if (isIgnore(pomArtifact)) {
+            p.println("# ignored " + getArtifactFilename(pomArtifact));
+        } else {
+            printFile(
+                    prefix + n++,
+                    pomArtifact.getGroupId(),
+                    pomArtifact.getFile(),
+                    project.getArtifactId() + '-' + project.getVersion() + ".pom");
+        }
 
         if (consumerPom != null) {
             // build pom
@@ -197,12 +200,16 @@ class BuildInfoWriter {
                     project.getGroupId(), project.getArtifactId(), "build", "pom", project.getVersion());
             buildPomArtifact = buildPomArtifact.setFile(project.getFile());
 
-            artifacts.put(buildPomArtifact, prefix + n);
-            printFile(
-                    prefix + n++,
-                    buildPomArtifact.getGroupId(),
-                    buildPomArtifact.getFile(),
-                    project.getArtifactId() + '-' + project.getVersion() + "-build.pom");
+            if (isIgnore(buildPomArtifact)) {
+                p.println("# ignored " + getArtifactFilename(buildPomArtifact));
+            } else {
+                artifacts.put(buildPomArtifact, prefix + n);
+                printFile(
+                        prefix + n++,
+                        buildPomArtifact.getGroupId(),
+                        buildPomArtifact.getFile(),
+                        project.getArtifactId() + '-' + project.getVersion() + "-build.pom");
+            }
         }
 
         if (project.getArtifact() == null) {
@@ -210,11 +217,16 @@ class BuildInfoWriter {
         }
 
         if (project.getArtifact().getFile() != null) {
-            printArtifact(prefix, n++, RepositoryUtils.toArtifact(project.getArtifact()));
+            Artifact main = RepositoryUtils.toArtifact(project.getArtifact());
+            if (isIgnore(main)) {
+                p.println("# ignored " + getArtifactFilename(main));
+            } else {
+                printArtifact(prefix, n++, RepositoryUtils.toArtifact(project.getArtifact()));
+            }
         }
 
         for (Artifact attached : RepositoryUtils.toArtifacts(project.getAttachedArtifacts())) {
-            if (attached == consumerPom) {
+            if ("pom".equals(attached.getExtension()) && "consumer".equals(attached.getClassifier())) {
                 // ignore consumer pom
                 continue;
             }

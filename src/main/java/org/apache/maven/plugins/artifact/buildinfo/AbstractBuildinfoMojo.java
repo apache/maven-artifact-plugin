@@ -43,7 +43,6 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
@@ -57,11 +56,6 @@ import org.eclipse.aether.artifact.Artifact;
  * @since 3.2.0
  */
 public abstract class AbstractBuildinfoMojo extends AbstractMojo {
-    /**
-     * The Maven project.
-     */
-    @Component
-    protected MavenProject project;
 
     /**
      * Location of the generated buildinfo file.
@@ -80,19 +74,22 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
     /**
      * Artifacts to ignore, specified as a glob matching against <code>${groupId}/${filename}</code>, for example
-     * <code>*</>/*.xml</code>.
+     * <code>*</>/*.xml</code>. If all artifacts from a module are to be ignored, prefer {@code skipModules}.
      */
     @Parameter(property = "buildinfo.ignore", defaultValue = "")
     private List<String> ignore;
 
     /**
-     * Detect projects/modules with install or deploy skipped: avoid taking fingerprints.
+     * Auto-detect projects/modules with install or deploy skipped: avoid taking fingerprints.
+     * If auto-detection gives unexpected results, prefer handwritten {@code skipModules}.
      */
     @Parameter(property = "buildinfo.detect.skip", defaultValue = "true")
     private boolean detectSkip;
 
     /**
-     * Avoid taking fingerprints for modules specified as glob matching against <code>${groupId}/${artifactId}</code>.
+     * Avoid taking fingerprints for full modules, specified as glob matching against
+     * <code>${groupId}/${artifactId}</code>.
+     * For ignoring only a few files instead of full modules, see {@code ignore}.
      * @since 3.5.0
      */
     @Parameter(property = "buildinfo.skipModules")
@@ -110,12 +107,6 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     private boolean reproducible;
 
     /**
-     * The current build session instance. This is used for toolchain manager API calls.
-     */
-    @Component
-    protected MavenSession session;
-
-    /**
      * Timestamp for reproducible output archive entries, either formatted as ISO 8601
      * <code>yyyy-MM-dd'T'HH:mm:ssXXX</code> or as an int representing seconds since the epoch (like
      * <a href="https://reproducible-builds.org/docs/source-date-epoch/">SOURCE_DATE_EPOCH</a>).
@@ -123,7 +114,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
      * @since 3.2.0
      */
     @Parameter(defaultValue = "${project.build.outputTimestamp}")
-    private String outputTimestamp;
+    protected String outputTimestamp;
 
     /**
      * Diagnose {@code outputTimestamp} effective value based on execution context.
@@ -136,22 +127,45 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     /**
      * To obtain a toolchain if possible.
      */
-    @Component
-    private ToolchainManager toolchainManager;
+    private final ToolchainManager toolchainManager;
 
-    @Component
-    protected RuntimeInformation rtInformation;
+    protected final RuntimeInformation rtInformation;
+
+    /**
+     * The Maven project.
+     */
+    protected final MavenProject project;
+
+    /**
+     * The current build session instance. This is used for toolchain manager API calls.
+     */
+    protected final MavenSession session;
+
+    protected AbstractBuildinfoMojo(
+            ToolchainManager toolchainManager,
+            RuntimeInformation rtInformation,
+            MavenProject project,
+            MavenSession session) {
+        this.toolchainManager = toolchainManager;
+        this.rtInformation = rtInformation;
+        this.project = project;
+        this.session = session;
+    }
 
     @Override
     public void execute() throws MojoExecutionException {
         boolean mono = session.getProjects().size() == 1;
 
-        hasBadOutputTimestamp(outputTimestamp, getLog(), project, session.getProjects(), diagnose);
+        hasBadOutputTimestamp(outputTimestamp, getLog(), project, session, diagnose);
 
         if (!mono) {
             // if module skips install and/or deploy
-            if (isSkip(project)) {
-                getLog().info("Skipping goal because module skips install and/or deploy");
+            if (detectSkip && PluginUtil.isSkip(project)) {
+                getLog().info("Auto-skipping goal because module skips install and/or deploy");
+                return;
+            }
+            if (isSkipModule(project)) {
+                getLog().info("Skipping goal for module");
                 return;
             }
             // if multi-module build, generate (aggregate) buildinfo only in last module
@@ -172,50 +186,13 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     }
 
     static boolean hasBadOutputTimestamp(
-            String outputTimestamp,
-            Log log,
-            MavenProject project,
-            List<MavenProject> reactorProjects,
-            boolean diagnose) {
+            String outputTimestamp, Log log, MavenProject project, MavenSession session, boolean diagnose) {
         Instant timestamp =
                 MavenArchiver.parseBuildOutputTimestamp(outputTimestamp).orElse(null);
         String effective = ((timestamp == null) ? "disabled" : DateTimeFormatter.ISO_INSTANT.format(timestamp));
 
         if (diagnose) {
-            log.info("outputTimestamp = " + outputTimestamp
-                    + (effective.equals(outputTimestamp) ? "" : (" => " + effective)));
-
-            String projectProperty = project.getProperties().getProperty("project.build.outputTimestamp");
-            String modelProperty = project.getModel().getProperties().getProperty("project.build.outputTimestamp");
-            String originalModelProperty =
-                    project.getOriginalModel().getProperties().getProperty("project.build.outputTimestamp");
-
-            log.info("plugin outputTimestamp parameter diagnostics:" + System.lineSeparator()
-                    + "        - plugin outputTimestamp parameter (defaultValue=\"${project.build.outputTimestamp}\") = "
-                    + outputTimestamp + System.lineSeparator()
-                    + "        - project.build.outputTimestamp property from project = " + projectProperty
-                    + System.lineSeparator()
-                    + "        - project.build.outputTimestamp property from project model = " + modelProperty
-                    + System.lineSeparator()
-                    + "        - project.build.outputTimestamp property from project original model = "
-                    + originalModelProperty);
-
-            MavenProject parent = project.getParent();
-            if (parent != null) {
-                StringBuilder sb = new StringBuilder("Inheritance analysis property:" + System.lineSeparator()
-                        + "        - current " + project.getId() + " property = " + projectProperty);
-                while (parent != null) {
-                    String parentProperty = parent.getProperties().getProperty("project.build.outputTimestamp");
-                    sb.append(System.lineSeparator());
-                    sb.append("        - " + (reactorProjects.contains(parent) ? "reactor" : "external") + " parent "
-                            + parent.getId() + " property = " + parentProperty);
-                    if (!projectProperty.equals(parentProperty)) {
-                        break;
-                    }
-                    parent = parent.getParent();
-                }
-                log.info(sb.toString());
-            }
+            diagnose(outputTimestamp, log, project, session, effective);
         }
 
         if (timestamp == null) {
@@ -241,7 +218,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         // check if timestamp defined in a project from reactor: info if it is not the case
         boolean parentInReactor = false;
         MavenProject reactorParent = project;
-        while (reactorProjects.contains(reactorParent.getParent())) {
+        while (session.getProjects().contains(reactorParent.getParent())) {
             parentInReactor = true;
             reactorParent = reactorParent.getParent();
         }
@@ -256,6 +233,66 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         return false;
     }
 
+    static void diagnose(
+            String outputTimestamp, Log log, MavenProject project, MavenSession session, String effective) {
+        if (session.getProjects().size() > 1) {
+            MavenProject root = session.getTopLevelProject();
+            MavenProject first = session.getProjects().get(0);
+            Path firstRelative =
+                    root.getBasedir().toPath().relativize(first.getFile().toPath());
+            MavenProject firstParent = first.getParent();
+            log.info("reactor executionRoot = " + root.getId() + (root.equals(project) ? " (current)" : "")
+                    + System.lineSeparator()
+                    + "       reactor first = "
+                    + (first.equals(root) ? "executionRoot" : (first.getId() + " @ " + firstRelative))
+                    + System.lineSeparator()
+                    + "               first.parent = " + ((firstParent == null) ? firstParent : firstParent.getId()));
+            if (firstParent != null && session.getProjects().contains(firstParent)) {
+                // should not happen...
+                log.warn("reactor first parent = " + firstParent.getId() + " is in reactor");
+            }
+        }
+
+        log.info("outputTimestamp = " + outputTimestamp
+                + (effective.equals(outputTimestamp) ? "" : (" => " + effective)));
+
+        String projectProperty = project.getProperties().getProperty("project.build.outputTimestamp");
+        String modelProperty = project.getModel().getProperties().getProperty("project.build.outputTimestamp");
+        String originalModelProperty =
+                project.getOriginalModel().getProperties().getProperty("project.build.outputTimestamp");
+
+        log.info("plugin outputTimestamp parameter diagnostics:" + System.lineSeparator()
+                + "        - plugin outputTimestamp parameter (defaultValue=\"${project.build.outputTimestamp}\") = "
+                + outputTimestamp + System.lineSeparator()
+                + "        - project.build.outputTimestamp property from project = " + projectProperty
+                + System.lineSeparator()
+                + "        - project.build.outputTimestamp property from project model = " + modelProperty
+                + System.lineSeparator()
+                + "        - project.build.outputTimestamp property from project original model = "
+                + originalModelProperty);
+
+        if (outputTimestamp == null) {
+            return;
+        }
+
+        MavenProject parent = project.getParent();
+        if (parent != null) {
+            StringBuilder sb = new StringBuilder("Inheritance analysis for property:" + System.lineSeparator()
+                    + "        - current " + project.getId() + " property = " + projectProperty);
+            while (parent != null) {
+                String parentProperty = parent.getProperties().getProperty("project.build.outputTimestamp");
+                sb.append(System.lineSeparator());
+                sb.append("        - " + (session.getProjects().contains(parent) ? "reactor" : "external") + " parent "
+                        + parent.getId() + " property = " + parentProperty);
+                if (!projectProperty.equals(parentProperty)) {
+                    break;
+                }
+                parent = parent.getParent();
+            }
+            log.info(sb.toString());
+        }
+    }
+
     /**
      * Execute after buildinfo has been generated for current build (eventually aggregated).
      *
@@ -268,14 +305,14 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         getLog().info("Skipping intermediate goal run, aggregate will be " + last.getArtifactId());
     }
 
-    protected void copyAggregateToRoot(File aggregate) throws MojoExecutionException {
+    protected File copyAggregateToRoot(File aggregate) throws MojoExecutionException {
         if (session.getProjects().size() == 1) {
             // mono-module, no aggregate file to deal with
-            return;
+            return aggregate;
         }
 
         // copy aggregate file to root target directory
-        MavenProject root = getExecutionRoot();
+        MavenProject root = session.getTopLevelProject();
         String extension = aggregate.getName().substring(aggregate.getName().lastIndexOf('.'));
         File rootCopy =
                 new File(root.getBuild().getDirectory(), root.getArtifactId() + '-' + root.getVersion() + extension);
@@ -286,10 +323,11 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
                     rootCopy.toPath(),
                     LinkOption.NOFOLLOW_LINKS,
                     StandardCopyOption.REPLACE_EXISTING);
-            getLog().info("Aggregate " + extension.substring(1) + " copied to " + rootCopy);
+            getLog().info("Aggregate " + extension.substring(1) + " copied to " + relative(rootCopy));
         } catch (IOException ioe) {
             throw new MojoExecutionException("Could not copy " + aggregate + " to " + rootCopy, ioe);
         }
+        return rootCopy;
     }
 
     protected BuildInfoWriter newBuildInfoWriter(PrintWriter p, boolean mono) {
@@ -309,7 +347,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
      * @throws MojoExecutionException if anything goes wrong
      */
     protected Map<Artifact, String> generateBuildinfo(boolean mono) throws MojoExecutionException {
-        MavenProject root = mono ? project : getExecutionRoot();
+        MavenProject root = mono ? project : session.getTopLevelProject();
 
         buildinfoFile.getParentFile().mkdirs();
 
@@ -339,16 +377,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         }
     }
 
-    protected MavenProject getExecutionRoot() {
-        for (MavenProject p : session.getProjects()) {
-            if (p.isExecutionRoot()) {
-                return p;
-            }
-        }
-        return null;
-    }
-
-    private MavenProject getLastProject() {
+    protected MavenProject getLastProject() {
         int i = session.getProjects().size();
         while (i > 0) {
             MavenProject project = session.getProjects().get(--i);
@@ -360,20 +389,21 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     }
 
     protected boolean isSkip(MavenProject project) {
-        // manual/configured module skip
-        boolean skipModule = false;
-        if (skipModules != null && !skipModules.isEmpty()) {
-            if (skipModulesMatcher == null) {
-                FileSystem fs = FileSystems.getDefault();
-                skipModulesMatcher = skipModules.stream()
-                        .map(i -> fs.getPathMatcher("glob:" + i))
-                        .collect(Collectors.toList());
-            }
-            Path path = Paths.get(project.getGroupId() + '/' + project.getArtifactId());
-            skipModule = skipModulesMatcher.stream().anyMatch(m -> m.matches(path));
+        return isSkipModule(project) || (detectSkip && PluginUtil.isSkip(project));
+    }
+
+    protected boolean isSkipModule(MavenProject project) {
+        if (skipModules == null || skipModules.isEmpty()) {
+            return false;
         }
-        // detected skip
-        return skipModule || (detectSkip && PluginUtil.isSkip(project));
+        if (skipModulesMatcher == null) {
+            FileSystem fs = FileSystems.getDefault();
+            skipModulesMatcher = skipModules.stream()
+                    .map(i -> fs.getPathMatcher("glob:" + i))
+                    .collect(Collectors.toList());
+        }
+        Path path = Paths.get(project.getGroupId() + '/' + project.getArtifactId());
+        return skipModulesMatcher.stream().anyMatch(m -> m.matches(path));
     }
 
     private Toolchain getToolchain() {
@@ -383,5 +413,12 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         }
 
         return tc;
+    }
+
+    protected String relative(File file) {
+        File basedir = session.getTopLevelProject().getBasedir();
+        int length = basedir.getPath().length();
+        String path = file.getPath();
+        return path.substring(length + 1);
     }
 }

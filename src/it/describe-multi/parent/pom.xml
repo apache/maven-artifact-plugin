@@ -24,72 +24,29 @@
     <groupId>org.apache.maven</groupId>
     <artifactId>maven-parent</artifactId>
     <version>39</version>
+    <relativePath></relativePath>
   </parent>
 
   <groupId>org.apache.maven.plugins.it</groupId>
-  <artifactId>multi</artifactId>
+  <artifactId>parent</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <description>An IT verifying the use case of buildinfo file for multi-modules build.</description>
-
-  <prerequisites>
-    <maven>3.0.5</maven>
-  </prerequisites>
-
-  <modules>
-    <module>modB</module>
-    <module>modA</module>
-    <module>ignore-all</module>
-    <module>ignore-pom</module>
-    <module>ignore-jar</module>
-  </modules>
-
-  <distributionManagement>
-    <snapshotRepository>
-      <uniqueVersion>false</uniqueVersion>
-      <id>local-snapshots</id>
-      <url>file://${basedir}/target/remote-repo</url>
-    </snapshotRepository>
-  </distributionManagement>
+  <description>Parent POM.</description>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.outputTimestamp>1234567890</project.build.outputTimestamp>
+    <spotless.check.skip>true</spotless.check.skip>
+    <checkstyle.skip>true</checkstyle.skip>
   </properties>
 
   <build>
     <plugins>
       <plugin>
-        <groupId>org.spdx</groupId>
-        <artifactId>spdx-maven-plugin</artifactId>
-        <version>0.6.3</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>createSPDX</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>@project.groupId@</groupId>
         <artifactId>@project.artifactId@</artifactId>
         <version>@project.version@</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>buildinfo</goal>
-            </goals>
-            <configuration>
-              <ignore>
-                <ignore>*/*.spdx.json</ignore>
-                <ignore>*/ignore-all-*</ignore>
-                <ignore>*/ignore-pom-*.pom</ignore>
-                <ignore>*/ignore-jar-*.jar</ignore>
-              </ignore>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>

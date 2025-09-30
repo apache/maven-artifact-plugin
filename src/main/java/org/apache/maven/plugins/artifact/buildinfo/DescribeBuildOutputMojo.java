@@ -18,6 +18,8 @@
  */
 package org.apache.maven.plugins.artifact.buildinfo;
 
+import javax.inject.Inject;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,29 +27,53 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.RepositoryUtils;
+import org.apache.maven.archiver.MavenArchiver;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.shared.utils.logging.MessageUtils;
+import org.apache.maven.toolchain.ToolchainManager;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 
 /**
  * Describe build output (experimental).
- * It is expected to be used aggregator used from CLI, ie run at root after everything has run, but not bound to any build
+ * It is expected to be used aggregator used from CLI; that is, run at root after everything has run, but not bound to any build
  * phase, where it would be run at root before modules.
  * @since 3.5.2
  */
 @Mojo(name = "describe-build-output", aggregator = true, threadSafe = true)
 public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
 
+    @Inject
+    public DescribeBuildOutputMojo(
+            ToolchainManager toolchainManager,
+            RuntimeInformation rtInformation,
+            MavenProject project,
+            MavenSession session) {
+        super(toolchainManager, rtInformation, project, session);
+    }
+
     @Override
     public void execute() throws MojoExecutionException {
         // super.execute(); // do not generate buildinfo, just reuse logic from abstract class
+        Instant timestamp =
+                MavenArchiver.parseBuildOutputTimestamp(outputTimestamp).orElse(null);
+        String effective = ((timestamp == null) ? "disabled" : DateTimeFormatter.ISO_INSTANT.format(timestamp));
+
+        diagnose(outputTimestamp, getLog(), project, session, effective);
+        getLog().info("");
         describeBuildOutput();
     }
 
@@ -55,18 +81,48 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
     private BuildInfoWriter bi;
 
     private void describeBuildOutput() throws MojoExecutionException {
-        rootPath = getExecutionRoot().getBasedir().toPath();
+        rootPath = session.getTopLevelProject().getBasedir().toPath();
         bi = newBuildInfoWriter(null, false);
 
+        Map<MavenProject, Long> reactorParents = session.getProjects().stream()
+                .collect(Collectors.groupingBy(
+                        p -> DescribeBuildOutputMojo.getReactorParent(session, p), Collectors.counting()));
+        reactorParents.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .forEach(e -> getLog().info("parent in reactor: " + e.getKey().getGroupId() + ":"
+                        + e.getKey().getArtifactId() + " @ "
+                        + rootPath.relativize(e.getKey().getFile().toPath()) + " (" + e.getValue() + " module"
+                        + ((e.getValue() > 1) ? "s" : "") + "), property = "
+                        + e.getKey().getProperties().get("project.build.outputTimestamp")));
+
+        getLog().info("");
+
+        Map<String, Long> groupIds = session.getProjects().stream()
+                .collect(Collectors.groupingBy(MavenProject::getGroupId, Collectors.counting()));
+        groupIds.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .forEach(e -> getLog().info("groupId: " + e.getKey() + " (" + e.getValue() + " artifactId"
+                        + ((e.getValue() > 1) ? "s" : "") + ")"));
+
+        Map<String, Set<String>> artifactIds = session.getProjects().stream()
+                .collect(Collectors.groupingBy(
+                        MavenProject::getArtifactId, Collectors.mapping(MavenProject::getGroupId, Collectors.toSet())));
+        artifactIds.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .filter(e -> e.getValue().size() > 1)
+                .forEach(e ->
+                        getLog().info("artifactId: " + e.getKey() + " defined for multiple groupIds: " + e.getValue()));
+
+        getLog().info("");
         getLog().info(MessageUtils.buffer()
-                .a("skip/ignore artifactId")
+                .a("skip/ignore? artifactId")
                 .strong("[:classifier][:extension]")
                 .a(" = build-path repository-filename size [sha256]")
                 .build());
 
         for (MavenProject p : session.getProjects()) {
             boolean skipped = isSkip(p);
-            String s = skipped ? "not-deployed " : "             ";
+            String s = skipped ? (isSkipModule(p) ? "skipped      " : "not-deployed ") : "             ";
 
             // project = pom
             // detect Maven 4 consumer POM transient attachment
@@ -92,11 +148,11 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
                 }
             }
             pomArtifact = pomArtifact.setFile(p.getFile());
-            getLog().info(s + describeArtifact(pomArtifact));
+            getLog().info(s + describeArtifact(pomArtifact, skipped));
 
             // main artifact (when available: pom packaging does not provide main artifact)
             if (p.getArtifact().getFile() != null) {
-                getLog().info(s + describeArtifact(RepositoryUtils.toArtifact(p.getArtifact())));
+                getLog().info(s + describeArtifact(RepositoryUtils.toArtifact(p.getArtifact()), skipped));
             }
 
             // attached artifacts (when available)
@@ -107,7 +163,7 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
                 }
                 boolean ignored = skipped ? false : isIgnore(a);
                 String i = skipped ? s : (ignored ? "RB-ignored   " : "             ");
-                getLog().info(i + describeArtifact(a, ignored));
+                getLog().info(i + describeArtifact(a, skipped || ignored));
             }
         }
     }
@@ -151,6 +207,14 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
         } catch (IOException ioe) {
             throw new MojoExecutionException("cannot read " + file, ioe);
         }
+    }
+
+    static MavenProject getReactorParent(MavenSession session, MavenProject project) {
+        MavenProject reactorParent = project;
+        while (session.getProjects().contains(reactorParent.getParent())) {
+            reactorParent = reactorParent.getParent();
+        }
+        return reactorParent;
     }
 
     @Override

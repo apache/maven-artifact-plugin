@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
+
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements. See the NOTICE file
@@ -17,60 +18,41 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.apache.maven</groupId>
-    <artifactId>maven-parent</artifactId>
-    <version>39</version>
-  </parent>
-
   <groupId>org.apache.maven.plugins.it</groupId>
-  <artifactId>multi</artifactId>
+  <artifactId>resume</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <description>An IT verifying the use case of buildinfo file for multi-modules build.</description>
-
-  <prerequisites>
-    <maven>3.0.5</maven>
-  </prerequisites>
-
-  <modules>
-    <module>modB</module>
-    <module>modA</module>
-    <module>ignore-all</module>
-    <module>ignore-pom</module>
-    <module>ignore-jar</module>
-  </modules>
-
-  <distributionManagement>
-    <snapshotRepository>
-      <uniqueVersion>false</uniqueVersion>
-      <id>local-snapshots</id>
-      <url>file://${basedir}/target/remote-repo</url>
-    </snapshotRepository>
-  </distributionManagement>
+  <description>An IT verifying compare works when resuming a multi-module build.</description>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
+  <prerequisites>
+    <maven>3.0.5</maven>
+  </prerequisites>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>local-snapshots</id>
+      <url>file://${basedir}/target/remote-repo</url>
+      <uniqueVersion>false</uniqueVersion>
+    </snapshotRepository>
+  </distributionManagement>
+
+  <modules>
+    <module>modB</module>
+    <module>modA</module>
+  </modules>
+
   <build>
     <plugins>
-      <plugin>
-        <groupId>org.spdx</groupId>
-        <artifactId>spdx-maven-plugin</artifactId>
-        <version>0.6.3</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>createSPDX</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <groupId>@project.groupId@</groupId>
         <artifactId>@project.artifactId@</artifactId>
@@ -78,16 +60,8 @@
         <executions>
           <execution>
             <goals>
-              <goal>buildinfo</goal>
+              <goal>compare</goal>
             </goals>
-            <configuration>
-              <ignore>
-                <ignore>*/*.spdx.json</ignore>
-                <ignore>*/ignore-all-*</ignore>
-                <ignore>*/ignore-pom-*.pom</ignore>
-                <ignore>*/ignore-jar-*.jar</ignore>
-              </ignore>
-            </configuration>
           </execution>
         </executions>
       </plugin>
