@@ -19,7 +19,10 @@
 package org.apache.maven.plugins.artifact.buildinfo;
 
 import java.util.Locale;
+import java.util.Map;
 import java.util.TreeMap;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.doxia.sink.Sink;
@@ -77,13 +80,55 @@ public class ReproducibleCentralReport extends AbstractMavenReport {
         sink.text("project's dependencies:");
         sink.paragraph_();
 
-        sink.list();
-        new TreeMap<String, Artifact>(project.getArtifactMap()).forEach((key, a) -> {
-            sink.listItem();
-            renderReproducibleCentralArtifact(sink, a);
-            sink.listItem_();
+        // Group dependencies by scope to help prioritization (compile first, then provided, runtime, test, system, import)
+        Map<String, List<Artifact>> byScope = new TreeMap<>();
+        project.getArtifacts().forEach(a -> {
+            String sc = a.getScope();
+            if (sc == null) {
+                sc = "compile"; // treat null as compile (Maven default)
+            }
+            byScope.computeIfAbsent(sc, k -> new ArrayList<>()).add(a);
         });
-        sink.list_();
+
+        // Define preferred scope order
+        String[] orderedScopes = new String[] {"compile", "provided", "runtime", "test", "system", "import"};
+
+        // Render groups in order; any other scopes (or missing) will be rendered afterwards sorted by name
+        for (String scope : orderedScopes) {
+            List<Artifact> list = byScope.remove(scope);
+            if (list != null && !list.isEmpty()) {
+                sink.sectionTitle2();
+                sink.text(scope + " dependencies:");
+                sink.sectionTitle2_();
+                sink.list();
+                list.stream()
+                        .sorted((a1, a2) -> (a1.getGroupId() + a1.getArtifactId()).compareTo(a2.getGroupId() + a2.getArtifactId()))
+                        .forEach(a -> {
+                            sink.listItem();
+                            renderReproducibleCentralArtifact(sink, a);
+                            sink.listItem_();
+                        });
+                sink.list_();
+            }
+        }
+
+        // Any remaining scopes
+        if (!byScope.isEmpty()) {
+            byScope.forEach((scope, list) -> {
+                sink.sectionTitle2();
+                sink.text((scope == null ? "(no scope)" : scope) + " dependencies:");
+                sink.sectionTitle2_();
+                sink.list();
+                list.stream()
+                        .sorted((a1, a2) -> (a1.getGroupId() + a1.getArtifactId()).compareTo(a2.getGroupId() + a2.getArtifactId()))
+                        .forEach(a -> {
+                            sink.listItem();
+                            renderReproducibleCentralArtifact(sink, a);
+                            sink.listItem_();
+                        });
+                sink.list_();
+            });
+        }
 
         sink.paragraph();
         sink.text("(*) ");
