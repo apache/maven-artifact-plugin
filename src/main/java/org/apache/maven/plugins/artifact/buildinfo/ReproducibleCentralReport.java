@@ -18,11 +18,11 @@
  */
 package org.apache.maven.plugins.artifact.buildinfo;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.doxia.sink.Sink;
@@ -80,7 +80,8 @@ public class ReproducibleCentralReport extends AbstractMavenReport {
         sink.text("project's dependencies:");
         sink.paragraph_();
 
-        // Group dependencies by scope to help prioritization (compile first, then provided, runtime, test, system, import)
+        // Group dependencies by scope to help prioritization (compile first, then provided, runtime, test, system,
+        // import)
         Map<String, List<Artifact>> byScope = new TreeMap<>();
         project.getArtifacts().forEach(a -> {
             String sc = a.getScope();
@@ -102,7 +103,8 @@ public class ReproducibleCentralReport extends AbstractMavenReport {
                 sink.sectionTitle2_();
                 sink.list();
                 list.stream()
-                        .sorted((a1, a2) -> (a1.getGroupId() + a1.getArtifactId()).compareTo(a2.getGroupId() + a2.getArtifactId()))
+                        .sorted((a1, a2) ->
+                                (a1.getGroupId() + a1.getArtifactId()).compareTo(a2.getGroupId() + a2.getArtifactId()))
                         .forEach(a -> {
                             sink.listItem();
                             renderReproducibleCentralArtifact(sink, a);
@@ -120,7 +122,8 @@ public class ReproducibleCentralReport extends AbstractMavenReport {
                 sink.sectionTitle2_();
                 sink.list();
                 list.stream()
-                        .sorted((a1, a2) -> (a1.getGroupId() + a1.getArtifactId()).compareTo(a2.getGroupId() + a2.getArtifactId()))
+                        .sorted((a1, a2) ->
+                                (a1.getGroupId() + a1.getArtifactId()).compareTo(a2.getGroupId() + a2.getArtifactId()))
                         .forEach(a -> {
                             sink.listItem();
                             renderReproducibleCentralArtifact(sink, a);
