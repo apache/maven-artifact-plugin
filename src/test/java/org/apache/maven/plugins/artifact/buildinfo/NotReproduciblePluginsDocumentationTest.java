@@ -19,22 +19,21 @@
 package org.apache.maven.plugins.artifact.buildinfo;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test class to generate {@code target/generated-site/apt/plugin-issues.apt} with content extracted from
  * {@code src/main/resources/org/apache/maven/plugins/artifact/buildinfo/not-reproducible-plugins.properties}
  * adn generated from {@code src/test/resources/plugin-issues.apt}.
  */
-public class NotReproduciblePluginsDocumentationTest {
+class NotReproduciblePluginsDocumentationTest {
     private static final String LS = System.lineSeparator();
 
     @Test
-    public void testBasic() throws IOException {
+    void basic() throws Exception {
         File pluginIssuesApt = new File("src/test/resources/plugin-issues.apt");
         String content = new String(Files.readAllBytes(pluginIssuesApt.toPath()), StandardCharsets.UTF_8);
 
