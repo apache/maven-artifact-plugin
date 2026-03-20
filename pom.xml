@@ -60,9 +60,10 @@
   </distributionManagement>
 
   <properties>
-    <mavenVersion>3.9.6</mavenVersion>
-    <resolverVersion>1.9.20</resolverVersion>
+    <mavenVersion>3.9.14</mavenVersion>
+    <resolverVersion>1.9.27</resolverVersion>
     <doxiaVersion>2.0.0</doxiaVersion>
+    <reportingVversion>3.1.0</reportingVversion>
     <javaVersion>8</javaVersion>
     <version.maven-invoker-plugin>3.9.1</version.maven-invoker-plugin>
     <project.build.outputTimestamp>2025-09-29T16:18:23Z</project.build.outputTimestamp>
@@ -108,6 +109,10 @@
     </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-utils</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
       <artifactId>plexus-xml</artifactId>
     </dependency>
     <!-- ONLY: MessageUtil -->
@@ -124,10 +129,6 @@
         <exclusion>
           <groupId>org.tukaani</groupId>
           <artifactId>xz</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.iq80.snappy</groupId>
-          <artifactId>snappy</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.apache.commons</groupId>
@@ -203,7 +204,12 @@
     <dependency>
       <groupId>org.apache.maven.reporting</groupId>
       <artifactId>maven-reporting-impl</artifactId>
-      <version>3.1.0</version>
+      <version>${reportingVversion}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.maven.reporting</groupId>
+      <artifactId>maven-reporting-api</artifactId>
+      <version>${reportingVversion}</version>
     </dependency>
   </dependencies>
 
