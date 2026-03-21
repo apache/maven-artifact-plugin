@@ -29,6 +29,7 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -362,7 +363,10 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         throw new MojoExecutionException("Could not find repository with id = " + referenceRepo);
     }
 
-    private static RemoteRepository createDeploymentArtifactRepository(String id, String url) {
-        return new RemoteRepository.Builder(id, "default", url).build();
+    private RemoteRepository createDeploymentArtifactRepository(String id, String url) {
+        RemoteRepository repository = new RemoteRepository.Builder(id, "default", url).build();
+        List<RemoteRepository> repositories =
+                repoSystem.newResolutionRepositories(repoSession, Collections.singletonList(repository));
+        return repositories.isEmpty() ? repository : repositories.get(0);
     }
 }
