@@ -32,9 +32,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
+import org.apache.maven.RepositoryUtils;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -45,9 +49,17 @@ import org.apache.maven.toolchain.ToolchainManager;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.ArtifactTypeRegistry;
+import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.collection.DependencyCollectionException;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyNode;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.util.artifact.ArtifactIdUtils;
+import org.eclipse.aether.util.graph.visitor.PathRecordingDependencyVisitor;
+import org.eclipse.aether.version.VersionConstraint;
 
+import static java.util.Optional.ofNullable;
 import static org.apache.maven.plugins.artifact.buildinfo.BuildInfoWriter.getArtifactFilename;
 
 /**
@@ -99,6 +111,14 @@ public class CompareMojo extends AbstractBuildinfoMojo {
     private boolean fail;
 
     /**
+     * Fail the build if dependencies with version range are found in project or transitive dependencies.
+     *
+     * @since 3.6.2
+     */
+    @Parameter(property = "compare.failVersionRange", defaultValue = "true")
+    private boolean failVersionRange;
+
+    /**
      * The entry point to Maven Artifact Resolver, i.e. the component doing all the work.
      */
     private final RepositorySystem repoSystem;
@@ -117,6 +137,8 @@ public class CompareMojo extends AbstractBuildinfoMojo {
     @Override
     public void execute(Map<Artifact, String> artifacts) throws MojoExecutionException {
         getLog().info("Checking against reference build from " + referenceRepo + "...");
+
+        checkVersionRangeInDependencies();
         checkAgainstReference(artifacts, session.getProjects().size() == 1);
     }
 
@@ -125,6 +147,8 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         if (aggregateOnly) {
             return;
         }
+
+        checkVersionRangeInDependencies();
 
         // try to download reference artifacts for current project and check if there are issues to give early feedback
         checkAgainstReference(generateBuildinfo(true), true);
@@ -368,5 +392,88 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         List<RemoteRepository> repositories =
                 repoSystem.newResolutionRepositories(repoSession, Collections.singletonList(repository));
         return repositories.isEmpty() ? repository : repositories.get(0);
+    }
+
+    private void checkVersionRangeInDependencies() throws MojoExecutionException {
+        DependencyNode rootNode = collectDependencies();
+        List<String> versionRangeDependencies = collectVersionRangeDependencies(rootNode);
+        if (!versionRangeDependencies.isEmpty()) {
+            if (failVersionRange) {
+                versionRangeDependencies.forEach(getLog()::error);
+                throw new MojoExecutionException("Version range dependencies found: " + versionRangeDependencies.size()
+                        + ". Please fix them to have a fixed version for better reproducibility");
+            } else {
+                versionRangeDependencies.forEach(getLog()::warn);
+            }
+        }
+    }
+
+    private DependencyNode collectDependencies() throws MojoExecutionException {
+        ArtifactTypeRegistry artifactTypeRegistry =
+                session.getRepositorySession().getArtifactTypeRegistry();
+
+        List<Dependency> dependencies = project.getDependencies().stream()
+                .map(d -> RepositoryUtils.toDependency(d, artifactTypeRegistry))
+                .collect(Collectors.toList());
+
+        List<Dependency> managedDependencies = ofNullable(project.getDependencyManagement())
+                .map(DependencyManagement::getDependencies)
+                .map(list -> list.stream()
+                        .map(d -> RepositoryUtils.toDependency(d, artifactTypeRegistry))
+                        .collect(Collectors.toList()))
+                .orElse(null);
+
+        CollectRequest collectRequest =
+                new CollectRequest(dependencies, managedDependencies, project.getRemoteProjectRepositories());
+        collectRequest.setRootArtifact(RepositoryUtils.toArtifact(project.getArtifact()));
+
+        try {
+            return repoSystem.collectDependencies(repoSession, collectRequest).getRoot();
+        } catch (DependencyCollectionException e) {
+            throw new MojoExecutionException("Cannot build dependency tree: " + e.getMessage(), e);
+        }
+    }
+
+    private List<String> collectVersionRangeDependencies(DependencyNode rootNode) {
+        List<String> result = new ArrayList<>();
+
+        rootNode.accept(new PathRecordingDependencyVisitor((node, parents) -> {
+            VersionConstraint versionConstraint = node.getVersionConstraint();
+            if (isVersionRange(versionConstraint)) {
+                String path = "";
+                if (parents.size() > 1) {
+                    path = " via "
+                            + parents.stream()
+                                    .limit(parents.size() - 1)
+                                    .map(n -> n.getDependency().getArtifact().toString())
+                                    .collect(Collectors.joining(" --> "));
+                }
+                result.add("Dependency " + node.getDependency() + path + " is referenced with a range version "
+                        + versionConstraint);
+            }
+
+            // track all dependencies
+            return false;
+        }));
+
+        return result;
+    }
+
+    private boolean isVersionRange(VersionConstraint versionConstraint) {
+        if (versionConstraint == null) {
+            return false;
+        }
+
+        if (versionConstraint.getVersion() != null) {
+            String version = versionConstraint.getVersion().toString();
+            return version.equals("LATEST") || version.equals("RELEASE");
+        }
+
+        if (versionConstraint.getRange() != null) {
+            return !Objects.equals(
+                    versionConstraint.getRange().getLowerBound(),
+                    versionConstraint.getRange().getUpperBound());
+        }
+        return false;
     }
 }
