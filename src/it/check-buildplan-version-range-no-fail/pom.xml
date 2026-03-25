@@ -63,7 +63,7 @@
           <artifactId>@project.artifactId@</artifactId>
           <version>@project.version@</version>
           <configuration>
-            <failVersionRange>false</failVersionRange>
+            <failOnNonReproducible>false</failOnNonReproducible>
           </configuration>
         </plugin>
       </plugins>

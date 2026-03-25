@@ -29,6 +29,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.outputTimestamp>0</project.build.outputTimestamp>
   </properties>
 
   <dependencies>
