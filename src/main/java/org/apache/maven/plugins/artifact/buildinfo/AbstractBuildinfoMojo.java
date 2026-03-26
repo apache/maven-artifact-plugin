@@ -34,8 +34,12 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.maven.archiver.MavenArchiver;
@@ -49,6 +53,8 @@ import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyNode;
 
 /**
  * Base buildinfo-generating class, for goals related to Reproducible Builds {@code .buildinfo} files.
@@ -90,6 +96,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
      * Avoid taking fingerprints for full modules, specified as glob matching against
      * <code>${groupId}/${artifactId}</code>.
      * For ignoring only a few files instead of full modules, see {@code ignore}.
+     *
      * @since 3.5.0
      */
     @Parameter(property = "buildinfo.skipModules")
@@ -131,6 +138,8 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
     protected final RuntimeInformation rtInformation;
 
+    private final RangesUtil rangesUtil;
+
     /**
      * The Maven project.
      */
@@ -144,12 +153,14 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     protected AbstractBuildinfoMojo(
             ToolchainManager toolchainManager,
             RuntimeInformation rtInformation,
+            RangesUtil rangesUtil,
             MavenProject project,
             MavenSession session) {
         this.toolchainManager = toolchainManager;
         this.rtInformation = rtInformation;
         this.project = project;
         this.session = session;
+        this.rangesUtil = rangesUtil;
     }
 
     @Override
@@ -338,6 +349,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
         return bi;
     }
+
     /**
      * Generate buildinfo file.
      *
@@ -351,20 +363,17 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
         buildinfoFile.getParentFile().mkdirs();
 
+        List<MavenProject> mavenProjects = getProjectListForBuildInfo(mono);
+        String rangeFilter = getVersionRangeDependenciesFilters(mavenProjects);
+
         try (PrintWriter p = new PrintWriter(new BufferedWriter(
                 new OutputStreamWriter(Files.newOutputStream(buildinfoFile.toPath()), StandardCharsets.UTF_8)))) {
             BuildInfoWriter bi = newBuildInfoWriter(p, mono);
-            bi.printHeader(root, mono ? null : project, reproducible);
+            bi.printHeader(root, mono ? null : project, rangeFilter, reproducible);
 
             // artifact(s) fingerprints
-            if (mono) {
+            for (MavenProject project : mavenProjects) {
                 bi.printArtifacts(project);
-            } else {
-                for (MavenProject project : session.getProjects()) {
-                    if (!isSkip(project)) {
-                        bi.printArtifacts(project);
-                    }
-                }
             }
 
             if (p.checkError()) {
@@ -375,6 +384,31 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         } catch (IOException e) {
             throw new MojoExecutionException("Error creating file " + buildinfoFile, e);
         }
+    }
+
+    private List<MavenProject> getProjectListForBuildInfo(boolean mono) {
+        if (mono) {
+            return Collections.singletonList(project);
+        } else {
+            return session.getProjects().stream().filter(p -> !isSkip(p)).collect(Collectors.toList());
+        }
+    }
+
+    private String getVersionRangeDependenciesFilters(List<MavenProject> mavenProjects) throws MojoExecutionException {
+
+        Set<DependencyNode> dependencyNodeSet = new LinkedHashSet<>();
+        for (MavenProject project : mavenProjects) {
+            dependencyNodeSet.addAll(
+                    rangesUtil.findVersionRangeDependencies(session, project).keySet());
+        }
+
+        return dependencyNodeSet.stream()
+                .map(DependencyNode::getDependency)
+                .filter(Objects::nonNull)
+                .map(Dependency::getArtifact)
+                .filter(Objects::nonNull)
+                .map(a -> String.format("e(%s:%s:(%s,))", a.getGroupId(), a.getArtifactId(), a.getVersion()))
+                .collect(Collectors.joining(";"));
     }
 
     protected MavenProject getLastProject() {

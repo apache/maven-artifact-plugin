@@ -55,10 +55,11 @@ public class BuildinfoMojo extends AbstractBuildinfoMojo {
     public BuildinfoMojo(
             ToolchainManager toolchainManager,
             RuntimeInformation runtimeInformation,
+            RangesUtil rangesUtil,
             MavenProject project,
             MavenSession session,
             MavenProjectHelper projectHelper) {
-        super(toolchainManager, runtimeInformation, project, session);
+        super(toolchainManager, runtimeInformation, rangesUtil, project, session);
         this.projectHelper = projectHelper;
     }
 

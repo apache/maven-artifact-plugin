@@ -67,7 +67,7 @@ class BuildInfoWriter {
         this.rtInformation = rtInformation;
     }
 
-    void printHeader(MavenProject project, MavenProject aggregate, boolean reproducible) {
+    void printHeader(MavenProject project, MavenProject aggregate, String rangeFilter, boolean reproducible) {
         p.println("# https://reproducible-builds.org/docs/jvm/");
         p.println("buildinfo.version=1.0-SNAPSHOT");
         p.println();
@@ -106,6 +106,11 @@ class BuildInfoWriter {
             // TODO wrong algorithm, should reuse algorithm written in versions-maven-plugin
             p.println("mvn.minimum.version=" + project.getPrerequisites().getMaven());
         }
+
+        if (!rangeFilter.isEmpty()) {
+            p.println("mvn.rebuild-args=-Dmaven.session.versionFilter=" + rangeFilter);
+        }
+
         if (toolchain != null) {
             String javaVersion = JdkToolchainUtil.getJavaVersion(toolchain);
             if (reproducible) {

@@ -107,10 +107,11 @@ public class CompareMojo extends AbstractBuildinfoMojo {
     public CompareMojo(
             ToolchainManager toolchainManager,
             RuntimeInformation rtInformation,
+            RangesUtil rangesUtil,
             MavenProject project,
             MavenSession session,
             RepositorySystem repoSystem) {
-        super(toolchainManager, rtInformation, project, session);
+        super(toolchainManager, rtInformation, rangesUtil, project, session);
         this.repoSystem = repoSystem;
     }
 

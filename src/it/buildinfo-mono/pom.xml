@@ -53,6 +53,14 @@
     <project.build.outputTimestamp>2019-12-03T10:04:00Z</project.build.outputTimestamp>
   </properties>
 
+  <dependencies>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>(1.7.30,1.7.36]</version>
+    </dependency>
+  </dependencies>
+
   <build>
     <plugins>
       <plugin>
