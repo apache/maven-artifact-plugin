@@ -62,7 +62,7 @@
   <properties>
     <mavenVersion>3.9.14</mavenVersion>
     <resolverVersion>1.9.27</resolverVersion>
-    <doxiaVersion>2.0.0</doxiaVersion>
+    <doxiaVersion>2.1.0</doxiaVersion>
     <reportingVversion>3.1.0</reportingVversion>
     <javaVersion>8</javaVersion>
     <version.maven-invoker-plugin>3.9.1</version.maven-invoker-plugin>
