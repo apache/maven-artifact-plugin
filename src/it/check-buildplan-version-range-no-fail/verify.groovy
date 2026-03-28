@@ -20,7 +20,7 @@
 
 def buildLog = new File(basedir, 'build.log').text
 
-assert buildLog.contains('[WARNING] Version with range found in dependencies, project can be non-reproducible')
-assert buildLog.contains(' - Dependency io.cucumber:messages:jar:32.2.0 (compile) via io.cucumber:gherkin:jar:38.0.0 is referenced with a range version [32.0.0,33.0.0)')
-assert buildLog.contains(' - Dependency commons-io:commons-io:jar:2.21.0 (compile) is referenced with a range version [2.20.0,)')
-assert buildLog.contains(' - Dependency commons-collections:commons-collections:jar:LATEST (compile) is referenced with a range version LATEST')
+assert buildLog.contains('[WARNING] Version specification with a range found in dependencies may make the project build non-reproducible')
+assert buildLog.contains(' - Dependency io.cucumber:messages:jar:32.2.0 (compile) via io.cucumber:gherkin:jar:38.0.0 has been resolved from a version range [32.0.0,33.0.0)')
+assert buildLog.contains(' - Dependency commons-io:commons-io:jar:2.21.0 (compile) has been resolved from a version range [2.20.0,)')
+assert buildLog.contains(' - Dependency commons-collections:commons-collections:jar:LATEST (compile) has been resolved from a version range LATEST')

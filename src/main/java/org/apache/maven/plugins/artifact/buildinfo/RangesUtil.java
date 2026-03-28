@@ -115,7 +115,7 @@ public class RangesUtil {
                 }
                 result.put(
                         node,
-                        "Dependency " + node.getDependency() + path + " is referenced with a range version "
+                        "Dependency " + node.getDependency() + path + " has been resolved from a version range "
                                 + versionConstraint);
             }
 

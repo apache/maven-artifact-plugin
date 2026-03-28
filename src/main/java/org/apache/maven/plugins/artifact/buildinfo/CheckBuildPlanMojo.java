@@ -195,10 +195,11 @@ public class CheckBuildPlanMojo extends AbstractMojo {
         Map<DependencyNode, String> versionRangeDependencies =
                 rangesUtil.findVersionRangeDependencies(session, project);
         if (!versionRangeDependencies.isEmpty()) {
-            String message = "Version with range found in dependencies, project can be non-reproducible"
-                    + versionRangeDependencies.values().stream()
-                            .collect(Collectors.joining(
-                                    System.lineSeparator() + " - ", System.lineSeparator() + " - ", ""));
+            String message =
+                    "Version specification with a range found in dependencies may make the project build non-reproducible"
+                            + versionRangeDependencies.values().stream()
+                                    .collect(Collectors.joining(
+                                            System.lineSeparator() + " - ", System.lineSeparator() + " - ", ""));
             if (failOnNonReproducible) {
                 getLog().error(message);
             } else {
