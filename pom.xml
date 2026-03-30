@@ -63,9 +63,7 @@
     <mavenVersion>3.9.14</mavenVersion>
     <resolverVersion>1.9.27</resolverVersion>
     <doxiaVersion>2.1.0</doxiaVersion>
-    <reportingVversion>3.1.0</reportingVversion>
     <javaVersion>8</javaVersion>
-    <version.maven-invoker-plugin>3.9.1</version.maven-invoker-plugin>
     <project.build.outputTimestamp>2025-09-29T16:18:23Z</project.build.outputTimestamp>
   </properties>
 
@@ -204,12 +202,12 @@
     <dependency>
       <groupId>org.apache.maven.reporting</groupId>
       <artifactId>maven-reporting-impl</artifactId>
-      <version>${reportingVversion}</version>
+      <version>4.0.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven.reporting</groupId>
       <artifactId>maven-reporting-api</artifactId>
-      <version>${reportingVversion}</version>
+      <version>4.0.0</version>
     </dependency>
   </dependencies>
 
