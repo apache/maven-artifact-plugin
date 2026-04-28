@@ -37,3 +37,12 @@ if( File.separator == '/' ) {
 } else {
   assert compare.contains( '# diffoscope target\\reference\\org.apache.maven.plugins.it.compare\\mono-1.0-SNAPSHOT.jar target\\mono-1.0-SNAPSHOT.jar' )
 }
+
+// check existence of generated buildinfo in target
+File buildinfoFile = new File( basedir, "target/mono-1.0-SNAPSHOT.buildinfo" );
+assert buildinfoFile.isFile()
+
+// check generated buildinfo content
+String buildinfo = buildinfoFile.text
+
+assert buildinfo.contains( "mvn.rebuild-args=-Dmaven.session.versionFilter=e(org.slf4j:slf4j-api:(1.7.36,))" )

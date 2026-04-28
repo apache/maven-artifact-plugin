@@ -60,9 +60,10 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
     public DescribeBuildOutputMojo(
             ToolchainManager toolchainManager,
             RuntimeInformation rtInformation,
+            RangesUtil rangesUtil,
             MavenProject project,
             MavenSession session) {
-        super(toolchainManager, rtInformation, project, session);
+        super(toolchainManager, rtInformation, rangesUtil, project, session);
     }
 
     @Override

@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.lifecycle.LifecycleExecutor;
@@ -39,6 +40,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.aether.graph.DependencyNode;
 import org.eclipse.aether.util.version.GenericVersionScheme;
 import org.eclipse.aether.version.InvalidVersionSpecificationException;
 import org.eclipse.aether.version.Version;
@@ -91,11 +93,15 @@ public class CheckBuildPlanMojo extends AbstractMojo {
 
     private final VersionScheme versionScheme = new GenericVersionScheme();
 
+    private final RangesUtil rangesUtil;
+
     @Inject
-    public CheckBuildPlanMojo(MavenProject project, MavenSession session, LifecycleExecutor lifecycleExecutor) {
+    public CheckBuildPlanMojo(
+            MavenProject project, MavenSession session, LifecycleExecutor lifecycleExecutor, RangesUtil rangesUtil) {
         this.project = project;
         this.session = session;
         this.lifecycleExecutor = lifecycleExecutor;
+        this.rangesUtil = rangesUtil;
     }
 
     protected MavenExecutionPlan calculateExecutionPlan() throws MojoExecutionException {
@@ -164,6 +170,8 @@ public class CheckBuildPlanMojo extends AbstractMojo {
             getLog().info("No known issue in " + okCount + " plugins");
         }
 
+        fail = checkVersionRangeInDependencies();
+
         if (fail) {
             getLog().info("current module pom.xml is " + project.getBasedir() + "/pom.xml");
             MavenProject parent = project;
@@ -181,6 +189,24 @@ public class CheckBuildPlanMojo extends AbstractMojo {
                 getLog().warn(message);
             }
         }
+    }
+
+    private boolean checkVersionRangeInDependencies() throws MojoExecutionException {
+        Map<DependencyNode, String> versionRangeDependencies =
+                rangesUtil.findVersionRangeDependencies(session, project);
+        if (!versionRangeDependencies.isEmpty()) {
+            String message =
+                    "Version specification with a range found in dependencies may make the project build non-reproducible"
+                            + versionRangeDependencies.values().stream()
+                                    .collect(Collectors.joining(
+                                            System.lineSeparator() + " - ", System.lineSeparator() + " - ", ""));
+            if (failOnNonReproducible) {
+                getLog().error(message);
+            } else {
+                getLog().warn(message);
+            }
+        }
+        return !versionRangeDependencies.isEmpty();
     }
 
     private Properties loadIssues() throws MojoExecutionException {
