@@ -83,15 +83,15 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
     private BuildInfoWriter bi;
 
     private void describeBuildEnvironment() {
-        getLog().info("Build environment information");
-        getLog().info("  java.version=" + System.getProperty("java.version"));
-        getLog().info("  java.vendor=" + System.getProperty("java.vendor"));
-        getLog().info("  java.home=" + System.getProperty("java.home"));
-        getLog().info("  os.name=" + System.getProperty("os.name"));
-        getLog().info("  os.version=" + System.getProperty("os.version"));
-        getLog().info("  os.arch=" + System.getProperty("os.arch"));
-        getLog().info("  mvn.version=" + rtInformation.getMavenVersion());
-        getLog().info("  line.separator="
+        getLog().info("Build environment information" + System.lineSeparator()
+                + "        - java.version=" + System.getProperty("java.version") + System.lineSeparator()
+                + "        - java.vendor=" + System.getProperty("java.vendor") + System.lineSeparator()
+                + "        - java.home=" + System.getProperty("java.home") + System.lineSeparator()
+                + "        - os.name=" + System.getProperty("os.name") + System.lineSeparator()
+                + "        - os.version=" + System.getProperty("os.version") + System.lineSeparator()
+                + "        - os.arch=" + System.getProperty("os.arch") + System.lineSeparator()
+                + "        - mvn.version=" + rtInformation.getMavenVersion() + System.lineSeparator()
+                + "        - line.separator="
                 + System.lineSeparator().replace("\r", "\\r").replace("\n", "\\n"));
     }
 
