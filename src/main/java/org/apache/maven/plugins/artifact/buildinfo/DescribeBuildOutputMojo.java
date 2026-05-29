@@ -75,11 +75,26 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
 
         diagnose(outputTimestamp, getLog(), project, session, effective);
         getLog().info("");
+        describeBuildEnvironment();
+        getLog().info("");
         describeBuildOutput();
     }
 
     private Path rootPath;
     private BuildInfoWriter bi;
+
+    private void describeBuildEnvironment() {
+        getLog().info("Build environment information" + System.lineSeparator()
+                + "        - java.version=" + System.getProperty("java.version") + System.lineSeparator()
+                + "        - java.vendor=" + System.getProperty("java.vendor") + System.lineSeparator()
+                + "        - java.home=" + System.getProperty("java.home") + System.lineSeparator()
+                + "        - os.name=" + System.getProperty("os.name") + System.lineSeparator()
+                + "        - os.version=" + System.getProperty("os.version") + System.lineSeparator()
+                + "        - os.arch=" + System.getProperty("os.arch") + System.lineSeparator()
+                + "        - mvn.version=" + rtInformation.getMavenVersion() + System.lineSeparator()
+                + "        - line.separator="
+                + System.lineSeparator().replace("\r", "\\r").replace("\n", "\\n"));
+    }
 
     private void describeBuildOutput() throws MojoExecutionException {
         rootPath = session.getTopLevelProject().getBasedir().toPath();
