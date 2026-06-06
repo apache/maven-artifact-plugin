@@ -21,4 +21,9 @@
 def buildLog = new File(basedir, 'build.log').text
 
 // https://issues.apache.org/jira/browse/MARTIFACT-24 & MARTIFACT-53 & MARTIFACT-71
-assert buildLog.contains('[INFO] <project.build.outputTimestamp> property (= 2022-12-11T20:07:23Z) is inherited, you can override in pom.xml')
+//assert buildLog.contains('[INFO] <project.build.outputTimestamp> property (= 2022-12-11T20:07:23Z) is inherited, you can override in pom.xml')
+// Afaik it's not possible to get a property from a parent when the own project (here: maven-artifact-plugin) overwrites it.
+// So it's not possible to pass the outputTimestamp property from maven-parent to the invoker-plugin as a script variable to be a checked here.
+// Therefore the string to be checked is divided to not contain a fixed timestamp.
+assert buildLog.contains("[INFO] <project.build.outputTimestamp> property (= ")
+assert buildLog.contains(" is inherited, you can override in pom.xml")
