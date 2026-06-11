@@ -40,7 +40,6 @@ assert buildinfoFile.text.equals( ignoreJar.text )
 // check generated aggregate buildinfo content
 String buildinfo = ignoreJar.text
 
-
 assert buildinfo.contains( "group-id=org.apache.maven.plugins.it" )
 assert buildinfo.contains( "artifact-id=multi" )
 assert buildinfo.contains( "version=1.0-SNAPSHOT" )
@@ -117,7 +116,6 @@ if (mavenVersion.startsWith('4.')) {
 assert !buildinfo.contains( ".buildinfo" )
 assert buildinfo.contains( "mvn.aggregate.artifact-id=ignore-jar" )
 
-
 // check existence of buildinfo in local repository
 File localIgnoreJar = new File( basedir, "../../local-repo/org/apache/maven/plugins/it/ignore-jar/1.0-SNAPSHOT/ignore-jar-1.0-SNAPSHOT.buildinfo")
 assert localIgnoreJar.isFile()
@@ -132,12 +130,10 @@ if (mavenVersion.startsWith('4.')) {
 
 assert remoteDir.isDirectory()
 
-for ( File f : remoteDir.listFiles() )
-{
+for ( File f : remoteDir.listFiles() ) {
   // In Maven 4 there is the build-POM and also the new (but with old name) consumer-POM
   // The expected ".buildinfo" file is named as the consumer-POM
   if ( f.getName().endsWith( ".pom" ) &&  !f.getName().endsWith( "build.pom" )) {
-
     File b = new File( remoteDir, f.getName().replace( ".pom", ".buildinfo" ) )
     println b
     assert b.isFile()

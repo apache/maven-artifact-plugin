@@ -44,4 +44,3 @@ if (mavenVersion.startsWith('4.')) {
     assert buildinfo.contains( "outputs.1.0.length=" + new File( basedir, 'modB/pom.xml' ).size() )
     assert buildinfo.contains( "outputs.2.0.length=" + new File( basedir, 'modA/flattened-pom.xml' ).size() )
 }
-

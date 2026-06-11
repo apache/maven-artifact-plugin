@@ -48,12 +48,10 @@ File remoteDir = new File( basedir, "target/remote-repo/org/apache/maven/plugins
 assert remoteDir.isDirectory()
 
 int count = 0;
-for ( File f : remoteDir.listFiles() )
-{
+for ( File f : remoteDir.listFiles() ) {
   // In Maven 4 there is the build-POM and also the new (but with old name) consumer-POM
   // The expected ".buildinfo" file is named as the consumer-POM
   if ( f.getName().endsWith( ".pom" ) &&  !f.getName().endsWith( "build.pom" )) {
-
     File b = new File( remoteDir, f.getName().replace( ".pom", ".buildinfo" ) )
     println b
     assert b.isFile()
