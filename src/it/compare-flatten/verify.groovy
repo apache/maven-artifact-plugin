@@ -19,13 +19,29 @@
  */
 
 String compare = new File( basedir, 'target/flatten-1.0-SNAPSHOT.buildcompare' ).text
-assert compare.contains( 'okFiles="flatten-1.0-SNAPSHOT.pom flatten-modB-1.0-SNAPSHOT.pom flatten-modA-1.0-SNAPSHOT.pom"' )
 
-assert new File( basedir, 'flattened-pom.xml' ).text == new File( basedir, 'target/reference/org.apache.maven.plugins.it/flatten-1.0-SNAPSHOT.pom' ).text
-assert new File( basedir, 'modA/flattened-pom.xml' ).text == new File( basedir, 'target/reference/org.apache.maven.plugins.it/flatten-modA-1.0-SNAPSHOT.pom' ).text
-assert new File( basedir, 'modB/pom.xml' ).text == new File( basedir, 'target/reference/org.apache.maven.plugins.it/flatten-modB-1.0-SNAPSHOT.pom' ).text
+// In Maven 4 the build-bom gets flatten. Its existence also changes the index in buildinfo
+if (mavenVersion.startsWith('4.')) {
+    assert compare.contains( 'okFiles="flatten-1.0-SNAPSHOT.pom flatten-1.0-SNAPSHOT-build.pom flatten-modB-1.0-SNAPSHOT.pom flatten-modB-1.0-SNAPSHOT-build.pom flatten-modA-1.0-SNAPSHOT.pom flatten-modA-1.0-SNAPSHOT-build.pom"' )
 
-String buildinfo = new File( basedir, 'target/flatten-1.0-SNAPSHOT.buildinfo' ).text
-assert buildinfo.contains( "outputs.0.0.length=" + new File( basedir, 'flattened-pom.xml' ).size() )
-assert buildinfo.contains( "outputs.1.0.length=" + new File( basedir, 'modB/pom.xml' ).size() )
-assert buildinfo.contains( "outputs.2.0.length=" + new File( basedir, 'modA/flattened-pom.xml' ).size() )
+    assert new File( basedir, 'flattened-pom.xml' ).text == new File( basedir, 'target/reference/org.apache.maven.plugins.it/flatten-1.0-SNAPSHOT-build.pom' ).text
+    assert new File( basedir, 'modA/flattened-pom.xml' ).text == new File( basedir, 'target/reference/org.apache.maven.plugins.it/flatten-modA-1.0-SNAPSHOT-build.pom' ).text
+    assert new File( basedir, 'modB/pom.xml' ).text == new File( basedir, 'target/reference/org.apache.maven.plugins.it/flatten-modB-1.0-SNAPSHOT-build.pom' ).text
+
+    String buildinfo = new File( basedir, 'target/flatten-1.0-SNAPSHOT.buildinfo' ).text
+    assert buildinfo.contains( "outputs.0.1.length=" + new File( basedir, 'flattened-pom.xml' ).size() )
+    assert buildinfo.contains( "outputs.1.1.length=" + new File( basedir, 'modB/pom.xml' ).size() )
+    assert buildinfo.contains( "outputs.2.1.length=" + new File( basedir, 'modA/flattened-pom.xml' ).size() )
+} else {
+    assert compare.contains( 'okFiles="flatten-1.0-SNAPSHOT.pom flatten-modB-1.0-SNAPSHOT.pom flatten-modA-1.0-SNAPSHOT.pom"' )
+
+    assert new File( basedir, 'flattened-pom.xml' ).text == new File( basedir, 'target/reference/org.apache.maven.plugins.it/flatten-1.0-SNAPSHOT.pom' ).text
+    assert new File( basedir, 'modA/flattened-pom.xml' ).text == new File( basedir, 'target/reference/org.apache.maven.plugins.it/flatten-modA-1.0-SNAPSHOT.pom' ).text
+    assert new File( basedir, 'modB/pom.xml' ).text == new File( basedir, 'target/reference/org.apache.maven.plugins.it/flatten-modB-1.0-SNAPSHOT.pom' ).text
+
+    String buildinfo = new File( basedir, 'target/flatten-1.0-SNAPSHOT.buildinfo' ).text
+    assert buildinfo.contains( "outputs.0.0.length=" + new File( basedir, 'flattened-pom.xml' ).size() )
+    assert buildinfo.contains( "outputs.1.0.length=" + new File( basedir, 'modB/pom.xml' ).size() )
+    assert buildinfo.contains( "outputs.2.0.length=" + new File( basedir, 'modA/flattened-pom.xml' ).size() )
+}
+

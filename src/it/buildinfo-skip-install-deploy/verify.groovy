@@ -36,7 +36,7 @@ assert buildinfo.contains( "version=1.0-SNAPSHOT" )
 assert buildinfo.contains( "outputs.1.coordinates=org.apache.maven.plugins.it:multi-modA" )
 assert buildinfo.contains( "outputs.1.0.filename=multi-modA-1.0-SNAPSHOT.pom" )
 
-if (mavenVersion.startsWith('4.') || mavenVersion.startsWith('3.10.')) {
+if (mavenVersion.startsWith('4.')) {
   assert buildinfo.contains( "outputs.1.2.filename=multi-modA-1.0-SNAPSHOT.jar" )
 } else {
   assert buildinfo.contains( "outputs.1.1.filename=multi-modA-1.0-SNAPSHOT.jar" )
@@ -45,7 +45,7 @@ if (mavenVersion.startsWith('4.') || mavenVersion.startsWith('3.10.')) {
 assert buildinfo.contains( "outputs.2.coordinates=org.apache.maven.plugins.it:multi-modB" )
 assert buildinfo.contains( "outputs.2.0.filename=multi-modB-1.0-SNAPSHOT.pom" )
 
-if (mavenVersion.startsWith('4.') || mavenVersion.startsWith('3.10.')) {
+if (mavenVersion.startsWith('4.')) {
   assert buildinfo.contains( "outputs.2.2.filename=multi-modB-1.0-SNAPSHOT.jar" )
 } else {
   assert buildinfo.contains( "outputs.2.1.filename=multi-modB-1.0-SNAPSHOT.jar" )
@@ -61,7 +61,7 @@ assert localModB.isFile()
 
 // check existence of buildinfo in remote repository
 File remoteDir = null
-if (mavenVersion.startsWith('4.') || mavenVersion.startsWith('3.10.')) {
+if (mavenVersion.startsWith('4.')) {
   remoteDir = new File( basedir, "target/remote-repo/org/apache/maven/plugins/it/multi-modB/1.0-SNAPSHOT" )
 } else {
   remoteDir = new File( basedir, "modB/target/remote-repo/org/apache/maven/plugins/it/multi-modB/1.0-SNAPSHOT" )
