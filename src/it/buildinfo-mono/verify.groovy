@@ -25,8 +25,17 @@ assert buildinfoFile.isFile()
 // check generated buildinfo content
 String buildinfo = buildinfoFile.text
 
-assert buildinfo.contains( "outputs.0.filename=mono-1.0-SNAPSHOT.pom" )
-assert buildinfo.contains( "outputs.1.filename=mono-1.0-SNAPSHOT.jar" )
+
+// In Maven 4 we build and consumer POM
+if (mavenVersion.startsWith('4.')) {
+  assert buildinfo.contains( "outputs.0.filename=mono-1.0-SNAPSHOT.pom" )
+  assert buildinfo.contains( "outputs.1.filename=mono-1.0-SNAPSHOT-build.pom" )
+  assert buildinfo.contains( "outputs.2.filename=mono-1.0-SNAPSHOT.jar" )
+} else {
+  assert buildinfo.contains( "outputs.0.filename=mono-1.0-SNAPSHOT.pom" )
+  assert buildinfo.contains( "outputs.1.filename=mono-1.0-SNAPSHOT.jar" )
+}
+
 assert buildinfo.contains( "mvn.minimum.version=3.0.5" )
 assert buildinfo.contains( "mvn.rebuild-args=-Dmaven.session.versionFilter=e(org.slf4j:slf4j-api:(1.7.36,))" )
 
@@ -40,8 +49,9 @@ File remoteDir = new File( basedir, "target/remote-repo/org/apache/maven/plugins
 int count = 0;
 for ( File f : remoteDir.listFiles() )
 {
-  if ( f.getName().endsWith( ".pom" ) )
-  {
+  // In Maven 4 there is the build-POM and also the new (but with old name) consumer-POM
+  // The expected ".buildinfo" file is named as the consumer-POM
+  if ( f.getName().endsWith( ".pom" ) &&  !f.getName().endsWith( "build.pom" )) {
     File b = new File( remoteDir, f.getName().replace( ".pom", ".buildinfo" ) )
     println b
     assert b.isFile()
