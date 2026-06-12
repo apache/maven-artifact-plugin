@@ -26,10 +26,18 @@ assert compareFile.isFile()
 String compare = compareFile.text
 
 assert compare.contains( "version=1.0-SNAPSHOT" )
-assert compare.contains( "ok=1" )
+
+// In Maven 4 we build and consumer POM
+if (mavenVersion.startsWith('4.')) {
+  assert compare.contains( "ok=2" )
+  assert compare.contains( 'okFiles="mono-1.0-SNAPSHOT.pom mono-1.0-SNAPSHOT-build.pom"' )
+} else {
+  assert compare.contains( "ok=1" )
+  assert compare.contains( 'okFiles="mono-1.0-SNAPSHOT.pom"' )
+}
+
 assert compare.contains( "ko=1" )
 assert compare.contains( "ignored=1" )
-assert compare.contains( 'okFiles="mono-1.0-SNAPSHOT.pom"' )
 assert compare.contains( 'koFiles="mono-1.0-SNAPSHOT.jar"' )
 assert compare.contains( 'ignoredFiles="mono-1.0-SNAPSHOT.spdx.json"' )
 if( File.separator == '/' ) {

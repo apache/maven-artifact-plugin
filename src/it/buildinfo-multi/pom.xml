@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.maven</groupId>
     <artifactId>maven-parent</artifactId>
-    <version>39</version>
+    <version>48</version>
   </parent>
 
   <groupId>org.apache.maven.plugins.it</groupId>
@@ -88,6 +88,24 @@
                 <ignore>*/ignore-jar-*.jar</ignore>
               </ignore>
             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>@version.apache-rat-plugin@</version>
+        <configuration>
+          <excludes>
+            <exclude>**/build.log.1</exclude>
+          </excludes>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <phase>verify</phase>
           </execution>
         </executions>
       </plugin>
