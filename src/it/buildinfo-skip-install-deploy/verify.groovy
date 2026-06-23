@@ -51,34 +51,5 @@ if (mavenVersion.startsWith('4.')) {
   assert buildinfo.contains( "outputs.2.1.filename=multi-modB-1.0-SNAPSHOT.jar" )
 }
 
-
 assert !buildinfo.contains( ".buildinfo" )
 assert !buildinfo.contains( "outputs.3" )
-
-// check existence of buildinfo in local repository
-File localModB = new File( basedir, "../../local-repo/org/apache/maven/plugins/it/multi-modB/1.0-SNAPSHOT/multi-modB-1.0-SNAPSHOT.buildinfo")
-assert localModB.isFile()
-
-// check existence of buildinfo in remote repository
-File remoteDir = null
-if (mavenVersion.startsWith('4.')) {
-  remoteDir = new File( basedir, "target/remote-repo/org/apache/maven/plugins/it/multi-modB/1.0-SNAPSHOT" )
-} else {
-  remoteDir = new File( basedir, "modB/target/remote-repo/org/apache/maven/plugins/it/multi-modB/1.0-SNAPSHOT" )
-}
-
-assert remoteDir.isDirectory()
-
-// check if there is a .buildinfo for the first .pom file
-for ( File f : remoteDir.listFiles() )  {
-  // In Maven 4 there is the build-POM and also the new (but with old name) consumer-POM
-  // The expected ".buildinfo" file is named as the consumer-POM
-  if ( f.getName().endsWith( ".pom" ) &&  !f.getName().endsWith( "build.pom" )) {
-    File b = new File( remoteDir, f.getName().replace( ".pom", ".buildinfo" ) )
-    println b
-    assert b.isFile()
-    return
-  }
-}
-
-// issue: buildinfo not found

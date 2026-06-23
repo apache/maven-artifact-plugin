@@ -65,12 +65,6 @@ public class BuildinfoMojo extends AbstractBuildinfoMojo {
 
     @Override
     public void execute(Map<Artifact, String> artifacts) throws MojoExecutionException {
-        // eventually attach
-        if (attach) {
-            getLog().info("Attaching buildinfo");
-            projectHelper.attachArtifact(project, "buildinfo", buildinfoFile);
-        } else {
-            getLog().info("NOT adding buildinfo to the list of attached artifacts.");
-        }
+        // attach / deploy feature has been removed, see #216
     }
 }

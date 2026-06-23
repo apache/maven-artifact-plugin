@@ -38,24 +38,3 @@ if (mavenVersion.startsWith('4.')) {
 
 assert buildinfo.contains( "mvn.minimum.version=3.0.5" )
 assert buildinfo.contains( "mvn.rebuild-args=-Dmaven.session.versionFilter=e(org.slf4j:slf4j-api:(1.7.36,))" )
-
-// check existence of buildinfo in local repository
-File local = new File( basedir, "../../local-repo/org/apache/maven/plugins/it/mono/1.0-SNAPSHOT/mono-1.0-SNAPSHOT.buildinfo")
-assert local.isFile()
-
-// check existence of buildinfo in remote repository
-File remoteDir = new File( basedir, "target/remote-repo/org/apache/maven/plugins/it/mono/1.0-SNAPSHOT")
-assert remoteDir.isDirectory()
-
-int count = 0;
-for ( File f : remoteDir.listFiles() ) {
-  // In Maven 4 there is the build-POM and also the new (but with old name) consumer-POM
-  // The expected ".buildinfo" file is named as the consumer-POM
-  if ( f.getName().endsWith( ".pom" ) &&  !f.getName().endsWith( "build.pom" )) {
-    File b = new File( remoteDir, f.getName().replace( ".pom", ".buildinfo" ) )
-    println b
-    assert b.isFile()
-    count++
-  }
-}
-assert count > 0
