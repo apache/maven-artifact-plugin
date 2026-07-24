@@ -102,7 +102,7 @@ class ReferenceBuildinfoUtil {
     File downloadOrCreateReferenceBuildinfo(
             RemoteRepository repo, MavenProject project, File buildinfoFile, boolean mono)
             throws MojoExecutionException {
-        File referenceBuildinfo = downloadReferenceBuildinfo(repo, project);
+        File referenceBuildinfo = downloadReferenceBuildinfo(repo, project, buildinfoFile);
 
         if (referenceBuildinfo != null) {
             log.warn("dropping downloaded reference buildinfo because it may be generated"
@@ -190,7 +190,7 @@ class ReferenceBuildinfoUtil {
                     throw new MojoExecutionException("Write error to " + referenceBuildinfo);
                 }
 
-                log.info("Minimal buildinfo generated from downloaded artifacts: " + referenceBuildinfo);
+                log.debug("Minimal buildinfo generated from downloaded artifacts: " + referenceBuildinfo);
             }
         } catch (IOException e) {
             throw new MojoExecutionException("Error creating file " + referenceBuildinfo, e);
@@ -252,18 +252,20 @@ class ReferenceBuildinfoUtil {
         return null;
     }
 
-    private File downloadReferenceBuildinfo(RemoteRepository repo, MavenProject project) throws MojoExecutionException {
+    private File downloadReferenceBuildinfo(RemoteRepository repo, MavenProject project, File buildinfoFile)
+            throws MojoExecutionException {
         Artifact buildinfo = new DefaultArtifact(
                 project.getGroupId(), project.getArtifactId(), null, "buildinfo", project.getVersion());
         try {
             File file = downloadReference(repo, buildinfo);
 
-            log.info("Reference buildinfo file found, copied to " + file);
+            log.info("Reference buildinfo file found in repo, copied to " + file);
 
             return file;
         } catch (ArtifactResolutionException e) {
-            log.info("Reference buildinfo file not found: "
-                    + "it will be generated from downloaded reference artifacts");
+            log.info("Reference buildinfo file not found in repo: "
+                    + "it will be generated from downloaded reference artifacts to "
+                    + new File(referenceDir, buildinfoFile.getName()));
         }
 
         return null;
