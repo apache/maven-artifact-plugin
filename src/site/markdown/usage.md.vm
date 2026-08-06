@@ -1,38 +1,30 @@
- ------
- Usage
- ------
- Hervé Boutemy
- ------
- 2020-06-20
- ------
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
 
-~~ Licensed to the Apache Software Foundation (ASF) under one
-~~ or more contributor license agreements.  See the NOTICE file
-~~ distributed with this work for additional information
-~~ regarding copyright ownership.  The ASF licenses this file
-~~ to you under the Apache License, Version 2.0 (the
-~~ "License"); you may not use this file except in compliance
-~~ with the License.  You may obtain a copy of the License at
-~~
-~~   http://www.apache.org/licenses/LICENSE-2.0
-~~
-~~ Unless required by applicable law or agreed to in writing,
-~~ software distributed under the License is distributed on an
-~~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-~~ KIND, either express or implied.  See the License for the
-~~ specific language governing permissions and limitations
-~~ under the License.
+http://www.apache.org/licenses/LICENSE-2.0
 
-~~ NOTE: For help with the syntax of this file, see:
-~~ http://maven.apache.org/doxia/references/apt-format.html
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
 
-Usage
+# Usage
 
-* Recording <<<.buildinfo>>> File
+Recording `.buildinfo` File
+---------------------------
 
-  Recording build result into a <<<.buildinfo>>> file is typically done on command line by calling <<<artifact:buildinfo>>> goal after the normal build:
+Recording build result into a `.buildinfo` file is typically done on command line by calling `artifact:buildinfo` goal after the normal build:
 
--------
+```
 $ mvn clean verify artifact:buildinfo
 [INFO] Scanning for projects...
 [INFO] 
@@ -45,17 +37,18 @@ $ mvn clean verify artifact:buildinfo
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------
--------
+```
 
-  This records data on the current build results into a <<<.buildinfo>>> file using {{{https://reproducible-builds.org/docs/jvm/}Reproducible Builds <<<.buildinfo>>> for the JVM}} format.
+This records data on the current build results into a `.buildinfo` file using [Reproducible Builds `.buildinfo` for the JVM](https://reproducible-builds.org/docs/jvm/) format.
 
-  Notice that if the build is multi-module, only 1 <<<.buildinfo>>> file is generated, in the last module of the reactor, that will record aggregated results for all the modules.
+Notice that if the build is multi-module, only 1 `.buildinfo` file is generated, in the last module of the reactor, that will record aggregated results for all the modules.
 
-* Checking Reproducible Build: Comparing Current Build Against Previous One
+Checking Reproducible Build: Comparing Current Build Against Previous One
+-------------------------------------------------------------------------
 
-  <<<artifact:compare>>> goal compares reference artifacts against current build output to display <<Reproducible Build output summary>>:
+`artifact:compare` goal compares reference artifacts against current build output to display **Reproducible Build output summary**:
 
--------
+```
 $ mvn -Papache-release clean verify -Dgpg.skip artifact:compare
 [INFO] Scanning for projects...
 ...
@@ -76,4 +69,4 @@ Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/
 [WARNING] see also https://maven.apache.org/guides/mini/guide-reproducible-builds.html
 [INFO] Reproducible Build output comparison saved to /tmp/doxia-1.9.1/doxia-modules/doxia-module-markdown/target/doxia-module-markdown-1.9.1.buildcompare
 [INFO] Aggregate buildcompare copied to /tmp/doxia-1.9.1/target/doxia-1.9.1.buildcompare
--------
+```
