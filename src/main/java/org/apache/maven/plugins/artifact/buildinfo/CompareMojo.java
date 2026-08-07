@@ -316,7 +316,9 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         }
         if (!reference.exists()) {
             RemoteRepository repo = createReferenceRepo();
-            String url = repo.getUrl() + "/"
+            String baseUrl = repo.getUrl();
+            String url = baseUrl
+                    + (baseUrl.endsWith("/") ? "" : "/")
                     + session.getRepositorySession()
                             .getLocalRepositoryManager()
                             .getPathForRemoteArtifact(a, repo, null);
