@@ -54,3 +54,10 @@ assert buildinfoFile.isFile()
 String buildinfo = buildinfoFile.text
 
 assert buildinfo.contains( "mvn.rebuild-args=-Dmaven.session.versionFilter=e(org.slf4j:slf4j-api:(1.7.36,))" )
+
+// check existence of build log
+File buildLogFile = new File( basedir, "build.log" );
+assert buildLogFile.isFile()
+
+String buildLog = buildLogFile.text
+assert buildLog.contains("[WARNING] The artifact org.slf4j:slf4j-api:1.7.36 is stemming from your local Maven repository. Please ensure that this is intended. If not, consider removing this artifact and rebuilding.")
