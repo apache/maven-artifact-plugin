@@ -218,6 +218,9 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
     }
 
     private String sha256(File file) throws MojoExecutionException {
+        if (file.isDirectory()) {
+            return "directory";
+        }
         try (InputStream is = Files.newInputStream(file.toPath())) {
             return DigestUtils.sha256Hex(is);
         } catch (IOException ioe) {
