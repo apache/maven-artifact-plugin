@@ -1,4 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
+---
+title: Frequently Asked Questions
+---
 
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
@@ -19,15 +21,14 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-<faqs xmlns="http://maven.apache.org/FML/1.0.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/FML/1.0.1 https://maven.apache.org/xsd/fml-1.0.1.xsd"
-  id="FAQ" title="Frequently Asked Questions">
-  <part id="General">
-   <faq id="Configure Reproducible Builds">
-     <question>How to configure my Maven build for Reproducible Builds?</question>
-     <answer>
-       <p>See the <a href="/guides/mini/guide-reproducible-builds.html">Configuring for Reproducible Builds guide</a>.</p>
-     </answer>
-   </faq>
- </part>
-</faqs>
+<a id="top"></a>
+
+# Frequently Asked Questions
+
+1. [How to configure my Maven build for Reproducible Builds?](#Configure_Reproducible_Builds)
+
+<a id="Configure_Reproducible_Builds"></a>
+
+### How to configure my Maven build for Reproducible Builds?
+
+See the [Configuring for Reproducible Builds guide](/guides/mini/guide-reproducible-builds.html).
