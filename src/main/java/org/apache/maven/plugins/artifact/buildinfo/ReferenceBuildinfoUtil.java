@@ -265,7 +265,7 @@ class ReferenceBuildinfoUtil {
                     artifact.getGroupId(),
                     artifact.getArtifactId(),
                     artifact.getVersion(),
-                    //if the artifact was resolved successfully, there is a file we can access
+                    // if the artifact was resolved successfully, there is a file we can access
                     artifact.getFile().getAbsolutePath()));
         }
     }
