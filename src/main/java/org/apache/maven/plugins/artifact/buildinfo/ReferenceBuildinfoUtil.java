@@ -253,14 +253,20 @@ class ReferenceBuildinfoUtil {
         artifactRequest.setArtifact(defaultArtifact);
         artifactRequest.setRepositories(remoteRepos);
         ArtifactResult artifactResult = repoSystem.resolveArtifact(repoSession, artifactRequest);
+        Artifact artifact = artifactResult.getArtifact();
         ArtifactRepository resultRepo = artifactResult.getRepository();
 
         if (resultRepo instanceof LocalRepository) {
             log.warn(String.format(
-                    "The artifact %s:%s:%s is stemming from your local Maven repository. "
+                    "The artifact %s:%s:%s is stemming from a local install to your local Maven repository. "
                             + "Please ensure that this is intended. "
-                            + "If not, consider removing this artifact and rebuilding.",
-                    defaultArtifact.getGroupId(), defaultArtifact.getArtifactId(), defaultArtifact.getVersion()));
+                            + "If not, consider removing this artifact and rebuilding "
+                            + "and that your locally installed artifact from %s matches public reference from remote.",
+                    artifact.getGroupId(),
+                    artifact.getArtifactId(),
+                    artifact.getVersion(),
+                    //if the artifact was resolved successfully, there is a file we can access
+                    artifact.getFile().getAbsolutePath()));
         }
     }
 
