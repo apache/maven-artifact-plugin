@@ -60,5 +60,5 @@ File buildLogFile = new File( basedir, "build.log" );
 assert buildLogFile.isFile()
 
 String buildLog = buildLogFile.text
-assert buildLog.contains("[WARNING] The artifact org.slf4j:slf4j-api:1.7.36 is stemming from a local install to your local Maven repository. Please ensure that this is intended. If not, consider removing this artifact and rebuilding. and that your locally installed artifact from")
+assert buildLog.contains("[WARNING] The artifact org.slf4j:slf4j-api:1.7.36 is stemming from a local install to your local Maven repository. Please ensure that this is intended. If not, consider removing this artifact and rebuilding and that your locally installed artifact from")
 assert buildLog.contains("slf4j-api-1.7.36.jar matches public reference from remote.")
