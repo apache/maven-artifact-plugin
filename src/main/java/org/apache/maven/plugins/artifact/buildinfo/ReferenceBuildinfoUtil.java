@@ -258,10 +258,10 @@ class ReferenceBuildinfoUtil {
 
         if (resultRepo instanceof LocalRepository) {
             log.warn(String.format(
-                    "The artifact %s:%s:%s is stemming from a local install to your local Maven repository. "
+                    "The dependency %s:%s:%s is stemming from a local install to your local Maven repository. "
                             + "Please ensure that this is intended. "
-                            + "If not, consider removing this artifact and rebuilding "
-                            + "and that your locally installed artifact from %s matches public reference from remote.",
+                            + "If not, consider removing this artifact and rebuilding, "
+                            + "or that your locally installed artifact from %s matches public reference from remote.",
                     artifact.getGroupId(),
                     artifact.getArtifactId(),
                     artifact.getVersion(),
