@@ -31,9 +31,13 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
  */
 class PluginUtil {
     private static final String NEXUS_STAGING = "nexus-staging";
+    private static final String CENTRAL_PUBLISHING = "central-publishing";
 
     static boolean isSkip(MavenProject project) {
-        return isSkip(project, "install") || isSkip(project, "deploy") || isSkip(project, NEXUS_STAGING);
+        return isSkip(project, "install")
+                || isSkip(project, "deploy")
+                || isSkip(project, NEXUS_STAGING)
+                || isSkip(project, CENTRAL_PUBLISHING);
     }
 
     private static boolean isSkip(MavenProject project, String id) {
@@ -44,6 +48,10 @@ class PluginUtil {
             pluginGa = "org.sonatype.plugins:" + id + "-maven-plugin";
             pluginParameter = "skipNexusStagingDeployMojo";
             pluginProperty = "skipNexusStagingDeployMojo";
+        } else if (id.equals(CENTRAL_PUBLISHING)) {
+            pluginGa = "org.sonatype.central:" + id + "-maven-plugin";
+            pluginParameter = "skipPublishing";
+            pluginProperty = "skipPublishing";
         } else {
             pluginGa = "org.apache.maven.plugins:maven-" + id + "-plugin";
             pluginParameter = "skip";
