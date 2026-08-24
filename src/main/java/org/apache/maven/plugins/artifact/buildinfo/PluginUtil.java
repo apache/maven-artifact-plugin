@@ -34,10 +34,15 @@ class PluginUtil {
     private static final String CENTRAL_PUBLISHING = "central-publishing";
 
     static boolean isSkip(MavenProject project) {
-        return isSkip(project, "install")
-                || isSkip(project, "deploy")
-                || isSkip(project, NEXUS_STAGING)
-                || isSkip(project, CENTRAL_PUBLISHING);
+        // check the extension plugins first, as using them drops deploy
+        if (getPlugin(project, "org.sonatype.plugins:" + NEXUS_STAGING + "-maven-plugin") != null) {
+            return isSkip(project, NEXUS_STAGING);
+        }
+        if (getPlugin(project, "org.sonatype.central:" + CENTRAL_PUBLISHING + "-maven-plugin") != null) {
+            return isSkip(project, CENTRAL_PUBLISHING);
+        }
+        // install/deploy are really used
+        return isSkip(project, "install") || isSkip(project, "deploy");
     }
 
     private static boolean isSkip(MavenProject project, String id) {
