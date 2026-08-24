@@ -22,6 +22,7 @@
 File buildinfoFile = new File( basedir, "target/multi-1.0-SNAPSHOT.buildinfo" );
 assert buildinfoFile.isFile()
 
+// Skipping intermediate goal run, aggregate will be multi-modB
 File modA = new File( basedir, "modA/target/multi-modA-1.0-SNAPSHOT.buildinfo")
 assert !modA.isFile()
 
