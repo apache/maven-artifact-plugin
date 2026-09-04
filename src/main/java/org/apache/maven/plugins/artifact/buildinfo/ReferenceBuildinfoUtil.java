@@ -43,13 +43,11 @@ import java.util.zip.ZipException;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
 import org.eclipse.aether.AbstractForwardingRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.collection.CollectResult;
 import org.eclipse.aether.collection.DependencyCollectionException;
@@ -108,23 +106,13 @@ class ReferenceBuildinfoUtil {
         this.rtInformation = rtInformation;
     }
 
-    File downloadOrCreateReferenceBuildinfo(
+    File createReferenceBuildinfo(
             RemoteRepository repo,
-            MavenProject project,
             File buildinfoFile,
             boolean mono,
             RepositorySystemSession repoSession,
             List<RemoteRepository> remoteRepos)
             throws MojoExecutionException {
-        File referenceBuildinfo = downloadReferenceBuildinfo(repo, project, buildinfoFile);
-
-        if (referenceBuildinfo != null) {
-            log.warn("dropping downloaded reference buildinfo because it may be generated"
-                    + " from different maven-artifact-plugin release...");
-            // TODO keep a save?
-            referenceBuildinfo = null;
-        }
-
         // download reference artifacts and guess Java version and OS
         String javaVersion = null;
         String osName = null;
@@ -154,6 +142,7 @@ class ReferenceBuildinfoUtil {
             }
         }
 
+        File referenceBuildinfo = null;
         try {
             // generate buildinfo from reference artifacts
             referenceBuildinfo = getReference(null, buildinfoFile);
@@ -324,25 +313,6 @@ class ReferenceBuildinfoUtil {
         } catch (IOException e) {
             log.warn("Unable to read " + entryName + " from " + jar, e);
         }
-        return null;
-    }
-
-    private File downloadReferenceBuildinfo(RemoteRepository repo, MavenProject project, File buildinfoFile)
-            throws MojoExecutionException {
-        Artifact buildinfo = new DefaultArtifact(
-                project.getGroupId(), project.getArtifactId(), null, "buildinfo", project.getVersion());
-        try {
-            File file = downloadReference(repo, buildinfo);
-
-            log.info("Reference buildinfo file found in repo, copied to " + file);
-
-            return file;
-        } catch (ArtifactResolutionException e) {
-            log.info("Reference buildinfo file not found in repo: "
-                    + "it will be generated from downloaded reference artifacts to "
-                    + new File(referenceDir, buildinfoFile.getName()));
-        }
-
         return null;
     }
 
