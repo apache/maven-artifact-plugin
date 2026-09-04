@@ -183,7 +183,9 @@ class ReferenceBuildinfoUtil {
                 for (Map.Entry<Artifact, String> entry : artifacts.entrySet()) {
                     Artifact artifact = entry.getKey();
 
-                    checkForLocalResolution(repoSession, remoteRepos, artifact);
+                    if ("pom".equals(artifact.getExtension()) && "".equals(artifact.getClassifier())) {
+                        checkArtifactDependenciesForLocalResolution(repoSession, remoteRepos, artifact);
+                    }
 
                     File referenceFile = referenceArtifacts.get(artifact);
                     if (referenceFile != null) {
@@ -205,7 +207,7 @@ class ReferenceBuildinfoUtil {
         return referenceBuildinfo;
     }
 
-    public void checkForLocalResolution(
+    public void checkArtifactDependenciesForLocalResolution(
             RepositorySystemSession repoSession, List<RemoteRepository> remoteRepos, Artifact artifact) {
 
         try {
@@ -213,7 +215,7 @@ class ReferenceBuildinfoUtil {
             CollectResult collectResult = repoSystem.collectDependencies(repoSession, collectRequest);
 
             for (DependencyNode child : collectResult.getRoot().getChildren()) {
-                checkDependenciesForLocalResolution(repoSession, child, remoteRepos);
+                checkDependencyNodeTreeForLocalResolution(repoSession, child, remoteRepos);
             }
 
         } catch (ArtifactResolutionException | DependencyCollectionException e) {
@@ -221,21 +223,21 @@ class ReferenceBuildinfoUtil {
         }
     }
 
-    private void checkDependenciesForLocalResolution(
+    private void checkDependencyNodeTreeForLocalResolution(
             RepositorySystemSession repoSession, DependencyNode child, List<RemoteRepository> remoteRepos)
             throws ArtifactResolutionException {
         // check for every dependency in the dependency tree
-        if (!child.getChildren().isEmpty()) {
-            for (DependencyNode node : child.getChildren()) {
-                checkDependenciesForLocalResolution(repoSession, node, remoteRepos);
-            }
+        if (child.getChildren().isEmpty()) {
+            checkDependencyNodeForLocalResolution(repoSession, child, remoteRepos);
         } else {
-            printWarningForLocalRepositoryArtifactResolution(repoSession, child, remoteRepos);
+            for (DependencyNode node : child.getChildren()) {
+                checkDependencyNodeTreeForLocalResolution(repoSession, node, remoteRepos);
+            }
         }
     }
 
     /* An artifact stemming from a local repo is most likely an issue during release builds. See #146. */
-    private void printWarningForLocalRepositoryArtifactResolution(
+    private void checkDependencyNodeForLocalResolution(
             RepositorySystemSession repoSession, DependencyNode child, List<RemoteRepository> remoteRepos)
             throws ArtifactResolutionException {
         Artifact defaultArtifact = child.getDependency().getArtifact();
