@@ -143,21 +143,21 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         File referenceDir = new File(root.getBuild().getDirectory(), "reference");
         referenceDir.mkdirs();
 
-        // download or create reference buildinfo
-        File referenceBuildinfo = downloadOrCreateReferenceBuildinfo(mono, artifacts, referenceDir);
+        // create reference buildinfo
+        File referenceBuildinfo = createReferenceBuildinfo(mono, artifacts, referenceDir);
 
         // compare outputs from reference buildinfo vs actual
         compareWithReference(artifacts, referenceBuildinfo);
     }
 
-    private File downloadOrCreateReferenceBuildinfo(boolean mono, Map<Artifact, String> artifacts, File referenceDir)
+    private File createReferenceBuildinfo(boolean mono, Map<Artifact, String> artifacts, File referenceDir)
             throws MojoExecutionException {
         RemoteRepository repo = createReferenceRepo();
 
         ReferenceBuildinfoUtil rmb =
                 new ReferenceBuildinfoUtil(getLog(), referenceDir, artifacts, repoSystem, repoSession, rtInformation);
 
-        return rmb.downloadOrCreateReferenceBuildinfo(repo, project, buildinfoFile, mono, repoSession, remoteRepos);
+        return rmb.createReferenceBuildinfo(repo, buildinfoFile, mono, repoSession, remoteRepos);
     }
 
     private void compareWithReference(Map<Artifact, String> artifacts, File referenceBuildinfo)
@@ -226,12 +226,10 @@ public class CompareMojo extends AbstractBuildinfoMojo {
                 p.println("missingFiles=\"" + String.join(" ", missingFilenames) + '"');
             }
             Properties ref = new Properties();
-            if (referenceBuildinfo != null) {
-                try (InputStream in = Files.newInputStream(referenceBuildinfo.toPath())) {
-                    ref.load(in);
-                } catch (IOException e) {
-                    // nothing
-                }
+            try (InputStream in = Files.newInputStream(referenceBuildinfo.toPath())) {
+                ref.load(in);
+            } catch (IOException e) {
+                // nothing
             }
             String v = ref.getProperty("java.version");
             if (v != null) {
