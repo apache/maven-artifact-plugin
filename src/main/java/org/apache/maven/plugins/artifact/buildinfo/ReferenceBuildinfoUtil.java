@@ -119,11 +119,17 @@ class ReferenceBuildinfoUtil {
         String currentJavaVersion = null;
         String currentOsName = null;
         Map<Artifact, File> referenceArtifacts = new HashMap<>();
+        int localInstallArtifacts = 0;
         for (Artifact artifact : artifacts.keySet()) {
             try {
                 // download
-                File file = downloadReference(repo, artifact);
+                ArtifactResult referenceResult = downloadReference(repo, artifact);
+                File file = referenceResult.getArtifact().getFile();
                 referenceArtifacts.put(artifact, file);
+
+                if (referenceResult.getRepository() instanceof LocalRepository) {
+                    localInstallArtifacts++;
+                }
 
                 // guess Java version and OS
                 if ((javaVersion == null) && JAR_EXTENSIONS.contains(artifact.getExtension())) {
@@ -142,6 +148,16 @@ class ReferenceBuildinfoUtil {
             }
         }
 
+        if (localInstallArtifacts == 0) {
+            log.info("Comparing against " + artifacts.size() + " reference files from " + repo);
+        } else if (localInstallArtifacts == artifacts.size()) {
+            log.info("Comparing against " + artifacts.size() + " reference files from previous 'mvn install'");
+        } else {
+            log.warn("Comparing against " + localInstallArtifacts
+                    + " reference files mixed from previous 'mvn install' and "
+                    + (artifacts.size() - localInstallArtifacts) + " from " + repo);
+        }
+
         File referenceBuildinfo = null;
         try {
             // generate buildinfo from reference artifacts
@@ -154,14 +170,14 @@ class ReferenceBuildinfoUtil {
                     p.println("# effective build environment information");
                     if (javaVersion != null) {
                         p.println("java.version=" + javaVersion);
-                        log.info("Reference build java.version: " + javaVersion);
+                        log.info("    reference build java.version: " + javaVersion);
                         if (!javaVersion.equals(currentJavaVersion)) {
                             log.error("Current build java.version: " + currentJavaVersion);
                         }
                     }
                     if (osName != null) {
                         p.println("os.name=" + osName);
-                        log.info("Reference build os.name: " + osName);
+                        log.info("    reference build os.name: " + osName);
 
                         // check against current line separator
                         if (!osName.equals(currentOsName)) {
@@ -228,7 +244,7 @@ class ReferenceBuildinfoUtil {
             throws ArtifactResolutionException {
         // check for every dependency in the dependency tree
         if (child.getChildren().isEmpty()) {
-            checkDependencyNodeForLocalResolution(repoSession, child, remoteRepos);
+            checkArtifactForLocalResolution(repoSession, child.getDependency().getArtifact(), remoteRepos);
         } else {
             for (DependencyNode node : child.getChildren()) {
                 checkDependencyNodeTreeForLocalResolution(repoSession, node, remoteRepos);
@@ -237,15 +253,14 @@ class ReferenceBuildinfoUtil {
     }
 
     /* An artifact stemming from a local repo is most likely an issue during release builds. See #146. */
-    private void checkDependencyNodeForLocalResolution(
-            RepositorySystemSession repoSession, DependencyNode child, List<RemoteRepository> remoteRepos)
+    private void checkArtifactForLocalResolution(
+            RepositorySystemSession repoSession, Artifact artifact, List<RemoteRepository> remoteRepos)
             throws ArtifactResolutionException {
-        Artifact defaultArtifact = child.getDependency().getArtifact();
         ArtifactRequest artifactRequest = new ArtifactRequest();
-        artifactRequest.setArtifact(defaultArtifact);
+        artifactRequest.setArtifact(artifact);
         artifactRequest.setRepositories(remoteRepos);
         ArtifactResult artifactResult = repoSystem.resolveArtifact(repoSession, artifactRequest);
-        Artifact artifact = artifactResult.getArtifact();
+        Artifact resolvedArtifact = artifactResult.getArtifact();
         ArtifactRepository resultRepo = artifactResult.getRepository();
 
         if (resultRepo instanceof LocalRepository) {
@@ -254,11 +269,11 @@ class ReferenceBuildinfoUtil {
                             + "Please ensure that this is intended. "
                             + "If not, consider removing this artifact and rebuilding, "
                             + "or that your locally installed artifact from %s matches public reference from remote.",
-                    artifact.getGroupId(),
-                    artifact.getArtifactId(),
-                    artifact.getVersion(),
+                    resolvedArtifact.getGroupId(),
+                    resolvedArtifact.getArtifactId(),
+                    resolvedArtifact.getVersion(),
                     // if the artifact was resolved successfully, there is a file we can access
-                    artifact.getFile().getAbsolutePath()));
+                    resolvedArtifact.getFile().getAbsolutePath()));
         }
     }
 
@@ -318,7 +333,7 @@ class ReferenceBuildinfoUtil {
         return null;
     }
 
-    private File downloadReference(RemoteRepository repo, Artifact artifact)
+    private ArtifactResult downloadReference(RemoteRepository repo, Artifact artifact)
             throws MojoExecutionException, ArtifactResolutionException {
         try {
             ArtifactRequest request = new ArtifactRequest();
@@ -336,7 +351,9 @@ class ReferenceBuildinfoUtil {
                     LinkOption.NOFOLLOW_LINKS,
                     StandardCopyOption.REPLACE_EXISTING);
 
-            return destFile;
+            result.getArtifact().setFile(destFile);
+
+            return result;
         } catch (ArtifactResolutionException are) {
             if (are.getResult().isMissing()) {
                 throw are;
