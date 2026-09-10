@@ -185,8 +185,20 @@ public class ReproducibleCentralReport extends AbstractMavenReport {
         }
     }
 
+    /**
+     * @deprecated use {@link #getOutputPath()} instead
+     */
     @Override
+    @Deprecated
     public String getOutputName() {
+        return getOutputPath();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getOutputPath() {
         return "reproducible-central";
     }
 
