@@ -30,45 +30,29 @@ you dig right into the code, there are a few guidelines that we need
 contributors to follow so that we can have a chance of keeping on top of
 things.
 
-This plugin contains `buildinfo` goal for [Reproducible Builds](https://reproducible-builds.org/) tooling,
-to ease reproducing Maven builds that are [expected to be reproducible](https://maven.apache.org/guides/mini/guide-reproducible-builds.html).
+This plugin contains `compare` goal for [Reproducible Builds](https://reproducible-builds.org/) tooling,
+to ease checking Maven builds that are [expected to be reproducible](https://maven.apache.org/guides/mini/guide-reproducible-builds.html)
+get really the same output as reference build.
 
-The purpose of this goal is:
+The purpose of this `compare` goal is:
 
-- to generate a buildinfo file from a build, recording fingerprints of output files, as specified in [Reproducible Builds for the JVM](https://reproducible-builds.org/docs/jvm/)
-  that will eventually be deployed to remote repository
+- to generate a buildinfo file from a build, recording fingerprints of output files
 
-- help rebuilders to check that they local build produces the same Reproducible Build output than the reference build
-  published to a remote repository
+- compare this recording of outputs to the reference files.
 
-To use this plugin, you'll need to build and install from source, or use SHAPSHOT from `https://repository.apache.org/content/repositories/snapshots`
-
-Generating buildinfo after a build
---------------
-
-```
-mvn verify artifact:buildinfo
-```
-
-Deploy to remote repository
---------------
-
-Configure the plugin with its ```buildinfo```
-goal in your ```pom.xml```
-
-Check local build against remote reference
+Comparing local build against remote reference
 --------------
 
 If reference build is available in a remote repository with predefined id, like ```central```:
 
 ```
-mvn verify artifact:buildinfo -Dreference.repo=central
+mvn verify artifact:compare -Dreference.repo=central
 ```
 
 If reference build is available in a remote repository without predefined id, use its url instead:
 
 ```
-mvn verify artifact:buildinfo -Dreference.repo=https://repository.apache.org/content/groups/maven-staging-group/
+mvn verify artifact:compare -Dreference.repo=https://repository.apache.org/content/groups/maven-staging-group/
 ```
 
 Getting Started

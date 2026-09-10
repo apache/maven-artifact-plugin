@@ -37,8 +37,10 @@ import org.eclipse.aether.artifact.Artifact;
  * Creates a buildinfo file recording build environment and output (from {@code package}), as specified in
  * <a href="https://reproducible-builds.org/docs/jvm/">Reproducible Builds for the JVM</a>
  * for mono-module build, and extended for multi-module build.
+ * @deprecated buildinfo is an internal format, prefer the {@code describe-build-output} or {@code compare} goals
  */
 @Mojo(name = "buildinfo", defaultPhase = LifecyclePhase.VERIFY, threadSafe = false)
+@Deprecated
 public class BuildinfoMojo extends AbstractBuildinfoMojo {
     /**
      * Specifies whether to attach the generated buildinfo file to the project.

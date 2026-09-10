@@ -31,10 +31,10 @@ The Artifact Plugin is used to manage artifacts tasks.
 
 The Artifact Plugin has 4 goals currently:
 
-- [artifact:buildinfo](./buildinfo-mojo.html) records current build results (from `package`) in [Reproducible Builds buildinfo](https://reproducible-builds.org/docs/jvm/) file,
+- [artifact:buildinfo](./buildinfo-mojo.html) (deprecated) records current build results (from `package`) in [Reproducible Builds buildinfo](https://reproducible-builds.org/docs/jvm/) file,
 - [artifact:compare](./compare-mojo.html) compares current build output (from `package`) against reference build previously published,
 - [artifact:check-buildplan](./check-buildplan-mojo.html) checks the project's buildplan to find if any used [plugin has a known Reproducible Builds issue](./plugin-issues.html),
-- [artifact:describe-build-output](./describe-build-output-mojo.html) (experimental) describes build structure and output,
+- [artifact:describe-build-output](./describe-build-output-mojo.html) describes build structure and output,
 - [artifact:reproducible-central](./reproducible-central-mojo.html) (experimental) report shows if dependencies are proven Reproducible Builds at Reproducible Central.
 ## Usage
 

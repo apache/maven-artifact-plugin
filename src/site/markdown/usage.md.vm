@@ -26,30 +26,6 @@ under the License.
 
 # Usage
 
-Recording `.buildinfo` File
----------------------------
-
-Recording build result into a `.buildinfo` file is typically done on command line by calling `artifact:buildinfo` goal after the normal build:
-
-```
-$ mvn clean verify artifact:buildinfo
-[INFO] Scanning for projects...
-[INFO] 
-[INFO] ----------------< org.apache.maven.sample:test-project >----------------
-[INFO] Building Test Project 1.0-SNAPSHOT
-[INFO] --------------------------------[ jar ]---------------------------------
-...
-[INFO] --- maven-artifact-plugin:${project.version}:buildinfo (default-cli) @ test-project ---
-[INFO] Saved info on build to /tmp/test-project/target/test-project-1.0-SNAPSHOT.buildinfo
-[INFO] ------------------------------------------------------------------------
-[INFO] BUILD SUCCESS
-[INFO] ------------------------------------------------------------------------
-```
-
-This records data on the current build results into a `.buildinfo` file using [Reproducible Builds `.buildinfo` for the JVM](https://reproducible-builds.org/docs/jvm/) format.
-
-Notice that if the build is multi-module, only 1 `.buildinfo` file is generated, in the last module of the reactor, that will record aggregated results for all the modules.
-
 Checking Reproducible Build: Comparing Current Build Against Previous One
 -------------------------------------------------------------------------
 
@@ -60,20 +36,14 @@ $ mvn -Papache-release clean verify -Dgpg.skip artifact:compare
 [INFO] Scanning for projects...
 ...
 [INFO] --- maven-artifact-plugin:${project.version}:compare (default-cli) @ doxia-module-markdown ---
-[INFO] Saved aggregate info on build to /tmp/doxia-1.9.1/doxia-modules/doxia-module-markdown/target/doxia-module-markdown-1.9.1.buildinfo
-[INFO] Checking against reference build from central...
-Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-module-markdown/1.9.1/doxia-module-markdown-1.9.1.buildinfo
-[WARNING] Reference buildinfo file not found: it will be generated from downloaded reference artifacts
-[INFO] Reference build java.version: 1.8 (from MANIFEST.MF Build-Jdk-Spec)
-[ERROR] Current build java.version: 1.7 (from MANIFEST.MF Build-Jdk-Spec)
-[INFO] Reference build os.name: Unix (from pom.properties newline)
-[INFO] Minimal buildinfo generated from downloaded artifacts: /tmp/doxia-1.9.1/target/reference/doxia-module-markdown-1.9.1.buildinfo
-[WARNING] size mismatch doxia-logging-api-1.9.1.jar: investigate with diffoscope target/reference/doxia-logging-api-1.9.1.jar doxia-logging-api/target/doxia-logging-api-1.9.1.jar
-...
-[WARNING] size mismatch doxia-module-markdown-1.9.1.jar: investigate with diffoscope target/reference/doxia-module-markdown-1.9.1.jar doxia-modules/doxia-module-markdown/target/doxia-module-markdown-1.9.1.jar
-[WARNING] Reproducible Build output summary: 39 files ok, 18 different
-[WARNING] see diff target/reference/doxia-module-markdown-1.9.1.buildinfo doxia-modules/doxia-module-markdown/target/doxia-module-markdown-1.9.1.buildinfo
-[WARNING] see also https://maven.apache.org/guides/mini/guide-reproducible-builds.html
-[INFO] Reproducible Build output comparison saved to /tmp/doxia-1.9.1/doxia-modules/doxia-module-markdown/target/doxia-module-markdown-1.9.1.buildcompare
-[INFO] Aggregate buildcompare copied to /tmp/doxia-1.9.1/target/doxia-1.9.1.buildcompare
+[INFO] Saved aggregate info on build to /tmp/doxia-2.1.0/doxia-modules/doxia-module-markdown/target/doxia-module-markdown-2.1.0.buildinfo
+[INFO] Aggregate buildinfo copied to target/doxia-2.1.0.buildinfo
+[INFO] Checking against reference build from local repository or central...
+Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/maven/doxia/doxia-module-markdown/2.1.0/doxia-module-markdown-2.1.0.jar (85 kB at 202 kB/s)
+[INFO] Comparing against 49 reference files from central (https://repo.maven.apache.org/maven2, default, releases)
+[INFO]     reference build java.version: 21 (from MANIFEST.MF Build-Jdk-Spec)
+[INFO]     reference build os.name: Unix (from pom.properties newline)
+[INFO] [Reproducible Builds] rebuild comparison result: 49 files match
+[INFO]                                                  saved to doxia-modules/doxia-module-markdown/target/doxia-module-markdown-2.1.0.buildcompare
+[INFO] Aggregate buildcompare copied to /tmp/doxia-2.1.0/target/doxia-2.1.0.buildcompare
 ```
