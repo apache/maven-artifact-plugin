@@ -30,9 +30,8 @@ import org.junit.jupiter.api.Test;
  * adn generated from {@code src/test/resources/plugin-issues.apt}.
  */
 class NotReproduciblePluginsDocumentationTest {
-    private static final String LS = System.lineSeparator();
 
-    @Test
+  @Test
     void basic() throws Exception {
         File pluginIssuesApt = new File("src/test/resources/plugin-issues.apt");
         String content = new String(Files.readAllBytes(pluginIssuesApt.toPath()), StandardCharsets.UTF_8);
@@ -42,10 +41,10 @@ class NotReproduciblePluginsDocumentationTest {
         pluginIssuesApt = new File(targetDirectory, pluginIssuesApt.getName());
 
         StringBuilder sb = new StringBuilder(content);
-        sb.append(LS);
+        sb.append("\n");
         sb.append(
                 "*---------+-------------------------------------------------------------------+-------+--------------+"
-                        + LS);
+                        + "\n");
         sb.append(
                 "|  | <<plugin>>                                                 | <<minimum version>> | <<comments>>");
         String groupId = null;
@@ -56,9 +55,9 @@ class NotReproduciblePluginsDocumentationTest {
                 continue;
             }
             if (!line.startsWith("#")) {
-                sb.append(LS
+                sb.append("\n"
                         + "*--------+--------------------------------------------------------------------+-------+--------------+"
-                        + LS);
+                        + "\n");
                 int index = line.indexOf('=');
                 String plugin = line.substring(0, index);
                 String status = line.substring(index + 1);
@@ -98,9 +97,9 @@ class NotReproduciblePluginsDocumentationTest {
                 }
             }
         }
-        sb.append(LS
+        sb.append("\n"
                 + "*----------+------------------------------------------------------------------+-------+--------------+"
-                + LS);
+                + "\n");
 
         Files.write(pluginIssuesApt.toPath(), sb.toString().getBytes(StandardCharsets.UTF_8));
     }
