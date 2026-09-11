@@ -28,6 +28,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -307,7 +308,9 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         File actual = a.getFile();
         // notice: actual file name may have been defined in pom
         // reference file name is taken from repository format
-        File reference = new File(new File(referenceDir, a.getGroupId()), getRepositoryFilename(a));
+        String repositoryPath =
+                session.getRepositorySession().getLocalRepositoryManager().getPathForLocalArtifact(a);
+        File reference = new File(new File(referenceDir, a.getGroupId()), getRepositoryFilename(repositoryPath));
         if (actual == null) {
             return "missing file for " + ArtifactIdUtils.toId(a) + " reference = " + relative(reference)
                     + " actual = null";
@@ -325,9 +328,8 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         return "diffoscope " + relative(reference) + " " + relative(actual);
     }
 
-    private String getRepositoryFilename(Artifact a) {
-        String path = session.getRepositorySession().getLocalRepositoryManager().getPathForLocalArtifact(a);
-        return path.substring(path.lastIndexOf('/'));
+    static String getRepositoryFilename(String path) {
+        return Paths.get(path).getFileName().toString();
     }
 
     private static String findPrefix(Properties reference, String actualGroupId, String actualFilename) {
