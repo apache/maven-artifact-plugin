@@ -320,9 +320,17 @@ public class CompareMojo extends AbstractBuildinfoMojo {
                     + session.getRepositorySession()
                             .getLocalRepositoryManager()
                             .getPathForRemoteArtifact(a, repo, null);
-            return "wget " + url + "; ls -l " + relative(actual);
+            return wgetHint(url, relative(actual));
         }
         return "diffoscope " + relative(reference) + " " + relative(actual);
+    }
+
+    static String wgetHint(String url, String actual) {
+        return "wget -- " + shellQuote(url) + "; ls -l -- " + shellQuote(actual);
+    }
+
+    private static String shellQuote(String value) {
+        return '\'' + value.replace("'", "'\"'\"'") + '\'';
     }
 
     private String getRepositoryFilename(Artifact a) {
