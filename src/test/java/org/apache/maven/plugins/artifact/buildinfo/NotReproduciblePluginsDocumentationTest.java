@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
  */
 class NotReproduciblePluginsDocumentationTest {
 
-  @Test
+    @Test
     void basic() throws Exception {
         File pluginIssuesApt = new File("src/test/resources/plugin-issues.apt");
         String content = new String(Files.readAllBytes(pluginIssuesApt.toPath()), StandardCharsets.UTF_8);
