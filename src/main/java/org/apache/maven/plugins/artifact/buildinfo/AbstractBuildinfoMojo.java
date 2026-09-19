@@ -104,7 +104,9 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     @Parameter(property = "buildinfo.skipModules")
     private List<String> skipModules;
 
-    private List<PathMatcher> skipModulesMatcher = null;
+    private List<PathMatcher> skipModulesMatcher = Collections.emptyList();
+
+    private List<PathMatcher> ignoreMatcher = Collections.emptyList();
 
     /**
      * Makes the generated {@code .buildinfo} file reproducible, by dropping detailed environment recording: OS will be
@@ -167,7 +169,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        getSkipModulesMatcher();
+        initializeGlobMatchers();
         boolean mono = session.getProjects().size() == 1;
 
         hasBadOutputTimestamp(outputTimestamp, getLog(), project, session, diagnose);
@@ -344,10 +346,10 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         return rootCopy;
     }
 
-    protected BuildInfoWriter newBuildInfoWriter(PrintWriter p, boolean mono) throws MojoExecutionException {
+    protected BuildInfoWriter newBuildInfoWriter(PrintWriter p, boolean mono) {
         BuildInfoWriter bi = new BuildInfoWriter(getLog(), p, mono, rtInformation);
         bi.setIgnoreJavadoc(ignoreJavadoc);
-        bi.setIgnore(compileGlobs(ignore, "buildinfo.ignore"));
+        bi.setIgnore(ignoreMatcher);
         bi.setToolchain(getToolchain());
 
         return bi;
@@ -389,17 +391,12 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         }
     }
 
-    private List<MavenProject> getProjectListForBuildInfo(boolean mono) throws MojoExecutionException {
+    private List<MavenProject> getProjectListForBuildInfo(boolean mono) {
         if (mono) {
             return Collections.singletonList(project);
+        } else {
+            return session.getProjects().stream().filter(p -> !isSkip(p)).collect(Collectors.toList());
         }
-        List<MavenProject> list = new ArrayList<>();
-        for (MavenProject p : session.getProjects()) {
-            if (!isSkip(p)) {
-                list.add(p);
-            }
-        }
-        return list;
     }
 
     private String getVersionRangeDependenciesFilters(List<MavenProject> mavenProjects) throws MojoExecutionException {
@@ -419,7 +416,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
                 .collect(Collectors.joining(";"));
     }
 
-    protected MavenProject getLastProject() throws MojoExecutionException {
+    protected MavenProject getLastProject() {
         int i = session.getProjects().size();
         while (i > 0) {
             MavenProject project = session.getProjects().get(--i);
@@ -430,23 +427,28 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         return null;
     }
 
-    protected boolean isSkip(MavenProject project) throws MojoExecutionException {
+    protected boolean isSkip(MavenProject project) {
         return isSkipModule(project) || (detectSkip && PluginUtil.isSkip(project));
     }
 
-    private List<PathMatcher> getSkipModulesMatcher() throws MojoExecutionException {
-        if (skipModulesMatcher == null) {
-            skipModulesMatcher = compileGlobs(skipModules, "buildinfo.skipModules");
-        }
-        return skipModulesMatcher;
+    /**
+     * Precompiles and validates the user-provided {@code buildinfo.ignore} and {@code buildinfo.skipModules} glob
+     * patterns up front, so invalid patterns are reported with a clear error instead of a raw
+     * {@link PatternSyntaxException} mid-build.
+     *
+     * @throws MojoExecutionException if a glob pattern is invalid
+     */
+    void initializeGlobMatchers() throws MojoExecutionException {
+        skipModulesMatcher = compileGlobs(skipModules, "buildinfo.skipModules");
+        ignoreMatcher = compileGlobs(ignore, "buildinfo.ignore");
     }
 
-    protected boolean isSkipModule(MavenProject project) throws MojoExecutionException {
-        if (getSkipModulesMatcher().isEmpty()) {
+    protected boolean isSkipModule(MavenProject project) {
+        if (skipModulesMatcher.isEmpty()) {
             return false;
         }
         Path path = Paths.get(project.getGroupId() + '/' + project.getArtifactId());
-        return getSkipModulesMatcher().stream().anyMatch(m -> m.matches(path));
+        return skipModulesMatcher.stream().anyMatch(m -> m.matches(path));
     }
 
     static List<PathMatcher> compileGlobs(List<String> globs, String parameter) throws MojoExecutionException {
