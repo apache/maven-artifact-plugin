@@ -18,12 +18,10 @@
  */
 package org.apache.maven.plugins.artifact.buildinfo;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -162,21 +160,20 @@ class ReferenceBuildinfoUtil {
         try {
             // generate buildinfo from reference artifacts
             referenceBuildinfo = getReference(null, buildinfoFile);
-            try (PrintWriter p = new PrintWriter(new BufferedWriter(new OutputStreamWriter(
-                    Files.newOutputStream(referenceBuildinfo.toPath()), StandardCharsets.UTF_8)))) {
+            try (Writer p = Files.newBufferedWriter(referenceBuildinfo.toPath(), StandardCharsets.UTF_8)) {
                 BuildInfoWriter bi = new BuildInfoWriter(log, p, mono, rtInformation);
 
                 if (javaVersion != null || osName != null) {
-                    p.println("# effective build environment information");
+                    p.write("# effective build environment information\n");
                     if (javaVersion != null) {
-                        p.println("java.version=" + javaVersion);
+                        p.write("java.version=" + javaVersion + "\n");
                         log.info("    reference build java.version: " + javaVersion);
                         if (!javaVersion.equals(currentJavaVersion)) {
                             log.error("Current build java.version: " + currentJavaVersion);
                         }
                     }
                     if (osName != null) {
-                        p.println("os.name=" + osName);
+                        p.write("os.name=" + osName + "\n");
                         log.info("    reference build os.name: " + osName);
 
                         // check against current line separator
@@ -208,10 +205,6 @@ class ReferenceBuildinfoUtil {
                         String prefix = entry.getValue();
                         bi.printFile(prefix, artifact.getGroupId(), referenceFile);
                     }
-                }
-
-                if (p.checkError()) {
-                    throw new MojoExecutionException("Write error to " + referenceBuildinfo);
                 }
 
                 log.debug("Minimal buildinfo generated from downloaded artifacts: " + referenceBuildinfo);
