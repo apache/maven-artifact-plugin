@@ -18,36 +18,67 @@
  */
 package org.apache.maven.plugins.artifact.buildinfo;
 
-import java.nio.file.PathMatcher;
-import java.util.Arrays;
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
 
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.project.MavenProject;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AbstractBuildinfoMojoTest {
 
     @Test
-    void invalidGlobPatternIsReportedWithClearError() {
-        MojoExecutionException e = assertThrows(
-                MojoExecutionException.class,
-                () -> AbstractBuildinfoMojo.compileGlobs(
-                        Collections.singletonList("org.example/["), "buildinfo.ignore"));
+    void invalidSkipModulesGlobResultsInClearError() throws Exception {
+        AbstractBuildinfoMojo mojo = newMojo(null, Collections.singletonList("org.example/["));
+
+        MojoExecutionException e = assertThrows(MojoExecutionException.class, mojo::execute);
+
+        assertTrue(e.getMessage().contains("buildinfo.skipModules"));
+        assertTrue(e.getMessage().contains("org.example/["));
+    }
+
+    @Test
+    void invalidIgnoreGlobResultsInClearError() throws Exception {
+        AbstractBuildinfoMojo mojo = newMojo(Collections.singletonList("org.example/["), null);
+
+        MojoExecutionException e = assertThrows(MojoExecutionException.class, mojo::execute);
 
         assertTrue(e.getMessage().contains("buildinfo.ignore"));
         assertTrue(e.getMessage().contains("org.example/["));
     }
 
     @Test
-    void validGlobPatternsCompile() throws MojoExecutionException {
-        List<PathMatcher> matchers =
-                AbstractBuildinfoMojo.compileGlobs(Arrays.asList("*/*.xml", "com.example/*"), "buildinfo.ignore");
+    void validSkipModulesGlobsAreUsedForSkipping() throws Exception {
+        AbstractBuildinfoMojo mojo = newMojo(null, Collections.singletonList("com.example/*"));
 
-        assertEquals(2, matchers.size());
+        mojo.initializeGlobMatchers();
+
+        MavenProject matching = new MavenProject();
+        matching.setGroupId("com.example");
+        matching.setArtifactId("sample");
+        assertTrue(mojo.isSkipModule(matching));
+
+        MavenProject other = new MavenProject();
+        other.setGroupId("org.other");
+        other.setArtifactId("sample");
+        assertFalse(mojo.isSkipModule(other));
+    }
+
+    private static AbstractBuildinfoMojo newMojo(List<String> ignore, List<String> skipModules) throws Exception {
+        DescribeBuildOutputMojo mojo = new DescribeBuildOutputMojo(null, null, null, null, null);
+        setField(mojo, "ignore", ignore);
+        setField(mojo, "skipModules", skipModules);
+        return mojo;
+    }
+
+    private static void setField(Object target, String name, Object value) throws Exception {
+        Field field = AbstractBuildinfoMojo.class.getDeclaredField(name);
+        field.setAccessible(true);
+        field.set(target, value);
     }
 }

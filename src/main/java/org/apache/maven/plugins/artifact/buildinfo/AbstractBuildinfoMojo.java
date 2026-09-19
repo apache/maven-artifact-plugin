@@ -451,7 +451,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         return skipModulesMatcher.stream().anyMatch(m -> m.matches(path));
     }
 
-    static List<PathMatcher> compileGlobs(List<String> globs, String parameter) throws MojoExecutionException {
+    private static List<PathMatcher> compileGlobs(List<String> globs, String parameter) throws MojoExecutionException {
         if (globs == null) {
             return Collections.emptyList();
         }
