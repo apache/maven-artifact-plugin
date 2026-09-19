@@ -34,12 +34,14 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import org.apache.maven.archiver.MavenArchiver;
@@ -165,6 +167,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        getSkipModulesMatcher();
         boolean mono = session.getProjects().size() == 1;
 
         hasBadOutputTimestamp(outputTimestamp, getLog(), project, session, diagnose);
@@ -341,10 +344,10 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         return rootCopy;
     }
 
-    protected BuildInfoWriter newBuildInfoWriter(PrintWriter p, boolean mono) {
+    protected BuildInfoWriter newBuildInfoWriter(PrintWriter p, boolean mono) throws MojoExecutionException {
         BuildInfoWriter bi = new BuildInfoWriter(getLog(), p, mono, rtInformation);
         bi.setIgnoreJavadoc(ignoreJavadoc);
-        bi.setIgnore(ignore);
+        bi.setIgnore(compileGlobs(ignore, "buildinfo.ignore"));
         bi.setToolchain(getToolchain());
 
         return bi;
@@ -386,12 +389,17 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         }
     }
 
-    private List<MavenProject> getProjectListForBuildInfo(boolean mono) {
+    private List<MavenProject> getProjectListForBuildInfo(boolean mono) throws MojoExecutionException {
         if (mono) {
             return Collections.singletonList(project);
-        } else {
-            return session.getProjects().stream().filter(p -> !isSkip(p)).collect(Collectors.toList());
         }
+        List<MavenProject> list = new ArrayList<>();
+        for (MavenProject p : session.getProjects()) {
+            if (!isSkip(p)) {
+                list.add(p);
+            }
+        }
+        return list;
     }
 
     private String getVersionRangeDependenciesFilters(List<MavenProject> mavenProjects) throws MojoExecutionException {
@@ -411,7 +419,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
                 .collect(Collectors.joining(";"));
     }
 
-    protected MavenProject getLastProject() {
+    protected MavenProject getLastProject() throws MojoExecutionException {
         int i = session.getProjects().size();
         while (i > 0) {
             MavenProject project = session.getProjects().get(--i);
@@ -422,22 +430,39 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         return null;
     }
 
-    protected boolean isSkip(MavenProject project) {
+    protected boolean isSkip(MavenProject project) throws MojoExecutionException {
         return isSkipModule(project) || (detectSkip && PluginUtil.isSkip(project));
     }
 
-    protected boolean isSkipModule(MavenProject project) {
-        if (skipModules == null || skipModules.isEmpty()) {
+    private List<PathMatcher> getSkipModulesMatcher() throws MojoExecutionException {
+        if (skipModulesMatcher == null) {
+            skipModulesMatcher = compileGlobs(skipModules, "buildinfo.skipModules");
+        }
+        return skipModulesMatcher;
+    }
+
+    protected boolean isSkipModule(MavenProject project) throws MojoExecutionException {
+        if (getSkipModulesMatcher().isEmpty()) {
             return false;
         }
-        if (skipModulesMatcher == null) {
-            FileSystem fs = FileSystems.getDefault();
-            skipModulesMatcher = skipModules.stream()
-                    .map(i -> fs.getPathMatcher("glob:" + i))
-                    .collect(Collectors.toList());
-        }
         Path path = Paths.get(project.getGroupId() + '/' + project.getArtifactId());
-        return skipModulesMatcher.stream().anyMatch(m -> m.matches(path));
+        return getSkipModulesMatcher().stream().anyMatch(m -> m.matches(path));
+    }
+
+    static List<PathMatcher> compileGlobs(List<String> globs, String parameter) throws MojoExecutionException {
+        if (globs == null) {
+            return Collections.emptyList();
+        }
+        FileSystem fs = FileSystems.getDefault();
+        List<PathMatcher> matchers = new ArrayList<>(globs.size());
+        for (String glob : globs) {
+            try {
+                matchers.add(fs.getPathMatcher("glob:" + glob));
+            } catch (PatternSyntaxException pse) {
+                throw new MojoExecutionException("Invalid " + parameter + " glob pattern: " + glob, pse);
+            }
+        }
+        return matchers;
     }
 
     private Toolchain getToolchain() {
