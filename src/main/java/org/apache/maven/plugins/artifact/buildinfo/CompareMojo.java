@@ -28,6 +28,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -335,7 +336,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
 
     private String getRepositoryFilename(Artifact a) {
         String path = session.getRepositorySession().getLocalRepositoryManager().getPathForLocalArtifact(a);
-        return path.substring(path.lastIndexOf('/'));
+        return Paths.get(path).getFileName().toString();
     }
 
     private static String findPrefix(Properties reference, String actualGroupId, String actualFilename) {
