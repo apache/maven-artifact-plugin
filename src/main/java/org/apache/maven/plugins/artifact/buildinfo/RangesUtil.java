@@ -137,9 +137,11 @@ public class RangesUtil {
         }
 
         if (versionConstraint.getRange() != null) {
-            return !Objects.equals(
-                    versionConstraint.getRange().getLowerBound(),
-                    versionConstraint.getRange().getUpperBound());
+            return versionConstraint.getRange().getLowerBound() == null
+                    || versionConstraint.getRange().getUpperBound() == null
+                    || !Objects.equals(
+                            versionConstraint.getRange().getLowerBound(),
+                            versionConstraint.getRange().getUpperBound());
         }
         return false;
     }
