@@ -308,9 +308,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         File actual = a.getFile();
         // notice: actual file name may have been defined in pom
         // reference file name is taken from repository format
-        String repositoryPath =
-                session.getRepositorySession().getLocalRepositoryManager().getPathForLocalArtifact(a);
-        File reference = new File(new File(referenceDir, a.getGroupId()), getRepositoryFilename(repositoryPath));
+        File reference = new File(new File(referenceDir, a.getGroupId()), getRepositoryFilename(a));
         if (actual == null) {
             return "missing file for " + ArtifactIdUtils.toId(a) + " reference = " + relative(reference)
                     + " actual = null";
@@ -336,7 +334,8 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         return '\'' + value.replace("'", "'\"'\"'") + '\'';
     }
 
-    static String getRepositoryFilename(String path) {
+    private String getRepositoryFilename(Artifact a) {
+        String path = session.getRepositorySession().getLocalRepositoryManager().getPathForLocalArtifact(a);
         return Paths.get(path).getFileName().toString();
     }
 
