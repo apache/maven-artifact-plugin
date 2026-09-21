@@ -160,20 +160,20 @@ class ReferenceBuildinfoUtil {
         try {
             // generate buildinfo from reference artifacts
             referenceBuildinfo = getReference(null, buildinfoFile);
-            try (Writer p = Files.newBufferedWriter(referenceBuildinfo.toPath(), StandardCharsets.UTF_8)) {
-                BuildInfoWriter bi = new BuildInfoWriter(log, p, mono, rtInformation);
+            try (Writer writer = Files.newBufferedWriter(referenceBuildinfo.toPath(), StandardCharsets.UTF_8)) {
+                BuildInfoWriter bi = new BuildInfoWriter(log, writer, mono, rtInformation);
 
                 if (javaVersion != null || osName != null) {
-                    p.write("# effective build environment information\n");
+                    writer.write("# effective build environment information\n");
                     if (javaVersion != null) {
-                        p.write("java.version=" + javaVersion + "\n");
+                        writer.write("java.version=" + javaVersion + "\n");
                         log.info("    reference build java.version: " + javaVersion);
                         if (!javaVersion.equals(currentJavaVersion)) {
                             log.error("Current build java.version: " + currentJavaVersion);
                         }
                     }
                     if (osName != null) {
-                        p.write("os.name=" + osName + "\n");
+                        writer.write("os.name=" + osName + "\n");
                         log.info("    reference build os.name: " + osName);
 
                         // check against current line separator

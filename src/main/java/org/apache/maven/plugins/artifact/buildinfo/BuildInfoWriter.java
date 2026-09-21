@@ -51,7 +51,7 @@ import org.eclipse.aether.util.artifact.ArtifactIdUtils;
  */
 class BuildInfoWriter {
     private final Log log;
-    private final Writer p;
+    private final Writer writer;
     private final boolean mono;
     private final RuntimeInformation rtInformation;
     private final Map<Artifact, String> artifacts = new LinkedHashMap<>();
@@ -60,56 +60,56 @@ class BuildInfoWriter {
     private List<PathMatcher> ignore;
     private Toolchain toolchain;
 
-    BuildInfoWriter(Log log, Writer p, boolean mono, RuntimeInformation rtInformation) {
+    BuildInfoWriter(Log log, Writer writer, boolean mono, RuntimeInformation rtInformation) {
         this.log = log;
-        this.p = p;
+        this.writer = writer;
         this.mono = mono;
         this.rtInformation = rtInformation;
     }
 
     void printHeader(MavenProject project, MavenProject aggregate, String rangeFilter, boolean reproducible)
             throws IOException {
-        p.write("# https://reproducible-builds.org/docs/jvm/\n");
-        p.write("buildinfo.version=1.0-SNAPSHOT\n");
-        p.write("\n");
-        p.write("name=" + project.getName() + "\n");
-        p.write("group-id=" + project.getGroupId() + "\n");
-        p.write("artifact-id=" + project.getArtifactId() + "\n");
-        p.write("version=" + project.getVersion() + "\n");
-        p.write("\n");
+        writer.write("# https://reproducible-builds.org/docs/jvm/\n");
+        writer.write("buildinfo.version=1.0-SNAPSHOT\n");
+        writer.write("\n");
+        writer.write("name=" + project.getName() + "\n");
+        writer.write("group-id=" + project.getGroupId() + "\n");
+        writer.write("artifact-id=" + project.getArtifactId() + "\n");
+        writer.write("version=" + project.getVersion() + "\n");
+        writer.write("\n");
         printSourceInformation(project);
-        p.write("\n");
-        p.write("# build instructions\n");
-        p.write("build-tool=mvn\n");
+        writer.write("\n");
+        writer.write("# build instructions\n");
+        writer.write("build-tool=mvn\n");
         // p.println( "# optional build setup url, as plugin parameter" );
-        p.write("\n");
+        writer.write("\n");
         if (reproducible) {
-            p.write("# build environment information (simplified for reproducibility)\n");
-            p.write("java.version=" + extractJavaMajorVersion(System.getProperty("java.version")) + "\n");
+            writer.write("# build environment information (simplified for reproducibility)\n");
+            writer.write("java.version=" + extractJavaMajorVersion(System.getProperty("java.version")) + "\n");
             String ls = System.lineSeparator();
-            p.write("os.name=" + ("\n".equals(ls) ? "Unix" : "Windows") + "\n");
+            writer.write("os.name=" + ("\n".equals(ls) ? "Unix" : "Windows") + "\n");
         } else {
-            p.write("# effective build environment information\n");
-            p.write("java.version=" + System.getProperty("java.version") + "\n");
-            p.write("java.vendor=" + System.getProperty("java.vendor") + "\n");
-            p.write("os.name=" + System.getProperty("os.name") + "\n");
-            p.write("os.version=" + System.getProperty("os.version") + "\n");
-            p.write("os.arch=" + System.getProperty("os.arch") + "\n");
-            p.write("line.separator="
+            writer.write("# effective build environment information\n");
+            writer.write("java.version=" + System.getProperty("java.version") + "\n");
+            writer.write("java.vendor=" + System.getProperty("java.vendor") + "\n");
+            writer.write("os.name=" + System.getProperty("os.name") + "\n");
+            writer.write("os.version=" + System.getProperty("os.version") + "\n");
+            writer.write("os.arch=" + System.getProperty("os.arch") + "\n");
+            writer.write("line.separator="
                     + System.lineSeparator().replace("\r", "\\r").replace("\n", "\\n") + "\n");
         }
-        p.write("\n");
-        p.write("# Maven rebuild instructions and effective environment\n");
+        writer.write("\n");
+        writer.write("# Maven rebuild instructions and effective environment\n");
         if (!reproducible) {
-            p.write("mvn.version=" + rtInformation.getMavenVersion() + "\n");
+            writer.write("mvn.version=" + rtInformation.getMavenVersion() + "\n");
         }
         if ((project.getPrerequisites() != null) && (project.getPrerequisites().getMaven() != null)) {
             // TODO wrong algorithm, should reuse algorithm written in versions-maven-plugin
-            p.write("mvn.minimum.version=" + project.getPrerequisites().getMaven() + "\n");
+            writer.write("mvn.minimum.version=" + project.getPrerequisites().getMaven() + "\n");
         }
 
         if (!rangeFilter.isEmpty()) {
-            p.write("mvn.rebuild-args=-Dmaven.session.versionFilter=" + rangeFilter + "\n");
+            writer.write("mvn.rebuild-args=-Dmaven.session.versionFilter=" + rangeFilter + "\n");
         }
 
         if (toolchain != null) {
@@ -117,15 +117,15 @@ class BuildInfoWriter {
             if (reproducible) {
                 javaVersion = extractJavaMajorVersion(javaVersion);
             }
-            p.write("mvn.toolchain.jdk=" + javaVersion + "\n");
+            writer.write("mvn.toolchain.jdk=" + javaVersion + "\n");
         }
 
         if (!mono && (aggregate != null)) {
-            p.write("mvn.aggregate.artifact-id=" + aggregate.getArtifactId() + "\n");
+            writer.write("mvn.aggregate.artifact-id=" + aggregate.getArtifactId() + "\n");
         }
 
-        p.write("\n");
-        p.write("# " + (mono ? "" : "aggregated ") + "output\n");
+        writer.write("\n");
+        writer.write("# " + (mono ? "" : "aggregated ") + "output\n");
     }
 
     private static String extractJavaMajorVersion(String javaVersion) {
@@ -141,14 +141,14 @@ class BuildInfoWriter {
 
     private void printSourceInformation(MavenProject project) throws IOException {
         boolean sourceAvailable = false;
-        p.write("# source information\n");
+        writer.write("# source information\n");
         // p.println( "# TBD source.* artifact, url should be parameters" );
         if (project.getScm() != null) {
             sourceAvailable = true;
-            p.write("source.scm.uri=" + project.getScm().getConnection() + "\n");
-            p.write("source.scm.tag=" + project.getScm().getTag() + "\n");
+            writer.write("source.scm.uri=" + project.getScm().getConnection() + "\n");
+            writer.write("source.scm.tag=" + project.getScm().getTag() + "\n");
         } else {
-            p.write("# no scm configured in pom.xml\n");
+            writer.write("# no scm configured in pom.xml\n");
         }
 
         if (!sourceAvailable) {
@@ -162,8 +162,8 @@ class BuildInfoWriter {
             // aggregated buildinfo output
             projectCount++;
             prefix += projectCount + ".";
-            p.write("\n");
-            p.write(prefix + "coordinates=" + project.getGroupId() + ':' + project.getArtifactId() + "\n");
+            writer.write("\n");
+            writer.write(prefix + "coordinates=" + project.getGroupId() + ':' + project.getArtifactId() + "\n");
         }
 
         // detect Maven 4 consumer POM transient attachment
@@ -183,7 +183,7 @@ class BuildInfoWriter {
                 Files.copy(consumerPom.getFile().toPath(), pomFile, StandardCopyOption.REPLACE_EXISTING);
                 pomArtifact = pomArtifact.setFile(pomFile.toFile());
             } catch (IOException e) {
-                p.write("Error processing consumer POM: " + e + "\n");
+                writer.write("Error processing consumer POM: " + e + "\n");
             }
         } else {
             pomArtifact = pomArtifact.setFile(project.getFile());
@@ -191,7 +191,7 @@ class BuildInfoWriter {
 
         artifacts.put(pomArtifact, prefix + n);
         if (isIgnore(pomArtifact)) {
-            p.write("# ignored " + getArtifactFilename(pomArtifact) + "\n");
+            writer.write("# ignored " + getArtifactFilename(pomArtifact) + "\n");
         } else {
             printFile(
                     prefix + n++,
@@ -207,7 +207,7 @@ class BuildInfoWriter {
             buildPomArtifact = buildPomArtifact.setFile(project.getFile());
 
             if (isIgnore(buildPomArtifact)) {
-                p.write("# ignored " + getArtifactFilename(buildPomArtifact) + "\n");
+                writer.write("# ignored " + getArtifactFilename(buildPomArtifact) + "\n");
             } else {
                 artifacts.put(buildPomArtifact, prefix + n);
                 printFile(
@@ -225,7 +225,7 @@ class BuildInfoWriter {
         if (project.getArtifact().getFile() != null) {
             Artifact main = RepositoryUtils.toArtifact(project.getArtifact());
             if (isIgnore(main)) {
-                p.write("# ignored " + getArtifactFilename(main) + "\n");
+                writer.write("# ignored " + getArtifactFilename(main) + "\n");
             } else {
                 printArtifact(prefix, n++, RepositoryUtils.toArtifact(project.getArtifact()));
             }
@@ -245,7 +245,7 @@ class BuildInfoWriter {
                 continue;
             }
             if (isIgnore(attached)) {
-                p.write("# ignored " + getArtifactFilename(attached) + "\n");
+                writer.write("# ignored " + getArtifactFilename(attached) + "\n");
                 artifacts.put(attached, null);
                 continue;
             }
@@ -298,10 +298,10 @@ class BuildInfoWriter {
 
     private void printFile(String prefix, String groupId, File file, String filename)
             throws IOException, MojoExecutionException {
-        p.write("\n");
-        p.write(prefix + ".groupId=" + groupId + "\n");
-        p.write(prefix + ".filename=" + filename + "\n");
-        p.write(prefix + ".length=" + file.length() + "\n");
+        writer.write("\n");
+        writer.write(prefix + ".groupId=" + groupId + "\n");
+        writer.write(prefix + ".filename=" + filename + "\n");
+        writer.write(prefix + ".length=" + file.length() + "\n");
         String sha512;
         try (InputStream is = Files.newInputStream(file.toPath())) {
             sha512 = DigestUtils.sha512Hex(is);
@@ -310,7 +310,7 @@ class BuildInfoWriter {
         } catch (IllegalArgumentException iae) {
             throw new MojoExecutionException("Could not get hash algorithm", iae.getCause());
         }
-        p.write(prefix + ".checksums.sha512=" + sha512 + "\n");
+        writer.write(prefix + ".checksums.sha512=" + sha512 + "\n");
     }
 
     Map<Artifact, String> getArtifacts() {

@@ -339,8 +339,8 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         return rootCopy;
     }
 
-    protected BuildInfoWriter newBuildInfoWriter(Writer p, boolean mono) {
-        BuildInfoWriter bi = new BuildInfoWriter(getLog(), p, mono, rtInformation);
+    protected BuildInfoWriter newBuildInfoWriter(Writer writer, boolean mono) {
+        BuildInfoWriter bi = new BuildInfoWriter(getLog(), writer, mono, rtInformation);
         bi.setIgnoreJavadoc(ignoreJavadoc);
         bi.setIgnore(ignore);
         bi.setToolchain(getToolchain());
@@ -364,8 +364,8 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         List<MavenProject> mavenProjects = getProjectListForBuildInfo(mono);
         String rangeFilter = getVersionRangeDependenciesFilters(mavenProjects);
 
-        try (Writer p = Files.newBufferedWriter(buildinfoFile.toPath(), StandardCharsets.UTF_8)) {
-            BuildInfoWriter bi = newBuildInfoWriter(p, mono);
+        try (Writer writer = Files.newBufferedWriter(buildinfoFile.toPath(), StandardCharsets.UTF_8)) {
+            BuildInfoWriter bi = newBuildInfoWriter(writer, mono);
             bi.printHeader(root, mono ? null : project, rangeFilter, reproducible);
 
             // artifact(s) fingerprints
