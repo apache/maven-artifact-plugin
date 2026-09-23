@@ -24,7 +24,7 @@
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-plugins</artifactId>
     <!-- also update in ITs: check-buildplan-info // compare-mono // buildinfo-multi -->
-    <version>49</version>
+    <version>50</version>
     <relativePath />
   </parent>
 
