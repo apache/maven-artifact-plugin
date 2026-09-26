@@ -49,7 +49,9 @@
 
   <modules>
     <module>modSkipInstall</module>
+    <module>modSkipInstallPlugin</module>
     <module>modSkipDeploy</module>
+    <module>modSkipDeployPlugin</module>
     <module>modSkipModule</module>
     <module>modB</module>
     <module>modA</module>
