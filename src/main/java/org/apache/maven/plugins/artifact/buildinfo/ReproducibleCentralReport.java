@@ -18,6 +18,9 @@
  */
 package org.apache.maven.plugins.artifact.buildinfo;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -172,16 +175,30 @@ public class ReproducibleCentralReport extends AbstractMavenReport {
 
     private void renderReproducibleCentralArtifact(
             Sink sink, String groupId, String artifactId, String version, String scope) {
-        String url = "https://jvm-repo-rebuild.github.io/reproducible-central/badge/artifact/"
-                + groupId.replace('.', '/') + '/' + artifactId + ".html";
-        String badge = "https://img.shields.io/reproducible-central/artifact/" + groupId + '/' + artifactId + '/'
-                + version + "?labelColor=1e5b96";
-        sink.link(url);
-        sink.figureGraphics(badge);
+        sink.link(reproducibleCentralArtifactUrl(groupId, artifactId));
+        sink.figureGraphics(reproducibleCentralArtifactBadgeUrl(groupId, artifactId, version));
         sink.link_();
         sink.text(' ' + groupId + ':' + artifactId + ':' + version);
         if (scope != null) {
             sink.text(" (" + scope + ")");
+        }
+    }
+
+    static String reproducibleCentralArtifactUrl(String groupId, String artifactId) {
+        return "https://jvm-repo-rebuild.github.io/reproducible-central/badge/artifact/"
+                + encode(groupId).replace('.', '/') + '/' + encode(artifactId) + ".html";
+    }
+
+    static String reproducibleCentralArtifactBadgeUrl(String groupId, String artifactId, String version) {
+        return "https://img.shields.io/reproducible-central/artifact/" + encode(groupId) + '/' + encode(artifactId)
+                + '/' + encode(version) + "?labelColor=1e5b96";
+    }
+
+    private static String encode(String s) {
+        try {
+return URLEncoder.encode(s, StandardCharsets.UTF_8.name()).replace("+", "%20");
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException("UTF-8 encoding is not supported", e);
         }
     }
 
