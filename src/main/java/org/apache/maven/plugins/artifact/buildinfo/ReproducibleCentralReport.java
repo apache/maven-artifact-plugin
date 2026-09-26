@@ -196,7 +196,7 @@ public class ReproducibleCentralReport extends AbstractMavenReport {
 
     private static String encode(String s) {
         try {
-            return URLEncoder.encode(s, StandardCharsets.UTF_8.name());
+return URLEncoder.encode(s, StandardCharsets.UTF_8.name()).replace("+", "%20");
         } catch (UnsupportedEncodingException e) {
             throw new IllegalStateException("UTF-8 encoding is not supported", e);
         }
