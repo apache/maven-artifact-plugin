@@ -68,6 +68,7 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        initializeGlobMatchers();
         // super.execute(); // do not generate buildinfo, just reuse logic from abstract class
         Instant timestamp =
                 MavenArchiver.parseBuildOutputTimestamp(outputTimestamp).orElse(null);
