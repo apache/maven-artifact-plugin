@@ -29,4 +29,8 @@ assert buildLog.contains(' via io.cucumber:gherkin:jar:38.0.0 has been resolved 
 
 assert buildLog.contains(' - Dependency commons-io:commons-io:jar:2.21.0 (compile) has been resolved from a version range [2.20.0,2.21.0]')
 assert buildLog.contains(' - Dependency commons-collections:commons-collections:jar:LATEST (compile) has been resolved from a version range LATEST')
+assert buildLog.readLines().any { line ->
+    line.startsWith(' - Dependency commons-cli:commons-cli:jar:')
+            && line.endsWith('has been resolved from a version range (,)')
+}
 assert !buildLog.contains(' - Dependency org.apache.commons:commons-lang3')
