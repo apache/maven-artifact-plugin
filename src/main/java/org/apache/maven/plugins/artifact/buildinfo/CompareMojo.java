@@ -40,7 +40,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
-import org.apache.maven.shared.utils.logging.MessageUtils;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
@@ -198,15 +197,12 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         int missing = missingFilenames.size();
 
         if (ko + missing > 0) {
-            getLog().error("[Reproducible Builds] rebuild comparison result: "
-                    + MessageUtils.buffer().success(ok + " files match")
-                    + ", " + MessageUtils.buffer().failure(ko + " differ")
-                    + ((missing == 0) ? "" : (", " + MessageUtils.buffer().failure(missing + " missing")))
-                    + ((ignored.isEmpty()) ? "" : (", " + MessageUtils.buffer().warning(ignored.size() + " ignored"))));
+            getLog().error("[Reproducible Builds] rebuild comparison result: " + ok + " files match, " + ko + " differ"
+                    + ((missing == 0) ? "" : (", " + missing + " missing"))
+                    + ((ignored.isEmpty()) ? "" : (", " + ignored.size() + " ignored")));
         } else {
-            getLog().info("[Reproducible Builds] rebuild comparison result: "
-                    + MessageUtils.buffer().success(ok + " files match")
-                    + ((ignored.isEmpty()) ? "" : (", " + MessageUtils.buffer().warning(ignored.size() + " ignored"))));
+            getLog().info("[Reproducible Builds] rebuild comparison result: " + ok + " files match"
+                    + ((ignored.isEmpty()) ? "" : (", " + ignored.size() + " ignored")));
         }
 
         // save .compare file
@@ -296,8 +292,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
 
         if (issue != null) {
             String diffoscope = diffoscope(artifact, referenceDir);
-            getLog().error(issue + " mismatch " + MessageUtils.buffer().strong(actualFilename) + ": investigate with "
-                    + MessageUtils.buffer().project(diffoscope));
+            getLog().error(issue + " mismatch " + actualFilename + ": investigate with " + diffoscope);
             return new String[] {actualFilename, diffoscope};
         }
         return new String[] {actualFilename, null};

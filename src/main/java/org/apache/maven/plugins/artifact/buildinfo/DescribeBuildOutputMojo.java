@@ -42,7 +42,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.rtinfo.RuntimeInformation;
-import org.apache.maven.shared.utils.logging.MessageUtils;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -130,11 +129,8 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
                         getLog().info("artifactId: " + e.getKey() + " defined for multiple groupIds: " + e.getValue()));
 
         getLog().info("");
-        getLog().info(MessageUtils.buffer()
-                .a("skip/ignore? artifactId")
-                .strong("[:classifier][:extension]")
-                .a(" = build-path repository-filename size [sha256]")
-                .build());
+        getLog().info(
+                        "skip/ignore? artifactId[:classifier][:extension] = build-path repository-filename size [sha256]");
 
         for (MavenProject p : session.getProjects()) {
             boolean skipped = isSkip(p);
@@ -203,17 +199,11 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
         String ce = ("".equals(a.getClassifier()) ? "" : (':' + a.getClassifier()))
                 + ("jar".equals(a.getExtension()) ? "" : (":" + a.getExtension()));
         String path = rootPath.relativize(a.getFile().toPath()).toString();
-        int i = path.indexOf("target/");
-        if (i >= 0) {
-            path = MessageUtils.buffer().mojo(path.substring(0, i + 7)).build() + path.substring(i + 7);
-        }
         String remoteFilename = BuildInfoWriter.getArtifactFilename(a);
         return /*a.getGroupId() + ':' +*/ a.getArtifactId() /*+ ':' + a.getVersion()*/
-                + MessageUtils.buffer().strong(ce) + " = "
+                + ce + " = "
                 + path + " "
-                + (path.endsWith(remoteFilename)
-                        ? "-"
-                        : MessageUtils.buffer().strong(remoteFilename).build())
+                + (path.endsWith(remoteFilename) ? "-" : remoteFilename)
                 + " " + a.getFile().length() + sha256;
     }
 
