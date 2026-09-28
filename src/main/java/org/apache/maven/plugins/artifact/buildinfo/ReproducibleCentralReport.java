@@ -26,8 +26,6 @@ import java.util.TreeMap;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.doxia.sink.Sink;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
@@ -52,9 +50,6 @@ import org.apache.maven.reporting.MavenReportException;
         requiresProject = true,
         threadSafe = true)
 public class ReproducibleCentralReport extends AbstractMavenReport {
-    @Component
-    private MavenSession session;
-
     @Override
     protected void executeReport(Locale locale) throws MavenReportException {
         Sink sink = getSink();
