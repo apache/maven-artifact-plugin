@@ -29,7 +29,7 @@ The Artifact Plugin is used to manage artifacts tasks.
 
 ## Goals Overview
 
-The Artifact Plugin has 4 goals currently:
+The Artifact Plugin has 5 goals:
 
 - [artifact:buildinfo](./buildinfo-mojo.html) (deprecated) records current build results (from `package`) in [Reproducible Builds buildinfo](https://reproducible-builds.org/docs/jvm/) file,
 - [artifact:compare](./compare-mojo.html) compares current build output (from `package`) against reference build previously published,
