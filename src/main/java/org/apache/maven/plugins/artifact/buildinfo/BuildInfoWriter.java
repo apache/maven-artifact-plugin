@@ -22,8 +22,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
@@ -33,7 +31,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.RepositoryUtils;
@@ -345,9 +342,8 @@ class BuildInfoWriter {
         this.ignoreJavadoc = ignoreJavadoc;
     }
 
-    void setIgnore(List<String> ignore) {
-        FileSystem fs = FileSystems.getDefault();
-        this.ignore = ignore.stream().map(i -> fs.getPathMatcher("glob:" + i)).collect(Collectors.toList());
+    void setIgnore(List<PathMatcher> ignore) {
+        this.ignore = ignore;
     }
 
     boolean isIgnore(Artifact attached) {
