@@ -160,6 +160,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         return rmb.createReferenceBuildinfo(repo, buildinfoFile, mono, repoSession, remoteRepos);
     }
 
+    @SuppressWarnings("deprecation")
     private void compareWithReference(Map<Artifact, String> artifacts, File referenceBuildinfo)
             throws MojoExecutionException {
         Properties actual = BuildInfoWriter.loadOutputProperties(buildinfoFile);
@@ -273,6 +274,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
     }
 
     // { filename, diffoscope or wget }
+    @SuppressWarnings("deprecation")
     private String[] checkArtifact(
             Artifact artifact, String prefix, Properties reference, Properties actual, File referenceDir)
             throws MojoExecutionException {

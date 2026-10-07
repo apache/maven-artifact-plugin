@@ -130,11 +130,7 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
                         getLog().info("artifactId: " + e.getKey() + " defined for multiple groupIds: " + e.getValue()));
 
         getLog().info("");
-        getLog().info(MessageUtils.buffer()
-                .a("skip/ignore? artifactId")
-                .strong("[:classifier][:extension]")
-                .a(" = build-path repository-filename size [sha256]")
-                .build());
+        getLog().info(buildOutputHeader());
 
         for (MavenProject p : session.getProjects()) {
             boolean skipped = isSkip(p);
@@ -194,10 +190,20 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
         return bi.isIgnore(a);
     }
 
+    @SuppressWarnings("deprecation")
+    private String buildOutputHeader() {
+        return MessageUtils.buffer()
+                .a("skip/ignore? artifactId")
+                .strong("[:classifier][:extension]")
+                .a(" = build-path repository-filename size [sha256]")
+                .build();
+    }
+
     private String describeArtifact(Artifact a) throws MojoExecutionException {
         return describeArtifact(a, false);
     }
 
+    @SuppressWarnings("deprecation")
     private String describeArtifact(Artifact a, boolean skipped) throws MojoExecutionException {
         String sha256 = skipped ? "" : (" " + sha256(a.getFile()));
         String ce = ("".equals(a.getClassifier()) ? "" : (':' + a.getClassifier()))
