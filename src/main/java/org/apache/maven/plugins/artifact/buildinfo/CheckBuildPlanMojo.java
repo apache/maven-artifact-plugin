@@ -170,7 +170,7 @@ public class CheckBuildPlanMojo extends AbstractMojo {
             getLog().info("No known issue in " + okCount + " plugins");
         }
 
-        fail = checkVersionRangeInDependencies();
+        fail |= checkVersionRangeInDependencies();
 
         if (fail) {
             getLog().info("current module pom.xml is " + project.getBasedir() + "/pom.xml");
