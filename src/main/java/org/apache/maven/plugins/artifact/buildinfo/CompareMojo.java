@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 import org.apache.maven.execution.MavenSession;
@@ -287,14 +288,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         String referenceSha512 = (String) reference.remove(referencePrefix + ".checksums.sha512");
         reference.remove(referencePrefix + ".groupId");
 
-        String issue = null;
-        if (referenceLength == null) {
-            issue = "missing reference file";
-        } else if (!actualLength.equals(referenceLength)) {
-            issue = "size";
-        } else if (!actualSha512.equals(referenceSha512)) {
-            issue = "sha512";
-        }
+        String issue = findIssue(actualLength, actualSha512, referenceLength, referenceSha512);
 
         if (issue != null) {
             String diffoscope = diffoscope(artifact, referenceDir);
@@ -303,6 +297,20 @@ public class CompareMojo extends AbstractBuildinfoMojo {
             return new String[] {actualFilename, diffoscope};
         }
         return new String[] {actualFilename, null};
+    }
+
+    // package-private for tests
+    static String findIssue(String actualLength, String actualSha512, String referenceLength, String referenceSha512) {
+        if (referenceLength == null) {
+            return "missing reference file";
+        }
+        if (!Objects.equals(actualLength, referenceLength)) {
+            return "size";
+        }
+        if (!Objects.equals(actualSha512, referenceSha512)) {
+            return "sha512";
+        }
+        return null;
     }
 
     private String diffoscope(Artifact a, File referenceDir) throws MojoExecutionException {
