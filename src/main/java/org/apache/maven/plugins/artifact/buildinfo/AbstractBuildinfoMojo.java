@@ -18,11 +18,9 @@
  */
 package org.apache.maven.plugins.artifact.buildinfo;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -341,8 +339,8 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         return rootCopy;
     }
 
-    protected BuildInfoWriter newBuildInfoWriter(PrintWriter p, boolean mono) {
-        BuildInfoWriter bi = new BuildInfoWriter(getLog(), p, mono, rtInformation);
+    protected BuildInfoWriter newBuildInfoWriter(Writer writer, boolean mono) {
+        BuildInfoWriter bi = new BuildInfoWriter(getLog(), writer, mono, rtInformation);
         bi.setIgnoreJavadoc(ignoreJavadoc);
         bi.setIgnore(ignore);
         bi.setToolchain(getToolchain());
@@ -366,18 +364,13 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         List<MavenProject> mavenProjects = getProjectListForBuildInfo(mono);
         String rangeFilter = getVersionRangeDependenciesFilters(mavenProjects);
 
-        try (PrintWriter p = new PrintWriter(new BufferedWriter(
-                new OutputStreamWriter(Files.newOutputStream(buildinfoFile.toPath()), StandardCharsets.UTF_8)))) {
-            BuildInfoWriter bi = newBuildInfoWriter(p, mono);
+        try (Writer writer = Files.newBufferedWriter(buildinfoFile.toPath(), StandardCharsets.UTF_8)) {
+            BuildInfoWriter bi = newBuildInfoWriter(writer, mono);
             bi.printHeader(root, mono ? null : project, rangeFilter, reproducible);
 
             // artifact(s) fingerprints
             for (MavenProject project : mavenProjects) {
                 bi.printArtifacts(project);
-            }
-
-            if (p.checkError()) {
-                throw new MojoExecutionException("Write error to " + buildinfoFile);
             }
 
             return bi.getArtifacts();
