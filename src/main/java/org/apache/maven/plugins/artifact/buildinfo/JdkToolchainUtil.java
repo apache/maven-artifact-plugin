@@ -37,7 +37,9 @@ class JdkToolchainUtil {
         String java = toolchain.findTool("java");
         if (java != null) {
             try {
-                Commandline cl = new Commandline(java + " -version");
+                Commandline cl = new Commandline();
+                cl.setExecutable(java);
+                cl.createArg().setValue("-version");
                 LineConsumer out = new LineConsumer();
                 LineConsumer err = new LineConsumer();
                 CommandLineUtils.executeCommandLine(cl, out, err);
