@@ -24,12 +24,14 @@ import java.nio.file.Path;
 import java.util.Arrays;
 
 import org.apache.maven.toolchain.Toolchain;
+import org.codehaus.plexus.util.cli.CommandLineTimeOutException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The fake {@code java} executables are shell scripts, so these tests don't run on Windows.
@@ -46,6 +48,15 @@ class JdkToolchainUtilTest {
         String version = JdkToolchainUtil.getJavaVersion(toolchainWith(java));
 
         assertEquals("openjdk version \"17.0.2\"", version);
+    }
+
+    @Test
+    void stopsWaitingForJavaThatDoesNotExit() throws IOException {
+        Path java = fakeJava(tempDir.resolve("jdk"), "exec sleep 5");
+
+        String version = JdkToolchainUtil.getJavaVersion(toolchainWith(java), 1);
+
+        assertTrue(version.startsWith(CommandLineTimeOutException.class.getName()), version);
     }
 
     private static Path fakeJava(Path jdkHome, String script) throws IOException {
