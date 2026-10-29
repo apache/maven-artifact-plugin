@@ -65,7 +65,6 @@
     <mavenVersion>3.9.16</mavenVersion>
     <resolverVersion>1.9.27</resolverVersion>
     <doxiaVersion>2.2.0</doxiaVersion>
-    <javaVersion>8</javaVersion>
     <project.build.outputTimestamp>2026-09-11T07:12:04Z</project.build.outputTimestamp>
     <version.flatten-maven-plugin>1.7.3</version.flatten-maven-plugin>
   </properties>
