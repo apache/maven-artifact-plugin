@@ -30,7 +30,7 @@
   <description>An IT looking at a mono-module build with outputTimestamp using git commit timestamp.</description>
 
   <prerequisites>
-    <maven>3.0.5</maven>
+    <maven>3.9.0</maven>
   </prerequisites>
 
   <properties>
