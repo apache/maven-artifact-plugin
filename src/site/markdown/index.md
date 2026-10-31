@@ -48,4 +48,4 @@ If you feel like the plugin is missing a feature or has a defect, you can fill a
 
 To provide you with better understanding on some usages of the Artifact Plugin, you can take a look into the following examples:
 
-- [How to diagnose issues with Reproducible Builds?](./reproducible.html)
+- [How to diagnose issues with Reproducible Builds?](https://maven.apache.org/guides/mini/guide-reproducible-builds.html#Reading_the_artifact.3Acompare_output)
