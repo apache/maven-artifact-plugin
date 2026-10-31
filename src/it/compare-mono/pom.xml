@@ -33,7 +33,7 @@
   <description>A simple IT verifying the basic use case of artifact:compare for mono-module build.</description>
 
   <prerequisites>
-    <maven>3.0.5</maven>
+    <maven>3.9.0</maven>
   </prerequisites>
 
   <scm>

@@ -67,6 +67,7 @@
     <doxiaVersion>2.2.0</doxiaVersion>
     <project.build.outputTimestamp>2026-09-11T07:12:04Z</project.build.outputTimestamp>
     <version.flatten-maven-plugin>1.7.3</version.flatten-maven-plugin>
+    <invoker.parallelThreads>0.75C</invoker.parallelThreads>
   </properties>
 
   <dependencies>

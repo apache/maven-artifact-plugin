@@ -36,7 +36,7 @@
   </properties>
 
   <prerequisites>
-    <maven>3.0.5</maven>
+    <maven>3.9.0</maven>
   </prerequisites>
 
   <distributionManagement>
