@@ -451,8 +451,15 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
     protected String relative(File file) {
         File basedir = session.getTopLevelProject().getBasedir();
-        int length = basedir.getPath().length();
-        String path = file.getPath();
-        return path.substring(length + 1);
+        return relative(basedir, file);
+    }
+
+    /**
+     * Computes the path of {@code file} relative to {@code basedir}, correctly handling a {@code file} that
+     * is not actually below {@code basedir} (for example a build artifact copied outside the reactor), instead
+     * of assuming {@code basedir}'s path is always a literal prefix of {@code file}'s path.
+     */
+    static String relative(File basedir, File file) {
+        return basedir.toPath().relativize(file.toPath()).toString();
     }
 }
