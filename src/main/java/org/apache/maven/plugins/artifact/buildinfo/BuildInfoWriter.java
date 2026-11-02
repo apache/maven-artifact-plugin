@@ -174,29 +174,35 @@ class BuildInfoWriter {
         int n = 0;
         Artifact pomArtifact =
                 new DefaultArtifact(project.getGroupId(), project.getArtifactId(), null, "pom", project.getVersion());
+        Path consumerPomFile = null;
         if (consumerPom != null) {
             // Maven 4 transient consumer POM attachment is published as the POM, overrides build POM, see
             // https://github.com/apache/maven/blob/c79a7a02721f0f9fd7e202e99f60b593461ba8cc/maven-core/src/main/java/org/apache/maven/internal/transformation/ConsumerPomArtifactTransformer.java#L130-L155
             try {
-                Path pomFile = Files.createTempFile(Paths.get(project.getBuild().getDirectory()), "consumer-", ".pom");
-                Files.copy(consumerPom.getFile().toPath(), pomFile, StandardCopyOption.REPLACE_EXISTING);
-                pomArtifact = pomArtifact.setFile(pomFile.toFile());
+                consumerPomFile =
+                        Files.createTempFile(Paths.get(project.getBuild().getDirectory()), "consumer-", ".pom");
+                Files.copy(consumerPom.getFile().toPath(), consumerPomFile, StandardCopyOption.REPLACE_EXISTING);
+                pomArtifact = pomArtifact.setFile(consumerPomFile.toFile());
             } catch (IOException e) {
-                p.println("Error processing consumer POM: " + e);
+                throw new MojoExecutionException("Error processing consumer POM", e);
             }
         } else {
             pomArtifact = pomArtifact.setFile(project.getFile());
         }
 
-        artifacts.put(pomArtifact, prefix + n);
-        if (isIgnore(pomArtifact)) {
-            p.println("# ignored " + getArtifactFilename(pomArtifact));
-        } else {
-            printFile(
-                    prefix + n++,
-                    pomArtifact.getGroupId(),
-                    pomArtifact.getFile(),
-                    project.getArtifactId() + '-' + project.getVersion() + ".pom");
+        try {
+            artifacts.put(pomArtifact, prefix + n);
+            if (isIgnore(pomArtifact)) {
+                p.println("# ignored " + getArtifactFilename(pomArtifact));
+            } else {
+                printFile(
+                        prefix + n++,
+                        pomArtifact.getGroupId(),
+                        pomArtifact.getFile(),
+                        project.getArtifactId() + '-' + project.getVersion() + ".pom");
+            }
+        } finally {
+            deleteQuietly(consumerPomFile);
         }
 
         if (consumerPom != null) {
@@ -293,6 +299,22 @@ class BuildInfoWriter {
 
     void printFile(String prefix, String groupId, File file) throws MojoExecutionException {
         printFile(prefix, groupId, file, file.getName());
+    }
+
+    /**
+     * Deletes a temporary file created to hold a consumer POM copy, logging failures instead of propagating them:
+     * a leftover temp file is a nuisance, not a reason to fail a build that otherwise succeeded.
+     *
+     * @param file the file to delete, may be {@code null}
+     */
+    private void deleteQuietly(Path file) {
+        if (file != null) {
+            try {
+                Files.deleteIfExists(file);
+            } catch (IOException e) {
+                log.debug("Could not delete temporary consumer POM copy " + file, e);
+            }
+        }
     }
 
     private void printFile(String prefix, String groupId, File file, String filename) throws MojoExecutionException {
