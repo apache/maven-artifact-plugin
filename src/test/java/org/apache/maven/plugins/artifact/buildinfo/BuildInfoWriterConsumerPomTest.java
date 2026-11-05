@@ -67,14 +67,21 @@ class BuildInfoWriterConsumerPomTest {
     }
 
     @Test
-    void consumerPomCopyFailureIsReportedInsteadOfMasked(@TempDir Path tempDir) {
+    void consumerPomCopyFailureIsReportedInsteadOfMasked(@TempDir Path tempDir) throws IOException {
         MavenProject project = newProject(tempDir);
         // points at a source file that does not exist, so Files.copy fails with an IOException
+        // after the destination temp file has already been created by Files.createTempFile
         attachConsumerPom(project, tempDir.resolve("does-not-exist.pom"));
 
         MojoExecutionException exception =
                 assertThrows(MojoExecutionException.class, () -> newWriter().printArtifacts(project));
         assertTrue(exception.getMessage().contains("consumer POM"), exception.getMessage());
+
+        try (Stream<Path> files = Files.list(tempDir)) {
+            assertFalse(
+                    files.anyMatch(f -> f.getFileName().toString().startsWith("consumer-")),
+                    "the destination temp file created before the failed copy must still be deleted");
+        }
     }
 
     private static MavenProject newProject(Path tempDir) {
@@ -91,7 +98,9 @@ class BuildInfoWriterConsumerPomTest {
         return project;
     }
 
-    @SuppressWarnings("deprecation") // MavenProject#attachArtifact requires an ArtifactHandlerManager we don't have
+    // addAttachedArtifact is deprecated; the alternative, attachArtifact(type, classifier, file),
+    // needs an ArtifactHandlerManager this test doesn't have.
+    @SuppressWarnings("deprecation")
     private static void attachConsumerPom(MavenProject project, Path sourceFile) {
         Artifact consumerPom = new DefaultArtifact(
                 project.getGroupId(),
