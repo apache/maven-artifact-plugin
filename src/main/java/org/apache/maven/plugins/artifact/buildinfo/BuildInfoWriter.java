@@ -175,22 +175,18 @@ class BuildInfoWriter {
         Artifact pomArtifact =
                 new DefaultArtifact(project.getGroupId(), project.getArtifactId(), null, "pom", project.getVersion());
         Path consumerPomFile = null;
-        if (consumerPom != null) {
-            // Maven 4 transient consumer POM attachment is published as the POM, overrides build POM, see
-            // https://github.com/apache/maven/blob/c79a7a02721f0f9fd7e202e99f60b593461ba8cc/maven-core/src/main/java/org/apache/maven/internal/transformation/ConsumerPomArtifactTransformer.java#L130-L155
-            try {
+        try {
+            if (consumerPom != null) {
+                // Maven 4 transient consumer POM attachment is published as the POM, overrides build POM, see
+                // https://github.com/apache/maven/blob/c79a7a02721f0f9fd7e202e99f60b593461ba8cc/maven-core/src/main/java/org/apache/maven/internal/transformation/ConsumerPomArtifactTransformer.java#L130-L155
                 consumerPomFile =
                         Files.createTempFile(Paths.get(project.getBuild().getDirectory()), "consumer-", ".pom");
                 Files.copy(consumerPom.getFile().toPath(), consumerPomFile, StandardCopyOption.REPLACE_EXISTING);
                 pomArtifact = pomArtifact.setFile(consumerPomFile.toFile());
-            } catch (IOException e) {
-                throw new MojoExecutionException("Error processing consumer POM", e);
+            } else {
+                pomArtifact = pomArtifact.setFile(project.getFile());
             }
-        } else {
-            pomArtifact = pomArtifact.setFile(project.getFile());
-        }
 
-        try {
             artifacts.put(pomArtifact, prefix + n);
             if (isIgnore(pomArtifact)) {
                 p.println("# ignored " + getArtifactFilename(pomArtifact));
@@ -201,6 +197,8 @@ class BuildInfoWriter {
                         pomArtifact.getFile(),
                         project.getArtifactId() + '-' + project.getVersion() + ".pom");
             }
+        } catch (IOException e) {
+            throw new MojoExecutionException("Error processing consumer POM", e);
         } finally {
             deleteQuietly(consumerPomFile);
         }
