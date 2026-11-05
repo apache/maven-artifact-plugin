@@ -195,7 +195,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
             }
         }
 
-        int ko = artifacts.size() - ok - ignored.size();
+        int ko = koFilenames.size();
         int missing = missingFilenames.size();
 
         if (ko + missing > 0) {
