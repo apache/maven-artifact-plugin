@@ -21,14 +21,15 @@
 File compareFile = new File( basedir, "target/missing-artifact-1.0-SNAPSHOT.buildcompare" );
 assert compareFile.isFile()
 
-String compare = compareFile.text
+Properties compare = new Properties()
+compareFile.withInputStream { compare.load( it ) }
 
-assert compare.contains( "version=1.0-SNAPSHOT" )
+assert compare.getProperty( "version" ) == "1.0-SNAPSHOT"
 
 // the main jar always differs (non-reproducible jar plugin version): 1 "ko"
 // the extra classifier jar was never part of the reference build: 1 "missing"
 // they must be reported as disjoint counts, not double-counted into ko
-assert compare.contains( "ko=1" )
-assert compare.contains( "missing=1" )
-assert compare.contains( 'koFiles="missing-artifact-1.0-SNAPSHOT.jar"' )
-assert compare.contains( 'missingFiles="missing-artifact-1.0-SNAPSHOT-extra.jar"' )
+assert compare.getProperty( "ko" ) == "1"
+assert compare.getProperty( "missing" ) == "1"
+assert compare.getProperty( "koFiles" ) == '"missing-artifact-1.0-SNAPSHOT.jar"'
+assert compare.getProperty( "missingFiles" ) == '"missing-artifact-1.0-SNAPSHOT-extra.jar"'
