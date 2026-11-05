@@ -449,13 +449,32 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         return tc;
     }
 
-    /**
-     * Computes the path of {@code file} relative to the top-level project's basedir, correctly handling a
-     * {@code file} that is not actually below basedir (for example a build artifact copied outside the
-     * reactor), instead of assuming basedir's path is always a literal prefix of {@code file}'s path.
-     */
     protected String relative(File file) {
         File basedir = session.getTopLevelProject().getBasedir();
-        return basedir.toPath().relativize(file.toPath()).toString();
+        return relativize(basedir.toPath(), file.toPath());
+    }
+
+    /**
+     * Computes the path of {@code file} relative to {@code basedir}, correctly handling a {@code file} that
+     * is not actually below {@code basedir} (for example a build artifact copied outside the reactor), instead
+     * of assuming {@code basedir}'s path is always a literal prefix of {@code file}'s path.
+     *
+     * <p>Falls back to an absolute, normalized path if {@code basedir} and {@code file} cannot be relativized
+     * directly, which happens when one is absolute and the other relative, or when they have different roots
+     * (for example different drives on Windows); {@link Path#relativize(Path)} throws
+     * {@link IllegalArgumentException} in those cases.
+     */
+    static String relativize(Path basedir, Path file) {
+        try {
+            return basedir.relativize(file).toString();
+        } catch (IllegalArgumentException e) {
+            Path absBasedir = basedir.toAbsolutePath().normalize();
+            Path absFile = file.toAbsolutePath().normalize();
+            try {
+                return absBasedir.relativize(absFile).toString();
+            } catch (IllegalArgumentException ignored) {
+                return absFile.toString();
+            }
+        }
     }
 }
