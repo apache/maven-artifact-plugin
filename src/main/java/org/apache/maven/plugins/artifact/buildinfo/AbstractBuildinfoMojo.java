@@ -449,31 +449,28 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         return tc;
     }
 
-    protected String relative(File file) {
-        File basedir = session.getTopLevelProject().getBasedir();
-        return relativize(basedir.toPath(), file.toPath());
-    }
-
     /**
-     * Computes the path of {@code file} relative to {@code basedir}, correctly handling a {@code file} that
-     * is not actually below {@code basedir} (for example a build artifact copied outside the reactor), instead
-     * of assuming {@code basedir}'s path is always a literal prefix of {@code file}'s path.
+     * Computes the path of {@code file} relative to the reactor's top-level basedir, correctly handling a
+     * {@code file} that is not actually below that basedir (for example a build artifact copied outside the
+     * reactor), instead of assuming the basedir's path is always a literal prefix of {@code file}'s path.
      *
-     * <p>Falls back to an absolute, normalized path if {@code basedir} and {@code file} cannot be relativized
+     * <p>Falls back to an absolute, normalized path if the basedir and {@code file} cannot be relativized
      * directly, which happens when one is absolute and the other relative, or when they have different roots
      * (for example different drives on Windows); {@link Path#relativize(Path)} throws
      * {@link IllegalArgumentException} in those cases.
      */
-    static String relativize(Path basedir, Path file) {
+    protected String relative(File file) {
+        Path basedir = session.getTopLevelProject().getBasedir().toPath();
+        Path path = file.toPath();
         try {
-            return basedir.relativize(file).toString();
+            return basedir.relativize(path).toString();
         } catch (IllegalArgumentException e) {
             Path absBasedir = basedir.toAbsolutePath().normalize();
-            Path absFile = file.toAbsolutePath().normalize();
+            Path absPath = path.toAbsolutePath().normalize();
             try {
-                return absBasedir.relativize(absFile).toString();
+                return absBasedir.relativize(absPath).toString();
             } catch (IllegalArgumentException ignored) {
-                return absFile.toString();
+                return absPath.toString();
             }
         }
     }

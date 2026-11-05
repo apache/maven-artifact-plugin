@@ -19,48 +19,62 @@
 package org.apache.maven.plugins.artifact.buildinfo;
 
 import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
+import org.apache.maven.execution.DefaultMavenExecutionRequest;
+import org.apache.maven.execution.DefaultMavenExecutionResult;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.project.MavenProject;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AbstractBuildinfoMojoRelativizeTest {
+
+    private static AbstractBuildinfoMojo newMojo(File basedir) {
+        MavenProject project = new MavenProject();
+        project.setFile(new File(basedir, "pom.xml"));
+        MavenSession session =
+                new MavenSession(null, new DefaultMavenExecutionRequest(), new DefaultMavenExecutionResult(), project);
+        return new BuildinfoMojo(null, null, null, project, session, null);
+    }
+
     @Test
     void relativizesFileUnderBasedir() {
+        File basedir = new File("/a/b");
         assertEquals(
-                "target" + File.separator + "app.jar",
-                AbstractBuildinfoMojo.relativize(Paths.get("/a/b"), Paths.get("/a/b/target/app.jar")));
+                "target" + File.separator + "app.jar", newMojo(basedir).relative(new File(basedir, "target/app.jar")));
     }
 
     @Test
     void doesNotTreatSiblingDirectoryWithSharedPrefixAsUnderBasedir() {
         // basedir=/a/b, file=/a/bc/d: a naive string prefix-strip would wrongly return "d"
+        File basedir = new File("/a/b");
         assertEquals(
                 ".." + File.separator + "bc" + File.separator + "d",
-                AbstractBuildinfoMojo.relativize(Paths.get("/a/b"), Paths.get("/a/bc/d")));
+                newMojo(basedir).relative(new File("/a/bc/d")));
     }
 
     @Test
     void doesNotThrowWhenFileIsShorterThanBasedir() {
         // a naive substring(length + 1) throws StringIndexOutOfBoundsException here
-        assertEquals("..", AbstractBuildinfoMojo.relativize(Paths.get("/a/b"), Paths.get("/a")));
+        File basedir = new File("/a/b");
+        assertEquals("..", newMojo(basedir).relative(new File("/a")));
     }
 
     @Test
     void fallsBackInsteadOfThrowingWhenOneSideIsNotAbsolute() {
         // Path#relativize throws IllegalArgumentException when exactly one of the two paths is absolute.
-        // relativize() must recover by retrying with both paths made absolute, rather than propagate it.
-        Path basedir = Paths.get("/a/b");
-        Path file = Paths.get("relative/child.jar");
+        // relative() must recover by retrying with both paths made absolute, rather than propagate it.
+        File basedir = new File("/a/b");
+        File file = new File("relative/child.jar");
 
-        String result = assertDoesNotThrow(() -> AbstractBuildinfoMojo.relativize(basedir, file));
+        String result = newMojo(basedir).relative(file);
 
-        Path expected = basedir.toAbsolutePath()
+        String expected = basedir.toPath()
+                .toAbsolutePath()
                 .normalize()
-                .relativize(file.toAbsolutePath().normalize());
-        assertEquals(expected.toString(), result);
+                .relativize(file.toPath().toAbsolutePath().normalize())
+                .toString();
+        assertEquals(expected, result);
     }
 }
