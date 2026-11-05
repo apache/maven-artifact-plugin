@@ -174,29 +174,24 @@ class BuildInfoWriter {
         int n = 0;
         Artifact pomArtifact =
                 new DefaultArtifact(project.getGroupId(), project.getArtifactId(), null, "pom", project.getVersion());
+        String pomFilename = project.getArtifactId() + '-' + project.getVersion() + ".pom";
+
         if (consumerPom != null) {
             // Maven 4 transient consumer POM attachment is published as the POM, overrides build POM, see
             // https://github.com/apache/maven/blob/c79a7a02721f0f9fd7e202e99f60b593461ba8cc/maven-core/src/main/java/org/apache/maven/internal/transformation/ConsumerPomArtifactTransformer.java#L130-L155
+            Path consumerPomFile = null;
             try {
-                Path pomFile = Files.createTempFile(Paths.get(project.getBuild().getDirectory()), "consumer-", ".pom");
-                Files.copy(consumerPom.getFile().toPath(), pomFile, StandardCopyOption.REPLACE_EXISTING);
-                pomArtifact = pomArtifact.setFile(pomFile.toFile());
+                consumerPomFile =
+                        Files.createTempFile(Paths.get(project.getBuild().getDirectory()), "consumer-", ".pom");
+                Files.copy(consumerPom.getFile().toPath(), consumerPomFile, StandardCopyOption.REPLACE_EXISTING);
+                n = printPomArtifact(prefix, n, pomArtifact.setFile(consumerPomFile.toFile()), pomFilename);
             } catch (IOException e) {
-                p.println("Error processing consumer POM: " + e);
+                throw new MojoExecutionException("Error processing consumer POM", e);
+            } finally {
+                deleteQuietly(consumerPomFile);
             }
         } else {
-            pomArtifact = pomArtifact.setFile(project.getFile());
-        }
-
-        artifacts.put(pomArtifact, prefix + n);
-        if (isIgnore(pomArtifact)) {
-            p.println("# ignored " + getArtifactFilename(pomArtifact));
-        } else {
-            printFile(
-                    prefix + n++,
-                    pomArtifact.getGroupId(),
-                    pomArtifact.getFile(),
-                    project.getArtifactId() + '-' + project.getVersion() + ".pom");
+            n = printPomArtifact(prefix, n, pomArtifact.setFile(project.getFile()), pomFilename);
         }
 
         if (consumerPom != null) {
@@ -252,6 +247,24 @@ class BuildInfoWriter {
         }
     }
 
+    /**
+     * Records and prints the project's main POM artifact (or logs that it is ignored), under the
+     * {@code artifactId-version.pom} filename rather than {@link #getArtifactFilename(Artifact)}'s
+     * {@code baseVersion}-based one.
+     *
+     * @return {@code n + 1} if the artifact was printed, {@code n} unchanged if it was ignored
+     */
+    private int printPomArtifact(String prefix, int n, Artifact pomArtifact, String filename)
+            throws MojoExecutionException {
+        artifacts.put(pomArtifact, prefix + n);
+        if (isIgnore(pomArtifact)) {
+            p.println("# ignored " + getArtifactFilename(pomArtifact));
+            return n;
+        }
+        printFile(prefix + n, pomArtifact.getGroupId(), pomArtifact.getFile(), filename);
+        return n + 1;
+    }
+
     private void printArtifact(String prefix, int i, Artifact artifact) throws MojoExecutionException {
         prefix = prefix + i;
         File artifactFile = artifact.getFile();
@@ -293,6 +306,22 @@ class BuildInfoWriter {
 
     void printFile(String prefix, String groupId, File file) throws MojoExecutionException {
         printFile(prefix, groupId, file, file.getName());
+    }
+
+    /**
+     * Deletes a temporary file created to hold a consumer POM copy, logging failures instead of propagating them:
+     * a leftover temp file is a nuisance, not a reason to fail a build that otherwise succeeded.
+     *
+     * @param file the file to delete, may be {@code null}
+     */
+    private void deleteQuietly(Path file) {
+        if (file != null) {
+            try {
+                Files.deleteIfExists(file);
+            } catch (IOException e) {
+                log.debug("Could not delete temporary consumer POM copy " + file, e);
+            }
+        }
     }
 
     private void printFile(String prefix, String groupId, File file, String filename) throws MojoExecutionException {
