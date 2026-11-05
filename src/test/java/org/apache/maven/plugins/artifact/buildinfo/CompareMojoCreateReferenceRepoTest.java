@@ -55,29 +55,39 @@ class CompareMojoCreateReferenceRepoTest {
     }
 
     /**
-     * Set a single resolvable repo
-     * @param repoId ID of the repository
-     * @param repoUrl URL of the repository
-     */
-    private void setResolvableRepo(String repoId, String repoUrl) {
-        remoteRepos.clear();
-        remoteRepos.add(new RemoteRepository.Builder(repoId, "default", repoUrl).build());
-    }
-
-    private void setResolvableMirrorRepo(String mirrorId, String mirrorUrl, String isMirrorForRepoId) {
-        remoteRepos.clear();
-        RemoteRepository mirrored =
-                new RemoteRepository.Builder(isMirrorForRepoId, "default", "https://placeholder.example.nl").build();
-        remoteRepos.add(new RemoteRepository.Builder(mirrorId, "default", mirrorUrl)
-                .addMirroredRepository(mirrored)
-                .build());
-    }
-
-    /**
      * Removes all resolvable repositories and mirrors.
      */
     private void clearResolvableRepos() {
         remoteRepos.clear();
+    }
+
+    /**
+     * Add a single resolvable repo
+     * @param repoId ID of the repository
+     * @param repoUrl URL of the repository
+     */
+    private void addResolvableRepo(String repoId, String repoUrl) {
+        remoteRepos.clear();
+        remoteRepos.add(new RemoteRepository.Builder(repoId, "default", repoUrl).build());
+    }
+
+    /**
+     * Add a single resolvable repo which is a mirror for a list of other repositories
+     * @param mirrorId ID of the repository
+     * @param mirrorUrl URL of the repository
+     * @param mirroredRepoIds IDs of the repositories which are mirrored by this repository
+     */
+    private void addResolvableMirrorRepo(String mirrorId, String mirrorUrl, String... mirroredRepoIds) {
+        remoteRepos.clear();
+
+        RemoteRepository.Builder mirror = new RemoteRepository.Builder(mirrorId, "default", mirrorUrl);
+
+        for (String repoId : mirroredRepoIds) {
+            RemoteRepository mirrored =
+                    new RemoteRepository.Builder(repoId, "default", "https://placeholder.example.nl/" + repoId).build();
+            mirror.addMirroredRepository(mirrored);
+            remoteRepos.add(mirror.build());
+        }
     }
 
     private void assertRemoteRepo(RemoteRepository result, String repoId, String repoUrl) {
@@ -90,7 +100,10 @@ class CompareMojoCreateReferenceRepoTest {
     @InjectMojo(goal = "compare")
     void centralRepoNoMirror(CompareMojo mojo) throws Exception {
         // Make the default repo 'central' resolvable
-        setResolvableRepo("central", "https://repo.maven.apache.org/maven2");
+        clearResolvableRepos();
+        addResolvableMirrorRepo("my-mirror-other", "https://my-mirror.example.nl/other", "other");
+        addResolvableRepo("releases", "https://repo.example.nl/releases");
+        addResolvableRepo("central", "https://repo.maven.apache.org/maven2");
 
         RemoteRepository result = mojo.createReferenceRepo();
 
@@ -102,7 +115,9 @@ class CompareMojoCreateReferenceRepoTest {
     void centralRepoWithMirror(CompareMojo mojo) throws Exception {
         // When a mirror is configured, Maven replaces central with the mirror in remoteRepos.
         // The original "central" entry is NOT present, only the mirror is.
-        setResolvableMirrorRepo("my-mirror", "https://my-mirror.example.nl/central", "central");
+        clearResolvableRepos();
+        addResolvableRepo("releases", "https://repo.example.nl/releases");
+        addResolvableMirrorRepo("my-mirror", "https://my-mirror.example.nl/central", "releases", "others", "central");
 
         RemoteRepository result = mojo.createReferenceRepo();
 
@@ -113,7 +128,9 @@ class CompareMojoCreateReferenceRepoTest {
     @InjectMojo(goal = "compare")
     @MojoParameter(name = "referenceRepo", value = "releases")
     void nonCentralRepoNoMirror(CompareMojo mojo) throws Exception {
-        setResolvableRepo("releases", "https://repo.example.nl/releases");
+        clearResolvableRepos();
+        addResolvableMirrorRepo("my-mirror-other", "https://my-mirror.example.nl/other", "other", "central");
+        addResolvableRepo("releases", "https://repo.example.nl/releases");
 
         RemoteRepository result = mojo.createReferenceRepo();
 
@@ -126,11 +143,13 @@ class CompareMojoCreateReferenceRepoTest {
     void nonCentralRepoWithMirror(CompareMojo mojo) throws Exception {
         // When a mirror is configured for a non-central repo, Maven replaces the original with the mirror.
         // The original "releases" entry is NOT present, only the mirror is.
-        setResolvableMirrorRepo("my-mirror", "https://my-mirror.example.nl/releases", "releases");
+        clearResolvableRepos();
+        addResolvableMirrorRepo("my-mirror-other", "https://my-mirror.example.nl/other", "other");
+        addResolvableMirrorRepo("my-mirror-central", "https://my-mirror.example.nl/central", "central", "releases");
 
         RemoteRepository result = mojo.createReferenceRepo();
 
-        assertRemoteRepo(result, "my-mirror", "https://my-mirror.example.nl/releases");
+        assertRemoteRepo(result, "my-mirror-central", "https://my-mirror.example.nl/central");
     }
 
     @Test
@@ -139,6 +158,8 @@ class CompareMojoCreateReferenceRepoTest {
     void repoDoesNotExist(CompareMojo mojo) {
         // When remoteRepos doesn't contain a repo with the requested ID
         clearResolvableRepos();
+        addResolvableMirrorRepo("my-mirror-other", "https://my-mirror.example.nl/other", "other");
+        addResolvableMirrorRepo("my-mirror-central", "https://my-mirror.example.nl/central", "central", "releases");
 
         MojoExecutionException ex = assertThrows(MojoExecutionException.class, mojo::createReferenceRepo);
         assertTrue(ex.getMessage().contains("Could not find repository with id = nonexistent"));
