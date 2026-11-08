@@ -34,12 +34,14 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import org.apache.maven.archiver.MavenArchiver;
@@ -102,7 +104,9 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     @Parameter(property = "buildinfo.skipModules")
     private List<String> skipModules;
 
-    private List<PathMatcher> skipModulesMatcher = null;
+    private List<PathMatcher> skipModulesMatcher = Collections.emptyList();
+
+    private List<PathMatcher> ignoreMatcher = Collections.emptyList();
 
     /**
      * Makes the generated {@code .buildinfo} file reproducible, by dropping detailed environment recording: OS will be
@@ -165,6 +169,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        initializeGlobMatchers();
         boolean mono = session.getProjects().size() == 1;
 
         hasBadOutputTimestamp(outputTimestamp, getLog(), project, session, diagnose);
@@ -344,7 +349,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
     protected BuildInfoWriter newBuildInfoWriter(PrintWriter p, boolean mono) {
         BuildInfoWriter bi = new BuildInfoWriter(getLog(), p, mono, rtInformation);
         bi.setIgnoreJavadoc(ignoreJavadoc);
-        bi.setIgnore(ignore);
+        bi.setIgnore(ignoreMatcher);
         bi.setToolchain(getToolchain());
 
         return bi;
@@ -426,18 +431,40 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         return isSkipModule(project) || (detectSkip && PluginUtil.isSkip(project));
     }
 
+    /**
+     * Precompiles and validates the user-provided {@code buildinfo.ignore} and {@code buildinfo.skipModules} glob
+     * patterns up front, so invalid patterns are reported with a clear error instead of a raw
+     * {@link PatternSyntaxException} mid-build.
+     *
+     * @throws MojoExecutionException if a glob pattern is invalid
+     */
+    void initializeGlobMatchers() throws MojoExecutionException {
+        skipModulesMatcher = compileGlobs(skipModules, "buildinfo.skipModules");
+        ignoreMatcher = compileGlobs(ignore, "buildinfo.ignore");
+    }
+
     protected boolean isSkipModule(MavenProject project) {
-        if (skipModules == null || skipModules.isEmpty()) {
+        if (skipModulesMatcher.isEmpty()) {
             return false;
-        }
-        if (skipModulesMatcher == null) {
-            FileSystem fs = FileSystems.getDefault();
-            skipModulesMatcher = skipModules.stream()
-                    .map(i -> fs.getPathMatcher("glob:" + i))
-                    .collect(Collectors.toList());
         }
         Path path = Paths.get(project.getGroupId() + '/' + project.getArtifactId());
         return skipModulesMatcher.stream().anyMatch(m -> m.matches(path));
+    }
+
+    private static List<PathMatcher> compileGlobs(List<String> globs, String parameter) throws MojoExecutionException {
+        if (globs == null) {
+            return Collections.emptyList();
+        }
+        FileSystem fs = FileSystems.getDefault();
+        List<PathMatcher> matchers = new ArrayList<>(globs.size());
+        for (String glob : globs) {
+            try {
+                matchers.add(fs.getPathMatcher("glob:" + glob));
+            } catch (PatternSyntaxException pse) {
+                throw new MojoExecutionException("Invalid " + parameter + " glob pattern: " + glob, pse);
+            }
+        }
+        return matchers;
     }
 
     private Toolchain getToolchain() {
