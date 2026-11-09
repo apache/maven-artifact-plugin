@@ -32,6 +32,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -44,6 +45,8 @@ import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.toolchain.Toolchain;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyNode;
 import org.eclipse.aether.util.artifact.ArtifactIdUtils;
 
 /**
@@ -67,7 +70,11 @@ class BuildInfoWriter {
         this.rtInformation = rtInformation;
     }
 
-    void printHeader(MavenProject project, MavenProject aggregate, String rangeFilter, boolean reproducible) {
+    void printHeader(
+            MavenProject project,
+            MavenProject aggregate,
+            Map<DependencyNode, String> versionRangeDependencies,
+            boolean reproducible) {
         p.println("# https://reproducible-builds.org/docs/jvm/");
         p.println("buildinfo.version=1.0-SNAPSHOT");
         p.println();
@@ -107,8 +114,22 @@ class BuildInfoWriter {
             p.println("mvn.minimum.version=" + project.getPrerequisites().getMaven());
         }
 
-        if (!rangeFilter.isEmpty()) {
-            p.println("mvn.rebuild-args=-Dmaven.session.versionFilter=" + rangeFilter);
+        if (!versionRangeDependencies.isEmpty()) {
+            p.println();
+            p.println("# Some dependencies were resolved from version ranges, result may vary over time:");
+            versionRangeDependencies.values().forEach(s -> {
+                p.println("# - " + s);
+                log.warn(s);
+            });
+            p.println("# With Maven 3.10+, you can force the exact resolved version:");
+            String filter = versionRangeDependencies.keySet().stream()
+                    .map(DependencyNode::getDependency)
+                    .filter(Objects::nonNull)
+                    .map(Dependency::getArtifact)
+                    .filter(Objects::nonNull)
+                    .map(a -> String.format("i([%s])@%s:%s", a.getVersion(), a.getGroupId(), a.getArtifactId()))
+                    .collect(Collectors.joining(";"));
+            p.println("# -Dmaven.session.versionFilter=" + filter);
         }
 
         if (toolchain != null) {
