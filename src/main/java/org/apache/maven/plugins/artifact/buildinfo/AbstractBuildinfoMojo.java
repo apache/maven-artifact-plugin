@@ -35,11 +35,9 @@ import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.maven.archiver.MavenArchiver;
@@ -53,7 +51,6 @@ import org.apache.maven.rtinfo.RuntimeInformation;
 import org.apache.maven.toolchain.Toolchain;
 import org.apache.maven.toolchain.ToolchainManager;
 import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyNode;
 
 /**
@@ -364,12 +361,12 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         buildinfoFile.getParentFile().mkdirs();
 
         List<MavenProject> mavenProjects = getProjectListForBuildInfo(mono);
-        String rangeFilter = getVersionRangeDependenciesFilters(mavenProjects);
+        Map<DependencyNode, String> versionRangeDependencies = getVersionRangeDependencies(mavenProjects);
 
         try (PrintWriter p = new PrintWriter(new BufferedWriter(
                 new OutputStreamWriter(Files.newOutputStream(buildinfoFile.toPath()), StandardCharsets.UTF_8)))) {
             BuildInfoWriter bi = newBuildInfoWriter(p, mono);
-            bi.printHeader(root, mono ? null : project, rangeFilter, reproducible);
+            bi.printHeader(root, mono ? null : project, versionRangeDependencies, reproducible);
 
             // artifact(s) fingerprints
             for (MavenProject project : mavenProjects) {
@@ -394,21 +391,15 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
         }
     }
 
-    private String getVersionRangeDependenciesFilters(List<MavenProject> mavenProjects) throws MojoExecutionException {
+    private Map<DependencyNode, String> getVersionRangeDependencies(List<MavenProject> mavenProjects)
+            throws MojoExecutionException {
 
-        Set<DependencyNode> dependencyNodeSet = new LinkedHashSet<>();
+        Map<DependencyNode, String> dependencyNodeMap = new LinkedHashMap<>();
         for (MavenProject project : mavenProjects) {
-            dependencyNodeSet.addAll(
-                    rangesUtil.findVersionRangeDependencies(session, project).keySet());
+            dependencyNodeMap.putAll(rangesUtil.findVersionRangeDependencies(session, project));
         }
 
-        return dependencyNodeSet.stream()
-                .map(DependencyNode::getDependency)
-                .filter(Objects::nonNull)
-                .map(Dependency::getArtifact)
-                .filter(Objects::nonNull)
-                .map(a -> String.format("e(%s:%s:(%s,))", a.getGroupId(), a.getArtifactId(), a.getVersion()))
-                .collect(Collectors.joining(";"));
+        return dependencyNodeMap;
     }
 
     protected MavenProject getLastProject() {

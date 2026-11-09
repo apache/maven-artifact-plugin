@@ -37,4 +37,4 @@ if (mavenVersion.startsWith('4.')) {
 }
 
 assert buildinfo.contains( "mvn.minimum.version=3.0.5" )
-assert buildinfo.contains( "mvn.rebuild-args=-Dmaven.session.versionFilter=e(org.slf4j:slf4j-api:(1.7.36,))" )
+assert buildinfo.contains( "# - Dependency org.slf4j:slf4j-api:jar:1.7.36 (compile) has been resolved from a version range (1.7.30,1.7.36]" )
