@@ -209,10 +209,11 @@ class BuildInfoWriter {
             pomArtifact = pomArtifact.setFile(project.getFile());
         }
 
-        artifacts.put(pomArtifact, prefix + n);
         if (isIgnore(pomArtifact)) {
             p.println("# ignored " + getArtifactFilename(pomArtifact));
+            artifacts.put(pomArtifact, null);
         } else {
+            artifacts.put(pomArtifact, prefix + n);
             printFile(
                     prefix + n++,
                     pomArtifact.getGroupId(),
