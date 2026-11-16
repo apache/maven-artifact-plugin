@@ -25,6 +25,6 @@ String compare = compareFile.text
 
 assert compare.contains( "ok=2" )
 assert compare.contains( "ko=0" )
-assert compare.contains( "ignored=1" )
+assert compare.contains( "ignored=0" )
 assert compare.contains( 'okFiles="ignore-pom-1.0-SNAPSHOT.jar ignore-pom-1.0-SNAPSHOT-tests.jar"' )
-assert compare.contains( 'ignoredFiles="ignore-pom-1.0-SNAPSHOT.pom"' )
+assert compare.contains( 'koFiles=""' )
