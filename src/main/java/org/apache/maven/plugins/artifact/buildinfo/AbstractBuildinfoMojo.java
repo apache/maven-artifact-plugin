@@ -290,12 +290,8 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
             while (parent != null) {
                 String parentProperty = parent.getProperties().getProperty("project.build.outputTimestamp");
                 sb.append(System.lineSeparator());
-                sb.append("        - ")
-                        .append(session.getProjects().contains(parent) ? "reactor" : "external")
-                        .append(" parent ")
-                        .append(parent.getId())
-                        .append(" property = ")
-                        .append(parentProperty);
+                sb.append("        - " + (session.getProjects().contains(parent) ? "reactor" : "external") + " parent "
+                        + parent.getId() + " property = " + parentProperty);
                 if (!projectProperty.equals(parentProperty)) {
                     break;
                 }
