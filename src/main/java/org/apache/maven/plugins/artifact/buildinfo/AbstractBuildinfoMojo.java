@@ -197,7 +197,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
             String outputTimestamp, Log log, MavenProject project, MavenSession session, boolean diagnose) {
         Instant timestamp =
                 MavenArchiver.parseBuildOutputTimestamp(outputTimestamp).orElse(null);
-        String effective = ((timestamp == null) ? "disabled" : DateTimeFormatter.ISO_INSTANT.format(timestamp));
+        String effective = timestamp == null ? "disabled" : DateTimeFormatter.ISO_INSTANT.format(timestamp);
 
         if (diagnose) {
             diagnose(outputTimestamp, log, project, session, effective);
@@ -254,7 +254,7 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
                     + "       reactor first = "
                     + (first.equals(root) ? "executionRoot" : (first.getId() + " @ " + firstRelative))
                     + System.lineSeparator()
-                    + "               first.parent = " + ((firstParent == null) ? firstParent : firstParent.getId()));
+                    + "               first.parent = " + (firstParent == null ? firstParent : firstParent.getId()));
             if (firstParent != null && session.getProjects().contains(firstParent)) {
                 // should not happen...
                 log.warn("reactor first parent = " + firstParent.getId() + " is in reactor");
@@ -290,8 +290,12 @@ public abstract class AbstractBuildinfoMojo extends AbstractMojo {
             while (parent != null) {
                 String parentProperty = parent.getProperties().getProperty("project.build.outputTimestamp");
                 sb.append(System.lineSeparator());
-                sb.append("        - " + (session.getProjects().contains(parent) ? "reactor" : "external") + " parent "
-                        + parent.getId() + " property = " + parentProperty);
+                sb.append("        - ")
+                        .append(session.getProjects().contains(parent) ? "reactor" : "external")
+                        .append(" parent ")
+                        .append(parent.getId())
+                        .append(" property = ")
+                        .append(parentProperty);
                 if (!projectProperty.equals(parentProperty)) {
                     break;
                 }

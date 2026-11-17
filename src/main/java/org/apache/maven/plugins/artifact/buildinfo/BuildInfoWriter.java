@@ -156,7 +156,7 @@ class BuildInfoWriter {
         if (index < 0) {
             index = javaVersion.indexOf('-'); // for example 17-ea
         }
-        return (index < 0) ? javaVersion : javaVersion.substring(0, index);
+        return index < 0 ? javaVersion : javaVersion.substring(0, index);
     }
 
     private void printSourceInformation(MavenProject project) {

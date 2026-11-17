@@ -71,7 +71,7 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
         // super.execute(); // do not generate buildinfo, just reuse logic from abstract class
         Instant timestamp =
                 MavenArchiver.parseBuildOutputTimestamp(outputTimestamp).orElse(null);
-        String effective = ((timestamp == null) ? "disabled" : DateTimeFormatter.ISO_INSTANT.format(timestamp));
+        String effective = timestamp == null ? "disabled" : DateTimeFormatter.ISO_INSTANT.format(timestamp);
 
         diagnose(outputTimestamp, getLog(), project, session, effective);
         getLog().info("");
@@ -108,7 +108,7 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
                 .forEach(e -> getLog().info("parent in reactor: " + e.getKey().getGroupId() + ":"
                         + e.getKey().getArtifactId() + " @ "
                         + rootPath.relativize(e.getKey().getFile().toPath()) + " (" + e.getValue() + " module"
-                        + ((e.getValue() > 1) ? "s" : "") + "), property = "
+                        + (e.getValue() > 1 ? "s" : "") + "), property = "
                         + e.getKey().getProperties().get("project.build.outputTimestamp")));
 
         getLog().info("");
@@ -118,7 +118,7 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
         groupIds.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                 .forEach(e -> getLog().info("groupId: " + e.getKey() + " (" + e.getValue() + " artifactId"
-                        + ((e.getValue() > 1) ? "s" : "") + ")"));
+                        + (e.getValue() > 1 ? "s" : "") + ")"));
 
         Map<String, Set<String>> artifactIds = session.getProjects().stream()
                 .collect(Collectors.groupingBy(
