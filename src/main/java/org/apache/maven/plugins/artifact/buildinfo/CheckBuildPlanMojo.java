@@ -210,7 +210,7 @@ public class CheckBuildPlanMojo extends AbstractMojo {
     }
 
     private Properties loadIssues() throws MojoExecutionException {
-        try (InputStream in = (pluginIssues == null)
+        try (InputStream in = pluginIssues == null
                 ? getClass().getResourceAsStream("not-reproducible-plugins.properties")
                 : Files.newInputStream(pluginIssues.toPath())) {
             Properties prop = new Properties();

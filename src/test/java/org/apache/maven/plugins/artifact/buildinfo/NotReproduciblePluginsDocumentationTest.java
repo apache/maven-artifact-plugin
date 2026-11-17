@@ -65,16 +65,22 @@ class NotReproduciblePluginsDocumentationTest {
                 index = plugin.indexOf('+');
                 if (index < 0) {
                     groupId = "org.apache.maven.plugins";
-                    sb.append("| org.apache.maven.plugins | {{{/plugins/" + plugin + "/}" + plugin + "}} ");
+                    sb.append("| org.apache.maven.plugins | {{{/plugins/")
+                            .append(plugin)
+                            .append("/}")
+                            .append(plugin)
+                            .append("}} ");
                 } else {
                     groupId = plugin.substring(0, index);
                     plugin = plugin.substring(index + 1);
-                    sb.append("| " + groupId + " | " + plugin + " ");
+                    sb.append("| ").append(groupId).append(" | ").append(plugin).append(" ");
                 }
                 if (status.startsWith("fail:")) {
-                    sb.append("| - | no fixed release available, see {{{" + status.substring(5) + "}reference}}");
+                    sb.append("| - | no fixed release available, see {{{")
+                            .append(status.substring(5))
+                            .append("}reference}}");
                 } else {
-                    sb.append("| " + status + " | ");
+                    sb.append("| ").append(status).append(" | ");
                 }
                 continue;
             }
@@ -91,7 +97,7 @@ class NotReproduciblePluginsDocumentationTest {
                     } else if (url.startsWith("https://github.com/")) {
                         line = line.substring(19);
                     }
-                    sb.append("{{{" + url + "}" + line + "}}");
+                    sb.append("{{{").append(url).append("}").append(line).append("}}");
                 } else {
                     sb.append(line);
                 }

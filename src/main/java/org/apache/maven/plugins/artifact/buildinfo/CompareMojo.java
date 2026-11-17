@@ -202,12 +202,12 @@ public class CompareMojo extends AbstractBuildinfoMojo {
             getLog().error("[Reproducible Builds] rebuild comparison result: "
                     + MessageUtils.buffer().success(ok + " files match")
                     + ", " + MessageUtils.buffer().failure(ko + " differ")
-                    + ((missing == 0) ? "" : (", " + MessageUtils.buffer().failure(missing + " missing")))
-                    + ((ignored.isEmpty()) ? "" : (", " + MessageUtils.buffer().warning(ignored.size() + " ignored"))));
+                    + (missing == 0 ? "" : (", " + MessageUtils.buffer().failure(missing + " missing")))
+                    + (ignored.isEmpty() ? "" : (", " + MessageUtils.buffer().warning(ignored.size() + " ignored"))));
         } else {
             getLog().info("[Reproducible Builds] rebuild comparison result: "
                     + MessageUtils.buffer().success(ok + " files match")
-                    + ((ignored.isEmpty()) ? "" : (", " + MessageUtils.buffer().warning(ignored.size() + " ignored"))));
+                    + (ignored.isEmpty() ? "" : (", " + MessageUtils.buffer().warning(ignored.size() + " ignored"))));
         }
 
         // save .compare file

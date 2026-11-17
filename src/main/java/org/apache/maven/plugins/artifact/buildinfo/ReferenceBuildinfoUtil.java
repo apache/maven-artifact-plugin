@@ -307,7 +307,7 @@ class ReferenceBuildinfoUtil {
 
         value = attr.getValue("Build-Jdk");
         if (value != null) {
-            return String.valueOf(value) + " (from MANIFEST.MF Build-Jdk)";
+            return value + " (from MANIFEST.MF Build-Jdk)";
         }
 
         return null;
