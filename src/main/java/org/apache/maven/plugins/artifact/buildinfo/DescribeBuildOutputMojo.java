@@ -147,8 +147,9 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
             if (consumerPom != null) {
                 // Maven 4 transient consumer POM attachment is published as the POM, overrides build POM, see
                 // https://github.com/apache/maven/blob/c79a7a02721f0f9fd7e202e99f60b593461ba8cc/maven-core/src/main/java/org/apache/maven/internal/transformation/ConsumerPomArtifactTransformer.java#L130-L155
+                Path pomFile = null;
                 try {
-                    Path pomFile = Files.createTempFile(Paths.get(p.getBuild().getDirectory()), "consumer-", ".pom");
+                    pomFile = Files.createTempFile(Paths.get(p.getBuild().getDirectory()), "consumer-", ".pom");
                     Files.copy(consumerPom.getFile().toPath(), pomFile, StandardCopyOption.REPLACE_EXISTING);
                     pomArtifact = pomArtifact.setFile(pomFile.toFile());
                     getLog().info(s + describeArtifact(pomArtifact)); // consumer pom
@@ -157,6 +158,14 @@ public class DescribeBuildOutputMojo extends AbstractBuildinfoMojo {
                             new DefaultArtifact(p.getGroupId(), p.getArtifactId(), "build", "pom", p.getVersion());
                 } catch (IOException e) {
                     throw new MojoExecutionException("Error processing consumer POM", e);
+                } finally {
+                    if (pomFile != null) {
+                        try {
+                            Files.deleteIfExists(pomFile);
+                        } catch (IOException e) {
+                            getLog().debug("Could not delete temporary consumer POM copy " + pomFile, e);
+                        }
+                    }
                 }
             }
             pomArtifact = pomArtifact.setFile(p.getFile());
