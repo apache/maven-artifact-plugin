@@ -20,14 +20,15 @@ package org.apache.maven.plugins.artifact.buildinfo;
 
 import java.util.Map;
 
+import org.apache.maven.model.ConfigurationContainer;
 import org.apache.maven.model.Plugin;
+import org.apache.maven.model.PluginExecution;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 
 /**
  * Plugin utility to detect if install or deploy is skipped in a build, or even nexus-staging.
  * It supports both disabling by parameter configuration or property.
- * Known limitation: it does not look at configuration done more precisely at plugin execution level.
  */
 class PluginUtil {
     private static final String NEXUS_STAGING = "nexus-staging";
@@ -64,7 +65,10 @@ class PluginUtil {
         }
 
         Plugin plugin = getPlugin(project, pluginGa);
-        String skip = getPluginParameter(plugin, pluginParameter);
+        String skip = getConfigurationParameter(plugin, pluginParameter);
+        if (skip == null) {
+            skip = getExecutionsParameter(plugin, pluginParameter);
+        }
         if (skip == null) {
             skip = project.getProperties().getProperty(pluginProperty);
         }
@@ -81,12 +85,25 @@ class PluginUtil {
         return result;
     }
 
-    private static String getPluginParameter(Plugin plugin, String parameter) {
-        if (plugin != null) {
-            Xpp3Dom pluginConf = (Xpp3Dom) plugin.getConfiguration();
+    private static String getExecutionsParameter(Plugin plugin, String parameter) {
+        if (plugin == null) {
+            return null;
+        }
+        for (PluginExecution execution : plugin.getExecutions()) {
+            String value = getConfigurationParameter(execution, parameter);
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
+    }
 
-            if (pluginConf != null) {
-                Xpp3Dom target = pluginConf.getChild(parameter);
+    private static String getConfigurationParameter(ConfigurationContainer container, String parameter) {
+        if (container != null) {
+            Xpp3Dom conf = (Xpp3Dom) container.getConfiguration();
+
+            if (conf != null) {
+                Xpp3Dom target = conf.getChild(parameter);
 
                 if (target != null) {
                     return target.getValue();
