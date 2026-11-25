@@ -19,44 +19,44 @@
  */
 
 // check existence of generated compare in target
-File compareFile = new File( basedir, "target/mono-1.0-SNAPSHOT.buildcompare" );
+File compareFile = new File(basedir, "target/mono-1.0-SNAPSHOT.buildcompare")
 assert compareFile.isFile()
 
 // check generated compare content
 String compare = compareFile.text
 
-assert compare.contains( "version=1.0-SNAPSHOT" )
+assert compare.contains("version=1.0-SNAPSHOT")
 
 // In Maven 4 we build and consumer POM
 if (mavenVersion.startsWith('4.')) {
-  assert compare.contains( "ok=2" )
-  assert compare.contains( 'okFiles="mono-1.0-SNAPSHOT.pom mono-1.0-SNAPSHOT-build.pom"' )
+    assert compare.contains("ok=2")
+    assert compare.contains('okFiles="mono-1.0-SNAPSHOT.pom mono-1.0-SNAPSHOT-build.pom"')
 } else {
-  assert compare.contains( "ok=1" )
-  assert compare.contains( 'okFiles="mono-1.0-SNAPSHOT.pom"' )
+    assert compare.contains("ok=1")
+    assert compare.contains('okFiles="mono-1.0-SNAPSHOT.pom"')
 }
 
-assert compare.contains( "ko=1" )
-assert compare.contains( "ignored=1" )
-assert compare.contains( 'koFiles="mono-1.0-SNAPSHOT.jar"' )
-assert compare.contains( 'ignoredFiles="mono-1.0-SNAPSHOT.spdx.json"' )
-if( File.separator == '/' ) {
-  assert compare.contains( '# diffoscope target/reference/org.apache.maven.plugins.it.compare/mono-1.0-SNAPSHOT.jar target/mono-1.0-SNAPSHOT.jar' )
+assert compare.contains("ko=1")
+assert compare.contains("ignored=1")
+assert compare.contains('koFiles="mono-1.0-SNAPSHOT.jar"')
+assert compare.contains('ignoredFiles="mono-1.0-SNAPSHOT.spdx.json"')
+if(File.separator == '/') {
+    assert compare.contains('# diffoscope target/reference/org.apache.maven.plugins.it.compare/mono-1.0-SNAPSHOT.jar target/mono-1.0-SNAPSHOT.jar')
 } else {
-  assert compare.contains( '# diffoscope target\\reference\\org.apache.maven.plugins.it.compare\\mono-1.0-SNAPSHOT.jar target\\mono-1.0-SNAPSHOT.jar' )
+    assert compare.contains('# diffoscope target\\reference\\org.apache.maven.plugins.it.compare\\mono-1.0-SNAPSHOT.jar target\\mono-1.0-SNAPSHOT.jar')
 }
 
 // check existence of generated buildinfo in target
-File buildinfoFile = new File( basedir, "target/mono-1.0-SNAPSHOT.buildinfo" );
+File buildinfoFile = new File(basedir, "target/mono-1.0-SNAPSHOT.buildinfo")
 assert buildinfoFile.isFile()
 
 // check generated buildinfo content
 String buildinfo = buildinfoFile.text
 
-assert buildinfo.contains( "# - Dependency org.slf4j:slf4j-api:jar:1.7.36 (compile) has been resolved from a version range (1.7.30,1.7.36]" )
+assert buildinfo.contains("# - Dependency org.slf4j:slf4j-api:jar:1.7.36 (compile) has been resolved from a version range (1.7.30,1.7.36]")
 
 // check existence of build log
-File buildLogFile = new File( basedir, "build.log" );
+File buildLogFile = new File(basedir, "build.log")
 assert buildLogFile.isFile()
 
 String buildLog = buildLogFile.text

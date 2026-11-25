@@ -20,7 +20,7 @@
 
 def check(String target) {
     // check existence of generated aggregate buildinfo in target and root copy
-    File buildinfoFile = new File(basedir, target + "/multi-1.0-SNAPSHOT.buildinfo");
+    File buildinfoFile = new File(basedir, target + "/multi-1.0-SNAPSHOT.buildinfo")
     assert buildinfoFile.isFile()
 
     File modB = new File(basedir, "modB/" + target + "/multi-modB-1.0-SNAPSHOT.buildinfo")

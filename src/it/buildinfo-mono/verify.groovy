@@ -19,7 +19,7 @@
  */
 
 // check existence of generated buildinfo in target
-File buildinfoFile = new File( basedir, "target/mono-1.0-SNAPSHOT.buildinfo" );
+File buildinfoFile = new File(basedir, "target/mono-1.0-SNAPSHOT.buildinfo")
 assert buildinfoFile.isFile()
 
 // check generated buildinfo content
@@ -28,13 +28,13 @@ String buildinfo = buildinfoFile.text
 
 // In Maven 4 we build and consumer POM
 if (mavenVersion.startsWith('4.')) {
-  assert buildinfo.contains( "outputs.0.filename=mono-1.0-SNAPSHOT.pom" )
-  assert buildinfo.contains( "outputs.1.filename=mono-1.0-SNAPSHOT-build.pom" )
-  assert buildinfo.contains( "outputs.2.filename=mono-1.0-SNAPSHOT.jar" )
+    assert buildinfo.contains("outputs.0.filename=mono-1.0-SNAPSHOT.pom")
+    assert buildinfo.contains("outputs.1.filename=mono-1.0-SNAPSHOT-build.pom")
+    assert buildinfo.contains("outputs.2.filename=mono-1.0-SNAPSHOT.jar")
 } else {
-  assert buildinfo.contains( "outputs.0.filename=mono-1.0-SNAPSHOT.pom" )
-  assert buildinfo.contains( "outputs.1.filename=mono-1.0-SNAPSHOT.jar" )
+    assert buildinfo.contains("outputs.0.filename=mono-1.0-SNAPSHOT.pom")
+    assert buildinfo.contains("outputs.1.filename=mono-1.0-SNAPSHOT.jar")
 }
 
-assert buildinfo.contains( "mvn.minimum.version=3.0.5" )
-assert buildinfo.contains( "# - Dependency org.slf4j:slf4j-api:jar:1.7.36 (compile) has been resolved from a version range (1.7.30,1.7.36]" )
+assert buildinfo.contains("mvn.minimum.version=3.0.5")
+assert buildinfo.contains("# - Dependency org.slf4j:slf4j-api:jar:1.7.36 (compile) has been resolved from a version range (1.7.30,1.7.36]")
