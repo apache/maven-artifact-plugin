@@ -32,15 +32,26 @@ import org.codehaus.plexus.util.cli.StreamConsumer;
  * A helper to get JDK version from a JDK toolchain.
  */
 class JdkToolchainUtil {
+    /**
+     * {@code java -version} answers at once: the timeout only keeps a JDK that hangs from blocking the build.
+     */
+    private static final int JAVA_VERSION_TIMEOUT_SECONDS = 30;
+
     static String getJavaVersion(Toolchain toolchain) {
+        return getJavaVersion(toolchain, JAVA_VERSION_TIMEOUT_SECONDS);
+    }
+
+    static String getJavaVersion(Toolchain toolchain, int timeoutSeconds) {
         String version = "unknown";
         String java = toolchain.findTool("java");
         if (java != null) {
             try {
-                Commandline cl = new Commandline(java + " -version");
+                Commandline cl = new Commandline();
+                cl.setExecutable(java);
+                cl.createArg().setValue("-version");
                 LineConsumer out = new LineConsumer();
                 LineConsumer err = new LineConsumer();
-                CommandLineUtils.executeCommandLine(cl, out, err);
+                CommandLineUtils.executeCommandLine(cl, out, err, timeoutSeconds);
                 version = String.join(":", err.getLines());
                 if (version == null || version.trim().isEmpty()) {
                     version = "unable to detect...";
