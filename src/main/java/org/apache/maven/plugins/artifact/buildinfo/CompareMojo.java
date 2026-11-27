@@ -353,7 +353,7 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         return null;
     }
 
-    private RemoteRepository createReferenceRepo() throws MojoExecutionException {
+    RemoteRepository createReferenceRepo() throws MojoExecutionException {
         if (referenceRepo.contains("::")) {
             // id::url
             int index = referenceRepo.indexOf("::");
@@ -369,6 +369,12 @@ public class CompareMojo extends AbstractBuildinfoMojo {
         for (RemoteRepository repo : remoteRepos) {
             if (referenceRepo.equals(repo.getId())) {
                 return repo;
+            }
+            // Check if this repo is a mirror for the requested repo
+            for (RemoteRepository mirrored : repo.getMirroredRepositories()) {
+                if (referenceRepo.equals(mirrored.getId())) {
+                    return repo;
+                }
             }
         }
         throw new MojoExecutionException("Could not find repository with id = " + referenceRepo);
